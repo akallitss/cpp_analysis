@@ -1,0 +1,22 @@
+# Example 1
+# Simple HTCondor submit description file
+# Everything with a leading # is a comment
+
+
+executable   = bin2tree.bash
+#arguments    = 302 2
+
+output       = outputfile
+error        = errorfile
+log          = bin2tree.log
+
+request_cpus   = 4
+request_memory = 1024M
+request_disk   = 10240K
+
+should_transfer_files = yes
+when_to_transfer_output = on_exit
+
++JobFlavour ="espresso"
+
+queue
