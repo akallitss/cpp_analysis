@@ -2,7 +2,7 @@
 Picosec Analysis for extracting analysis code parameters CPP
 
 =============================================
-README FILE
+
 This analysis code was developped from CEA/IRFU//DEDIP Group
 for the TestBeam data analysis of PICOSEC Micromegas Detector
 
