@@ -2209,12 +2209,12 @@ void FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       
       double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
       par->echargefit =  abs(fit_integral) / 50;
-      double fit_integral_fixed = sig_fittot->Integral(par->stime_pos*dt, par->ftime_pos*dt);
-      par->totchargefixed = abs(fit_integral_fixed) / 50;
+      //double fit_integral_fixed = sig_fittot->Integral(par->stime_pos*dt, par->ftime_pos*dt);
+      //par->totchargefixed = abs(fit_integral_fixed) / 50;
 
       //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
       cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
-      cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
+      //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
     //double IntegrateSigmoid = 0;
     //double binNo;
     //int intstart = sigstart

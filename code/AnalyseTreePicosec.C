@@ -698,7 +698,7 @@ const int MAXTRIG=1000;
       TString channel = TString::Itoa(i+1,10);
       TString bname = "peakparam_C"+channel;
       TString btype = bname+"["+bname1+"]/D";
-      otree->Branch(bname, ppars[i], btype);
+      otree->Branch(bname, spar[i], btype);
   }
            
  //------------------------------
@@ -1362,7 +1362,7 @@ const int MAXTRIG=1000;
       int nint = 20; //default to change you need to see MyFunctions.h
       nint = N_INTEGRATION_POINTS;
       //double DTI2 = 2.;  ///default
-      double DTI2 = 2.; 
+      double DTI2 = 2.; //time integration for 2ns
       nint = TMath::FloorNint(DTI2/dt)+1;
       cout<<"Integration points = "<<nint<<endl;    
       double intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
@@ -1470,7 +1470,7 @@ const int MAXTRIG=1000;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
 ///*************************************************************      
-      if(strncmp(DetName,"MCP", 3) ==0)
+      if(oscsetup->DetName[i] == "MCP")
       {
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
         if (ti<0) break;
