@@ -30,14 +30,15 @@ const char *DATA_PATH_NAME="/sw/akallits/PicoAnalysis/TestBeams/2022_October_h4"
 All those directories will be created by simply running:
 
     % root -l
-% .x ConstructDirTree.C
+    % .x ConstructDirTree.C
 ----Having your environment set up, you need to move to the Bin2Tree/ folder
 
 
 bin2tree.cxx is tha main code which together with the makefile
 will read the LEcroy software and binary files
-% make
-% ./bin2tree runNo poolNo
+
+    % make
+    % ./bin2tree runNo poolNo
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!ATTENTION for GDD scope you use poolNo == 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,8 +58,8 @@ and the OsciloscopeSetup information of the individual run.
 Those txt run informations will then be stored to the output root file of the data.
 At this point the tracking information is added and the SRS decoding is processed.
 
-% root -l  
-% .x MakeTreefromRawTreePicosec.C++(RUNNO,POOLNO)
+    % root -l  
+    % .x MakeTreefromRawTreePicosec.C++(RUNNO,POOLNO)
 This will result to the outputfile /path_to/data/2022_October_h4/processedTrees/Run224-Pool2_TESTBEAM_tree.root
 Which contains to trees :
 OsciloscopeSetup with all the information read from the txt file for the run parameters
