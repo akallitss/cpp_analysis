@@ -6,18 +6,15 @@ Picosec Analysis for extracting analysis code parameters CPP
 This analysis code was developped from CEA/IRFU//DEDIP Group
 for the TestBeam data analysis of PICOSEC Micromegas Detector
 
-The main code is contained in the code/ folder,
-while on the data/ you will find, organised by TestBeam period,
-the data used and produced in the analysis procedure.
-
-
 ==============================================================
+
 HOW TO RUN
-----In the /paht_to/code/directory you will find the header MyFunctions.h.
+
+The header code/MyFunctions.h : 
 ------MyFunctions.h-----------------
-First you need to define the directories of the raw-binary data, tracking data
+First, you need to define the directories of the raw-binary data, tracking data
 and all the other directories you may need for your analysis.
-In this version we use the following structure:
+In this version, we use the following structure:
 
 
 const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/code";
@@ -38,15 +35,17 @@ All those directories will be created by simply running:
 ----Having your environment set up, you need to move to the Bin2Tree/ folder
 
 
-bin2tree.cxx is tha main code which together with the makefile
-will read the LEcroy software and binary files
+bin2tree.cxx is the main code which together with the makefile
+will read the LECROY software and binary files
 
     % make
     % ./bin2tree runNo poolNo
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!ATTENTION for GDD scope you use poolNo == 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-This will result to a root file containing all trc waveforms in a tree format.
+
+
+This will result in a root file containing all TRC waveforms in a tree format.
 You can find this in the directory
 /path_to/data/2022_October_h4/dataTrees/
 with the name RUNNO-POOLNO_TESTBEAMraw_tree.root
