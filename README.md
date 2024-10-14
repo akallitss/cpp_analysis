@@ -18,6 +18,8 @@ HOW TO RUN
 First you need to define the directories of the raw-binary data, tracking data
 and all the other directories you may need for your analysis.
 In this version we use the following structure:
+
+
 const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/code";
 const char *BASEDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4";
 const char *WORKDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/wdir";
@@ -27,6 +29,8 @@ const char *TRACKDIRNAME="/sw/akallits/PicoAnalysis/TestBeams/2022_October_h4/tr
 const char *OUTDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
 const char *PARAMDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
 const char *DATA_PATH_NAME="/sw/akallits/PicoAnalysis/TestBeams/2022_October_h4";
+
+
 All those directories will be created by simply running:
 
     % root -l
