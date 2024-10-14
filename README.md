@@ -73,10 +73,8 @@ and their description (photocathode, anode/cathode voltages, position on the tra
 At this point the output is again a ROOT file that matches the desired tracking data on the specific detector, as well as the event number from the tracking
 and after decoding the 16bit waveform from the reference oscilloscope channel
 This will make the output file /path_to/data/processedTrees/ 
-
--Example command to process the data with the right tracking info
+- Example command to process the data with the right tracking info
     ```bash
-    
     root -l
     .x AnalyseTreePicosec.C++(302, 1)
 Here we follow the offline analysis procedure based on the CFD method
