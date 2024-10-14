@@ -1,7 +1,4 @@
 # cpp_analysis
-Picosec Analysis for extracting analysis code parameters CPP
-
-# cpp_analysis
 
 Picosec Analysis for extracting analysis code parameters in C++.
 
