@@ -85,8 +85,9 @@ public:
    double bsl;
  
   PEAKPARAM() {}
- 
-  PeakparamDef(PEAKPARAM,1)
+
+//  PeakparamDef(PEAKPARAM,1)
+  ClassDef(PEAKPARAM,1)
 };
  
 typedef struct {
@@ -312,6 +313,15 @@ const char *DATADIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_Oct
 const char *TRACKDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
 const char *OUTDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
 const char *PARAMDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
+
+// const char *CODEDIR="/home/dylan/CLionProjects/picosec_cpp_analysis/code";
+// const char *BASEDIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4";
+// const char *WORKDIR="/home/dylan/Desktop/picosec/data/2022_October_h4/wdir";
+// const char *PLOTDIR="/home/dylan/Desktop/picosec/data/2022_October_h4/plots";
+// const char *DATADIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4/dataTrees";
+// const char *TRACKDIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4/tracking";
+// const char *OUTDIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4/processedTrees";
+// const char *PARAMDIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4/processedTrees/ParameterTrees";
 
 //const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code";
 //const char *BASEDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2023_April_h4";
