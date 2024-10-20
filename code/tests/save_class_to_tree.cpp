@@ -11,7 +11,7 @@ void save_class_to_tree() {
     TFile *file = new TFile("events_class.root", "RECREATE");
 
     // Create a TTree
-    TTree *tree = new TTree("eventTree", "Tree storing Event struct");
+    TTree *tree = new TTree("eventTree", "Tree storing Event objects");
 
     // Create an instance of the class
     Event event;
