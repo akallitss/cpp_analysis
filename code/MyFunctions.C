@@ -3,6 +3,8 @@
 
 #include "MyFunctions.h"
 
+ClassImp(PEAKPARAM);
+
 void MyFunctions(){
   cout<<"Loading functions library..."<<endl;}
 

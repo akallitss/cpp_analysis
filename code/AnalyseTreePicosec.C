@@ -51,8 +51,9 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   threshold/=1000.;   /// make it in V
   peTh/=1000.;
 
-  const double mV=1000.;   /// set mV=1. to make everything in volts!
-  
+  // const double mV=1000.;   /// set mV=1. to make everything in volts!
+  const double mV=1.;   /// set mV=1. to make everything in volts!
+
   gStyle->SetLabelSize(0.045,"X");
   gStyle->SetLabelSize(0.045,"Y");
   gStyle->SetLabelFont(132,"X");
@@ -636,11 +637,12 @@ cout<<"________________++_________________" << endl;
 
 const int MAXTRIG=1000; 
 //   PICPARAM *ppar, *ppars[4], *spar;
-  PEAKPARAM *ppar, *ppars[4], *spar[4];
+//  PEAKPARAM *ppar, *ppars[4], *spar[4];
+  PEAKPARAM *ppar, *spar[4];
   for (int i=0; i<4; i++)
     {
-      ppars[i] = new PEAKPARAM[MAXTRIG]; 
-      spar[i] = new PEAKPARAM[MAXTRIG]; 
+//      ppars[i] = new PEAKPARAM[MAXTRIG];
+      spar[i] = new PEAKPARAM[MAXTRIG];
     }
   ppar = new PEAKPARAM; 
 
@@ -661,7 +663,6 @@ const int MAXTRIG=1000;
 //   sprintf(ofname,"%s/Run%03d-Pool%d-%s_treeParam_%.1fmV.root",anadirname,rtype,fabs(threshold*1000.));
   sprintf(ofname,"%s/Run%03d-Pool%d_%streeParam.root",anadirname,runNo,poolNo,rtype);
   cout<<RED<<"Output filename: "<<ofname<<endlr;
-
 
   TFile *ofile;
   if (draw)
@@ -694,13 +695,22 @@ const int MAXTRIG=1000;
       TString bname1 = "npeaks_C"+channel1;
       TString btype1 = bname1+"/I";
       otree->Branch(bname1, &npeaks[i], btype1);
-      
+
+      for(int j=0;j<MAXTRIG;j++)
+	  {
+		  TString channel = TString::Itoa(i+1,10);
+          TString trigger_num = TString::Itoa(j,10);
+		  TString bname = "peakparam_C"+channel+"_trigger_num_"+trigger_num;
+		  otree->Branch(bname, &spar[i][j]);
+          // This creates branches named peakparam_C1_trigger_num_0, peakparam_C1_trigger_num_1, etc.
+          // The branch is of type PEAKPARAM, which is a struct defined in MyFunctions.C
+	  }
       TString channel = TString::Itoa(i+1,10);
       TString bname = "peakparam_C"+channel;
       TString btype = bname+"["+bname1+"]/D";
       otree->Branch(bname, spar[i], btype);
   }
-           
+
  //------------------------------
 //   //doubling the histos for the peThreshold (goodpeaks threshold)
 //   TH1D *hGoodPeaksAMPL;
@@ -1191,7 +1201,7 @@ const int MAXTRIG=1000;
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //while (eventNo<nevents)
-  while (1 || eventNo<100)
+  while (1 && eventNo<100)
   {
     if (draw)
 	{
@@ -1200,13 +1210,13 @@ const int MAXTRIG=1000;
 	  cout<<KRESET<<"Event to draw : ";
 	  cin>>eventNo;
 	}
-     
+
       if (eventNo<0 || eventNo>=nevents) break;
       ///    if (eventNo<25 || eventNo>=150) {eventNo++; continue;}
-      
+
       tree->GetEntry(eventNo);
-      
-      
+
+
       double maxc[]={0.,0.,0.,0.};
       double minc[]={0.,0.,0.,0.};
       double maxd[]={0.,0.,0.,0.};
@@ -1214,7 +1224,7 @@ const int MAXTRIG=1000;
       long double evtime =  1.*epoch+1.*nn*1e-9;
 //       long double evtime = 1.*epoch+1.*nn*1e-9 + t0;
 //       printf("t0 = %8.8lf ,  evtime = %8.8LF\n",t0,evtime);
-      
+
       int ntrigs = 0;
       int ntrigsGoodPeaks =0;
       int detspark = 0;
@@ -1237,38 +1247,38 @@ const int MAXTRIG=1000;
   for (int ci = 0; ci < 4; ++ci)
   {
       if (!active[ci]) continue;
-    
-      
+
+
       ntrigs = 0;
       ntrigsGoodPeaks =0;
       detspark = 0;
       totcharge = 0.;
-      //cout<< "maxpoints = "<< maxpoints << endl;  
+      //cout<< "maxpoints = "<< maxpoints << endl;
       //cout<<"sampling of = dt = "<<dt<<endl;
       for (int i=0;i<maxpoints;i++)
         totcharge+= amplC[ci][i];
 //         totcharge+= bslC[ci] - amplC[ci][i];
-      
+
       totcharge*= -1;   ///pulses are negative
-      
-      
+
+
       totcharge /= maxpoints;
       totcharge *= DT*1e3;   /// make it fC
-      
+
       if (fabs(totcharge)>200. || rmsC[ci]> 1.0015)   ///to be fine-tuned - values from nBLM
       {
         detspark = 1;
         totNsparks++;
       }
-      
+
       npt = TMath::FloorNint(DT/dt)+1;   /// to be fine-tuned. Amplifier depended!
-//  return 0;   
+//  return 0;
 
     if (draw)
     {
       cout<<endl<<"Entering 2nd if(draw)_________________________________________________"<<endl<<endl;;
 
-        cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl; 
+        cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
         long double epochX = (1.*epoch + nn*1e-9);
     //  TTimeStamp *tstamp = new TTimeStamp((time_t)epoch+(rootConv-unixConv),(Int_t)nn);
@@ -1277,7 +1287,7 @@ const int MAXTRIG=1000;
         drawdt = epochX;
         cout <<"Default derivation for "<<DT<<" ns , with sampling of "<<dt<<" ns ==> derivation points npt = "<<npt<< endl;
 
-        
+
         evdcanv[ci]->cd(1);gPad->SetGrid(1,1);
         waveform = new TGraph(maxpoints,ptime,amplC[ci]);
         waveform2 = new TGraph(maxpoints,ptime,amplC[ci]);
@@ -1304,13 +1314,13 @@ const int MAXTRIG=1000;
 ///  Smoothing array when no "bit filter" !!!!
 
       evdcanv[ci]->cd(2); gPad->SetGrid(1,1);
-      DerivateArray(amplC[ci],dampl[ci],maxpoints,dt,npt,1); ///with the number of points 
+      DerivateArray(amplC[ci],dampl[ci],maxpoints,dt,npt,1); ///with the number of points
       double maxelement_dampl[4]= {0,0,0,0};
-      maxelement_dampl[ci] = TMath::MaxElement(maxpoints, dampl[ci]); 
+      maxelement_dampl[ci] = TMath::MaxElement(maxpoints, dampl[ci]);
       double minelement_dampl[4] = {0,0,0,0};
       minelement_dampl[ci] = TMath::MinElement(maxpoints, dampl[ci]);
-      derivative = new TGraph(maxpoints,ptime,dampl[ci]); // the dapl arr has changed 
-      derivative2 = new TGraph(maxpoints,ptime,dampl[ci]); 
+      derivative = new TGraph(maxpoints,ptime,dampl[ci]); // the dapl arr has changed
+      derivative2 = new TGraph(maxpoints,ptime,dampl[ci]);
       sprintf(cname,"Derivative C%d\n",ci+1);
       derivative->SetMarkerColor(clr[ci+8]);
       derivative->SetLineColor(clr[ci+8]);
@@ -1356,15 +1366,15 @@ const int MAXTRIG=1000;
       iwaveform->Draw("apl");
       //evdcanv[ci]->Modified();
       //evdcanv[ci]->Update();
-      
-  ///Integration of Pulse here  
+
+  ///Integration of Pulse here
 
       int nint = 20; //default to change you need to see MyFunctions.h
       nint = N_INTEGRATION_POINTS;
       //double DTI2 = 2.;  ///default
       double DTI2 = 2.; //time integration for 2ns
       nint = TMath::FloorNint(DTI2/dt)+1;
-      cout<<"Integration points = "<<nint<<endl;    
+      cout<<"Integration points = "<<nint<<endl;
       double intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
      // continue;
       maxd[ci]=TMath::MaxElement(maxpoints,iampl);
@@ -1387,7 +1397,7 @@ const int MAXTRIG=1000;
       //derivative2->Draw("pl");
       evdcanv[ci]->Modified();
       evdcanv[ci]->Update();
-  
+
       //intgr = IntegratePulse(maxpoints,amplC[ci],iampl,dt,50.);
       DTI2 = 1.5;
       nint = TMath::FloorNint(DTI2/dt)+1;;
@@ -1413,16 +1423,16 @@ const int MAXTRIG=1000;
       //graph23->Draw("pl");
       evdcanv[ci]->Modified();
       evdcanv[ci]->Update();
-      
+
       //cout<<RED<<"OLA KALA"<<endlr;
       //continue;
-        
+
   }///end (if(draw))
-      
-    ///  subtract baseline it is done during the creation of the tree   
+
+    ///  subtract baseline it is done during the creation of the tree
 //     for (int i=0;i<maxpoints;i++)
 //       amplSum[i]-=bslC[ci];
-    
+
     /// smooth sumn array for analysis
     int nsmooth = 3;
     if (oscsetup->AmplifierNo[ci]==1 || oscsetup->AmplifierNo[ci] == 3 )
@@ -1432,18 +1442,18 @@ const int MAXTRIG=1000;
         npt = TMath::FloorNint(DT/dt)+1;
     }
 //     if (oscsetup->AmplifierNo[ci]==1) nsmooth = 15;
-    
-    
+
+
     SmoothArray(amplC[ci], sampl, maxpoints, nsmooth, 1);
 
-    /// derivate data array   
+    /// derivate data array
     DerivateArray(amplC[ci],dsampl,maxpoints,dt,npt,1);
 
-    /// derivate smoothed data array   
+    /// derivate smoothed data array
 //     DerivateArray(sampl,dsampl,maxpoints,dt,npt,1);
    //continue;
     //return 11;
-      
+
     int itrig =0;
     double t10corrected = 0.;
     ntrigs = 0;
@@ -1456,7 +1466,7 @@ const int MAXTRIG=1000;
 
 /// Having the following "if (detspark)" here means that an event with a spark, of a "baseline recovery event will not be analysed!!!
     if (detspark)
-    {	
+    {
 //        hSparkEvolution->Fill(evtime);
        cout<<" Spark ("<< (totcharge>10.) <<") or recovery ("<< (rmsC[ci]> 0.0015) <<") at event "<<eventNo<<endl;   /// correct the values
        eventNo++;
@@ -1469,8 +1479,8 @@ const int MAXTRIG=1000;
 	  //cout<<"check: "<<ntrigs+1<<endl;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
-///*************************************************************      
-      if(oscsetup->DetName[i] == "MCP")
+///*************************************************************
+      if(oscsetup->DetName[ci] == "MCP")
       {
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
         if (ti<0) break;
@@ -1484,24 +1494,24 @@ const int MAXTRIG=1000;
       else
       { //cout<< CYAN<<"Channel "<<ci+1<<" does not use the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
           //cout <<GREEN<<"Event "<<evNo <<" Channnel "<<ci+1<<" start ti = "<< ti << endlr;
-          ti = AnalyseLongPulse(maxpoints,sampl,dsampl,ppar,Thresholds[ci], dt, ti);  
+          ti = AnalyseLongPulse(maxpoints,sampl,dsampl,ppar,Thresholds[ci], dt, ti);
           //cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" returned ti = "<< ti <<" maxpoints = "<<maxpoints<< endlr;
           if (ti<0) break;
       }
-      
-      
+
+
       //cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" Found trig at "<<ti*dt<< "  "<< ti<< "  "<<itrig<< "  "<<itrig*dt<< "  "<<ttrig<< "  "<< endlr;
-	  
+
 	  AddPar(ppar,&spar[ci][ntrigs]);
-///*************************************************************      
-	  
+///*************************************************************
+
 	  if (correlated)
 	    t10corrected = spar[ci][ntrigs].t10 - ttrig;
 	  else
 	    t10corrected = spar[ci][ntrigs].t10;//-1e5;
 
 	  double rstm = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
-      if (oscsetup->AmplifierNo[ci]==1) 
+      if (oscsetup->AmplifierNo[ci]==1)
           rstm = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
 
 	  hAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
@@ -1521,7 +1531,7 @@ const int MAXTRIG=1000;
 	  hAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].tot[0]);
 // 	  hCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
 	  hCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/spar[ci][ntrigs].ampl);
-	  
+
 	  T10 = spar[ci][ntrigs].t10;
 	  T90 = spar[ci][ntrigs].t90;
 	  TB10 = spar[ci][ntrigs].tb10;
@@ -1530,7 +1540,7 @@ const int MAXTRIG=1000;
 	  Width = spar[ci][ntrigs].width;
 	  TOT = spar[ci][ntrigs].tot[0];
 	  BSLch = spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch;
-	  
+
 
       int cut1 = spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl>250.;
 	  cut1 =1;
@@ -1589,50 +1599,49 @@ const int MAXTRIG=1000;
              if (ntrigsGoodPeaks>0)
 		  //hGoodPeaksDt[ci]->Fill((spar[ci][ntrigs].t10-spar[ci][ntrigs-1].t10)*1e-9);//in seconds
 	      //     cout << "hDT filling = " << (spar[ci][ntrigs].t10-spar[ntrigs-1].t10)*1e-9 << endl;
-		     if (t10corrected<0.) cout<<"Negative tcor, Event = "<<eventNo<<endl; 
+		     if (t10corrected<0.) cout<<"Negative tcor, Event = "<<eventNo<<endl;
 	      }
 	      ntrigsGoodPeaks++;
 	    }
 	  //------------------------
-	  
+
 	  ntrigs++;
 	}///end loop ti   ==> scan along one waveform to find multiple peaks
-
 
       npeaks[ci] = ntrigs;
       ngoodPeaks[ci] = ntrigsGoodPeaks;
 //       cout<<"Found "<<ntrigsGoodPeaks<<" goodpeaks"<<endl;
 //       if (ngoodPeaks[ci]>1) cout <<"event "<<eventNo<<" n = "<<ngoodPeaks[ci]<<"  "<< epoch - epochS<< "  "<< evtime - epochS<< endl;
-      
+
       ntrigsTot[ci] += npeaks[ci];
       ngoodTrigsTot[ci] += ngoodPeaks[ci];
       //cout << "npeaks[ci]" << npeaks[ci] << endl;
-      
+
 //  if (!exttrig)
 // 	  if (ntrigs == 0)
-// 	  { 
+// 	  {
 //             hRateEvolutionCheck[ci]->Fill(evtime);  /// this is for the case of external trigger !!!
 // 	    eventNo++;
 // 	    continue;
 // 	  }
-      
+
       double ts = ptime[0];//ns
       double tf = ptime[maxpoints-1];//ns
       double tlive = (tf-ts) * 1e-9;//to make it sec
       double peakspersec = 1.* npeaks[ci] / tlive;
       double goodpeakspersec = 1.*ntrigsGoodPeaks / tlive;
 ///       double tnow = epoch + nn*1e-9 + spar[npeaks[ci]-1].t10*1e-9;  /// time of last peak in event or of the unique event if short frame//sec
-     
+
       long double depoch = 1.* (long double) epoch;
       long double tnowgoodpeaks = depoch + nn*1e-9 + spar[ci][ntrigsGoodPeaks-1].t10*1e-9 ;  /// used for dt calculation for goodpeaks
-      
+
 
       hRateEvolution[ci]->Fill(evtime,npeaks[ci]);
       hRateEvolutionCheck[ci]->Fill(evtime);
-      
+
       if (bkg)
       {
-         //hBkgGoodPeaksRateEvolution[ci]->Fill(evtime,ngoodPeaks[ci]); 
+         //hBkgGoodPeaksRateEvolution[ci]->Fill(evtime,ngoodPeaks[ci]);
          if (ngoodPeaks[ci]>0)
              hRate[ci]->Fill(ngoodPeaks[ci]);
       }
@@ -1654,7 +1663,7 @@ const int MAXTRIG=1000;
                hDt[ci]->Fill(dtlast);
         }
         tlast = tnow ;
-        
+
 
         if (eventNo>0 && ngoodPeaks[ci]>0)
         {
@@ -1671,16 +1680,16 @@ const int MAXTRIG=1000;
             tlastgoodpeaks = tnowgoodpeaks ;
         }
 //      tlastgoodpeaks = tnowgoodpeaks ;
-	
+
       }
-      
+
  /// 2nd IF DRAW
       //----------------------
     if (draw)
 	{
     cout<<endl<<"Entering 3rd if (draw)______________________________________________________________"<<endl<<endl;;
 	  cout<<"Found "<<ntrigs<<" pulses "<<endl;
-	  
+
 	  evdcanv[ci]->cd(1);
 	  TGraph *graphSum = new TGraph(maxpoints,ptime,amplC[ci]);
 	  graphSum->SetMarkerColor(clr[ci+2]);
@@ -1693,7 +1702,7 @@ const int MAXTRIG=1000;
     graphSum->GetXaxis()->SetTitle("Time [ns]");
     graphSum->GetYaxis()->SetTitle("Amplitude [V]");
 	  graphSum->Draw("apl");
-	  
+
 	  TGraph *sgraphSum = new TGraph(maxpoints,ptime,sampl);
 	  sgraphSum->SetLineColor(7);
 	  sgraphSum->SetFillColor(0);
@@ -1713,7 +1722,7 @@ const int MAXTRIG=1000;
     sgraphSumS->GetXaxis()->SetTitle("Time [ns]");
     sgraphSumS->GetYaxis()->SetTitle("Amplitude [V]");
 	  sgraphSumS->Draw("pl");
-	  
+
 
 	  evdcanv[ci]->cd(2);
     //TGraph* graph22 = new TGraph(maxpoints,ptime,dsampl);
@@ -1738,10 +1747,10 @@ const int MAXTRIG=1000;
     graphSum->GetXaxis()->SetTitle("Time [ns]");
     graphSum->GetYaxis()->SetTitle("Amplitude [V]");
     graphSum->Draw("pl");
-  
+
 
     evdcanv[ci]->cd(3);
-   
+
     TMultiGraph *mg = new TMultiGraph();
     int nint = 20; //default
     nint = N_INTEGRATION_POINTS;
@@ -1749,7 +1758,7 @@ const int MAXTRIG=1000;
     //double DTI2 = 2.;  ///default
     double DTI2 = 150.; //time window for integration in ns
     nint = TMath::FloorNint(DTI2/dt)+1; // make it int at >= of the setted time window
-    cout<<"Integration points second time with DTI2 = "<<nint<<endl;    
+    cout<<"Integration points second time with DTI2 = "<<nint<<endl;
     double intgr;
     intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
     // continue;
@@ -1794,7 +1803,7 @@ const int MAXTRIG=1000;
     iwaveform3->SetFillColor(0);
     //iwaveform3->Draw("apl");
     mg->Add(iwaveform3);*/
-    mg->GetXaxis()->SetTitle("Time [ns]"); //this is to the integral graph only 
+    mg->GetXaxis()->SetTitle("Time [ns]"); //this is to the integral graph only
     mg->GetYaxis()->SetTitle("Amplitude [V]");
 
     mg->Draw("ap");
@@ -1813,7 +1822,7 @@ const int MAXTRIG=1000;
       //h4->SetMinimum(maxelement_dampl[ci]);
 
       //h4->SetMaximum(-1.);
-     
+
       //h2->SetMaximum(TMath::MaxElement(4,maxd) + 0.005);
  	    //h2->SetMaximum(maxd);
 	    //h2->SetMinimum(maxelement_dampl);
@@ -1821,13 +1830,13 @@ const int MAXTRIG=1000;
       h1->GetYaxis()->SetTitle("Amplitude [V]");
       h2->GetXaxis()->SetTitle("Time [ns]");
       h2->GetYaxis()->SetTitle("Amplitude [V]");
-      
+
 
 	    evdcanv[ci]->Modified();
 	    evdcanv[ci]->cd(2);
 	    evdcanv[ci]->Update();
 	  }
-	  
+
 // 	  for (int i=0;i<ntrigs;i++)
 	  for (int i=0;i<npeaks[ci];i++)
 	  {
@@ -1860,28 +1869,28 @@ const int MAXTRIG=1000;
 //         label4->SetLineColor(4);
 //         label4->Draw();
         line4->Draw();
-        
+
         TLine *line5 = new TLine(spar[ci][i].stime_pos*dt,spar[ci][i].bsl,spar[ci][i].ftime_pos*dt,spar[ci][i].bsl);
         line5->SetLineColor(2);
 //         TLatex *label5 = new TLatex(0.5, 0.5, "Starting/Ending points of waveform");
 //         label5->SetLineColor(2);
 //         label5->Draw();
         line5->Draw();
-        
+
         TLine *line6 = new TLine(spar[ci][i].ttrig,Thresholds[ci],spar[ci][i].ttrig+spar[ci][i].tot[0],Thresholds[ci]);
         line6->SetLineColor(3);
 //         TLatex *label6 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
 //         label6->SetLineColor(3);
 //         label6->Draw();
         line6->Draw();
-        
+
         TLine *line7 = new TLine(spar[ci][i].maxtime,-spar[ci][i].bsl, spar[ci][i].maxtime, -spar[ci][i].ampl);
         line7->SetLineColor(7);
 //         TLatex *label7 = new TLatex(0.5, 0.5, "Vertical region of peak max");
 //         label7->SetLineColor(8);
 //         label7->Draw();
         line7->Draw();
-        
+
         gPad->BuildLegend(0.75,0.8,0.99,0.99);
 
         evdcanv[ci]->Modified();
@@ -1890,7 +1899,7 @@ const int MAXTRIG=1000;
         /// Sigmoid Fit Draw
 
        if (SIGMOIDFIT[ci])
-       { 
+       {
          //cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
          fitcanv[ci]->cd(1);
          //cout<<RED<<"TWRA "<<spar[ci][i].tot_sig_end_pos<<endlr;
@@ -1908,16 +1917,16 @@ const int MAXTRIG=1000;
          fitcanv[ci]->Update();
 
        }
-    
+
     }
 	  evdcanv[ci]->Modified();
 	  evdcanv[ci]->Update();
-	   
+
 	  evdcanv[ci]->cd(2);
       gPad->BuildLegend(0.75,0.8,0.99,0.99);
       gPad->Update();
-	  //    continue;   
-	  
+	  //    continue;
+
 	  if (integralh!=NULL)
 	  {
         evdcanv[ci]->cd(3);
@@ -1933,29 +1942,29 @@ const int MAXTRIG=1000;
 
 	}
       ///---------------end 2nd if(draw)--------------------------------
-      
+
     if (ntrigs>20000)
 	{
 	  cout<<ntrigs<<" pulses in event "<< eventNo <<" channel "<<ci+1 << endl;
 	  return (ntrigs);
 	}
 
-    
-  }  
+
+  }
        /////////////////////////////////////////////////////////////////
- //////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+ //////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /// END of the channel loop (ci) inside events tree entry processing
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
       ////////////////////////////////////////////////////////////////
-      
-      
+
+
     if (eventNo % (evpm) == 0)
 	{
 	  cout<<"Found ntrigs ="<<ntrigs<<" pulses for event "<<eventNo<<endl;
 	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsGoodPeaks <<" pulses for event "<<eventNo<<endl;
 	}
-      
-    otree->Fill(); 
+
+    otree->Fill();
     eventNo++;
 
       
@@ -2996,12 +3005,12 @@ const int MAXTRIG=1000;
    int comtst=system(command);
    cout<<"Done!"<<endl;
 
- 
+
  RegisterRunParameters(runpar,basedirname);  
- 
+	*/
+
  ofile->Write("",TObject::kOverwrite);
  gSystem->ChangeDirectory(tmpdir);
- */
 cout<<BLUE<<"End of script!"<<endl;
  return 0; 
 //// turn the warnings back on
