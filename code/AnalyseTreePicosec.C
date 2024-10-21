@@ -51,8 +51,8 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   threshold/=1000.;   /// make it in V
   peTh/=1000.;
 
-  // const double mV=1000.;   /// set mV=1. to make everything in volts!
-  const double mV=1.;   /// set mV=1. to make everything in volts!
+   const double mV=1000.;   /// set mV=1. to make everything in volts!
+
 
   gStyle->SetLabelSize(0.045,"X");
   gStyle->SetLabelSize(0.045,"Y");
@@ -586,11 +586,11 @@ cout<<"________________++_________________" << endl;
 /// follows a simple event display  - activate with draw = 1 in the input command
 /// graphs to draw ecent waveforms and derivatives / integrals
   TGraph* waveform;
-  TGraph* waveform2; 
-  TGraph* derivative; 
+  TGraph* waveform2;
+  TGraph* derivative;
   TGraph* derivative2; 
-  TGraph* integralh; 
-  TGraph* integralh2; 
+  TGraph* integralh;
+  TGraph* integralh2;
   TGraph* sig_waveform;
   TGraph* sig_d_waveform;
 /// canvades for the event display
@@ -635,7 +635,7 @@ cout<<"________________++_________________" << endl;
 
 /// create output tree    
 
-const int MAXTRIG=1000; 
+const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   PICPARAM *ppar, *ppars[4], *spar;
 //  PEAKPARAM *ppar, *ppars[4], *spar[4];
   PEAKPARAM *ppar, *spar[4];
@@ -1201,7 +1201,7 @@ const int MAXTRIG=1000;
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //while (eventNo<nevents)
-  while (1 && eventNo<100)
+  while (1 && eventNo<10000)
   {
     if (draw)
 	{
@@ -1578,6 +1578,7 @@ const int MAXTRIG=1000;
 	  //cout << "hDT filling = " << (spar[ci][ntrigs].t10-spar[ntrigs-1].t10)*1e-9 << endl;
 /// 	  if (spar[ci][ntrigs].tot<400)
 /// 	    hsCH->Fill(spar[ci][ntrigs].charge);
+///
 	  // //-----------------------------
 	  // //doubling histos for nthreshold
 	  if(1 || ((spar[ci][ntrigs].ampl) > (peTh) && (spar[ci][ntrigs].charge) > (peThCh) && cut1))//(spar[ci][ntrigs].tot>60) && (spar[ci][ntrigs].tot<100)(spar[ci][ntrigs].width>60) && (spar[ci][ntrigs].width<100))
@@ -1691,37 +1692,37 @@ const int MAXTRIG=1000;
 	  cout<<"Found "<<ntrigs<<" pulses "<<endl;
 
 	  evdcanv[ci]->cd(1);
-	  TGraph *graphSum = new TGraph(maxpoints,ptime,amplC[ci]);
-	  graphSum->SetMarkerColor(clr[ci+2]);
+	TGraph *graphSum = new TGraph(maxpoints,ptime,amplC[ci]);
+	graphSum->SetMarkerColor(clr[ci+2]);
     graphSum->SetLineColor(clr[ci+2]);
     graphSum->SetFillColor(0);
     graphSum->SetLineWidth(2);
     graphSum->SetLineStyle(7);
     sprintf(cname,"Raw signal channel %d", evNo, ci+1);
-	  graphSum->SetTitle(cname);
+    graphSum->SetTitle(cname);
     graphSum->GetXaxis()->SetTitle("Time [ns]");
     graphSum->GetYaxis()->SetTitle("Amplitude [V]");
-	  graphSum->Draw("apl");
+	graphSum->Draw("apl");
 
-	  TGraph *sgraphSum = new TGraph(maxpoints,ptime,sampl);
-	  sgraphSum->SetLineColor(7);
-	  sgraphSum->SetFillColor(0);
-	  sgraphSum->SetLineWidth(2);
-	  sprintf(cname,"Smoothed signal 1 event %d",evNo);
-	  sgraphSum->SetTitle(cname);
+	TGraph *sgraphSum = new TGraph(maxpoints,ptime,sampl);
+	sgraphSum->SetLineColor(7);
+	sgraphSum->SetFillColor(0);
+	sgraphSum->SetLineWidth(2);
+	sprintf(cname,"Smoothed signal 1 event %d",evNo);
+	sgraphSum->SetTitle(cname);
     sgraphSum->GetXaxis()->SetTitle("Time [ns]");
     sgraphSum->GetYaxis()->SetTitle("Amplitude [V]");
-	  sgraphSum->Draw("pl");
+	sgraphSum->Draw("pl");
 
     TGraph *sgraphSumS = new TGraph(maxpoints,ptime,samplC);
-	  sgraphSumS->SetLineColor(2);
-	  sgraphSumS->SetFillColor(0);
-	  sgraphSumS->SetLineWidth(2);
-	  sprintf(cname,"Smoothed signal 33 event %d",evNo);
-	  sgraphSumS->SetTitle(cname);
+	sgraphSumS->SetLineColor(2);
+	sgraphSumS->SetFillColor(0);
+	sgraphSumS->SetLineWidth(2);
+	sprintf(cname,"Smoothed signal 33 event %d",evNo);
+	sgraphSumS->SetTitle(cname);
     sgraphSumS->GetXaxis()->SetTitle("Time [ns]");
     sgraphSumS->GetYaxis()->SetTitle("Amplitude [V]");
-	  sgraphSumS->Draw("pl");
+	sgraphSumS->Draw("pl");
 
 
 	  evdcanv[ci]->cd(2);
