@@ -2452,6 +2452,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
    par->maxtime = par->maxtime_pos*dt;
    par->t90 *= dt;
    par->t10 *= dt;
+   par->risetime = (par->t90-par->t10)*dt;
+  cout<<YELLOW<<"risetime = "<<par->risetime<<endlr;
    par->tb10 *= dt;
         //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
    par->sampl = data[par->stime_pos];
@@ -2658,6 +2660,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
    par->t90 *= dt;
    par->t10 *= dt;
    par->tb10 *= dt;
+   par->risetime = (par->t90-par->t10)*dt;
         //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
    par->sampl = data[par->stime_pos];
    par->fampl = data[par->ftime_pos];
@@ -2720,16 +2723,16 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    spar->e_peak_end_ampl = ipar->e_peak_end_ampl;
    spar->sampl=ipar->sampl;
    spar->fampl=ipar->fampl;
-   spar->t20=ipar->t20;
-   spar->st20=ipar->st20;
+   //spar->t20=ipar->t20;
+   //spar->st20=ipar->st20;
    spar->tfit20=ipar->tfit20;
    spar->tnaive20 = ipar->tnaive20;
    spar->te_peak_end = ipar->te_peak_end;
    
    
-   spar->sechargefixed=ipar->sechargefixed;
-   spar->secharge=ipar->secharge;
-   spar->echarge=ipar->echarge;
+   //spar->sechargefixed=ipar->sechargefixed;
+   //spar->secharge=ipar->secharge;
+   //spar->echarge=ipar->echarge;
    spar->scharge=ipar->scharge;
    spar->charge=ipar->charge;
    spar->echargefixed=ipar->echargefixed;
