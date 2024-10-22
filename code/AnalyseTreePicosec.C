@@ -36,6 +36,7 @@
 #include <TLine.h>
 #include <TObjString.h>
 #include<TMultiGraph.h>
+#include<TClonesArray.h>
 #include "MyFunctions.C"
 #include <iomanip>
 #include <iostream>
@@ -638,13 +639,17 @@ cout<<"________________++_________________" << endl;
 const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   PICPARAM *ppar, *ppars[4], *spar;
 //  PEAKPARAM *ppar, *ppars[4], *spar[4];
-  PEAKPARAM *ppar, *spar[4];
+  PEAKPARAM *ppar, *newPpar, *spar[4];
+  TClonesArray *sparArr[4];
+  
+   
   for (int i=0; i<4; i++)
     {
-//      ppars[i] = new PEAKPARAM[MAXTRIG];
       spar[i] = new PEAKPARAM[MAXTRIG];
+      sparArr[i] = new TClonesArray("PEAKPARAM",MAXTRIG);
     }
-  ppar = new PEAKPARAM; 
+  ppar = new PEAKPARAM;
+  newPpar = new PEAKPARAM;
 
 
 ///parameters for quick monitor of the analysed run
@@ -696,19 +701,20 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       TString btype1 = bname1+"/I";
       otree->Branch(bname1, &npeaks[i], btype1);
 
-      for(int j=0;j<MAXTRIG;j++)
+//       for(int j=0;j<MAXTRIG;j++)
 	  {
 		  TString channel = TString::Itoa(i+1,10);
-          TString trigger_num = TString::Itoa(j,10);
-		  TString bname = "peakparam_C"+channel+"_trigger_num_"+trigger_num;
-		  otree->Branch(bname, &spar[i][j]);
+//           TString trigger_num = TString::Itoa(1,10);
+		  TString bname = "peakparam_C"+channel;
+          //TString btype = bname+"["+bname1+"]";
+		  otree->Branch(bname, &sparArr[i]);
           // This creates branches named peakparam_C1_trigger_num_0, peakparam_C1_trigger_num_1, etc.
           // The branch is of type PEAKPARAM, which is a struct defined in MyFunctions.C
 	  }
-      TString channel = TString::Itoa(i+1,10);
-      TString bname = "peakparam_C"+channel;
-      TString btype = bname+"["+bname1+"]/D";
-      otree->Branch(bname, spar[i], btype);
+//       TString channel = TString::Itoa(i+1,10);
+//       TString bname = "peakparam_C"+channel;
+//       TString btype = bname+"["+bname1+"]/D";
+//       otree->Branch(bname, spar[i], btype);
   }
 
  //------------------------------
@@ -1201,7 +1207,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //while (eventNo<nevents)
-  while (1 && eventNo<10000)
+  while (1 && eventNo<200)
   {
     if (draw)
 	{
@@ -1250,6 +1256,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
       ntrigs = 0;
+      sparArr[ci]->Clear();
       ntrigsGoodPeaks =0;
       detspark = 0;
       totcharge = 0.;
@@ -1501,12 +1508,29 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
       //cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" Found trig at "<<ti*dt<< "  "<< ti<< "  "<<itrig<< "  "<<itrig*dt<< "  "<<ttrig<< "  "<< endlr;
+      //sparArr[ci]->AddAt(ppar,ntrigs);
+    	//PEAKPARAM* ppar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM();
+    	//sparArr[ci]->Add(ppar);
 
-	  AddPar(ppar,&spar[ci][ntrigs]);
+
+    	// Add peak parameters to the TClonesArray
+    	PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
+   //     if (ci==1)
+   //     {
+   //       cout<<RED<<"found ntrigs = "<<ntrigs<<endl;
+		 // //cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
+   //     	cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
+   //     	//cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
+   //     	 cout<<sparArr[ci]->GetEntries()<<endlr;
+   //       return 0;
+   //     }
+
+   	  AddPar(ppar,&spar[ci][ntrigs]);
 ///*************************************************************
 
 	  if (correlated)
 	    t10corrected = spar[ci][ntrigs].t10 - ttrig;
+
 	  else
 	    t10corrected = spar[ci][ntrigs].t10;//-1e5;
 
@@ -1964,8 +1988,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  cout<<"Found ntrigs ="<<ntrigs<<" pulses for event "<<eventNo<<endl;
 	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsGoodPeaks <<" pulses for event "<<eventNo<<endl;
 	}
+      for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
 
     otree->Fill();
+  
     eventNo++;
 
       
