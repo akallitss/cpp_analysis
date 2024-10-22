@@ -1264,15 +1264,15 @@ int SubtractRefferenceChannel(int* spoints,double** data, double* sampl,int cref
       f[cref]--;
     }
   }
-
+    
   for (int i=0;i<points;i++)
   {
-    sampl[i]=f[0]*(data[0][i]-bsl[0]) + f[1]*(data[1][i]-bsl[1]) + f[2]*(data[2][i]-bsl[2]) + f[3]*(data[3][i]-bsl[3]);
+      sampl[i]=f[0]*(data[0][i]-bsl[0]) + f[1]*(data[1][i]-bsl[1]) + f[2]*(data[2][i]-bsl[2]) + f[3]*(data[3][i]-bsl[3]); 
   }
-
+  
   return (-f[cref]);
 }
-
+ 
 int SubtractMaxChannel(int points,double** data, double* sampl, double* bsl, int* mask)
 {
   if (points<=0)
@@ -1426,93 +1426,6 @@ void Pallette2()
    gStyle->SetPalette(50,colors);
 }
 
-int AnalyseIntegratedPulse(int points, double* data, IPARAM *par, double threshold, double dt)
-{
-  /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold)
-  ///pulses are considered negative!!!
-//   dt*=1e9;
-  if (points < 20) return -1;
-  int ntrig=0;
-  int tpoint=0;
-  par->tot=0;
-  for (int i=0; i<points; i++)   {
-    if (data[i]<=threshold) {
-      tpoint = i;
-      ntrig=1;
-      par->tot=1;
-      break;
-    }
-  }
-//   cout<<"tpoint = "<<tpoint*dt<<endl;
-  if (tpoint>=points-10 || tpoint == 0) return 0;
-
-  double miny = data[tpoint];
-  par->charge=0.;
-
-  for (int i=tpoint; i<points; i++)
-  {
-    if (data[i]<miny)
-    {
-      par->ampl=data[i];
-      par->maxtime=i;
-      miny=data[i];
-    }
-    par->charge+=data[i];
-    if (data[i]<=threshold)
-      par->tot++;
-    if (data[i]>threshold/10.)
-    {
-      par->ftime=i;
-      break;
-    }
-  }
-  /// fast scan for risetime, risecharge and t_start
-  par->t90=tpoint;
-  par->t10=tpoint;
-  par->stime=tpoint;
-  for (int i=par->maxtime; i>0; i--)
-  {
-     if (data[i]>=par->ampl*0.9)
-     {
-       par->t90=i;
-       break;
-     }
-  }
-  par->risecharge=0.;
-  for (int i=par->t90; i>0; i--)
-  {
-    par->risecharge+=data[i];
-    if (data[i]>=par->ampl*0.1)
-    {
-      par->t10=i;
-      break;
-    }
-  }
-
-  for (int i=par->t10; i>0; i--)
-  {
-    if (i<tpoint)
-      par->charge+=data[i];
-      par->stime=i;
-    if (data[i]>threshold/100. || (data[i+1]-data[i-1])/dt >=-0.0001 )
-    {
-      break;
-    }
-  }
-  par->width = par->ftime-par->stime;
-  par->ampl*=-1.;
-  par->charge*=-1.*dt;
-//   cout<<"tstart = "<<par->stime*dt<<endl;
-//   cout<<"tend = "<<par->ftime*dt<<endl;
-//   cout<<"tmax = "<<par->maxtime*dt<<endl;
-//   cout<<"ampl = "<<par->ampl<<endl;
-//   cout<<"t10 = "<<par->t10*dt<<endl;
-//   cout<<"t90 = "<<par->t90*dt<<endl;
-//   cout<<"rt = "<<(par->t90-par->t10)*dt<<endl;
-//   cout<<"charge = "<<par->charge*dt/N_INTEGRATION_POINTS<<endl;
-//   cout<<"risecharge = "<<par->risecharge*dt/N_INTEGRATION_POINTS<<endl;
-  return (ntrig);
-}
 
 int AnalyseLongPulse(int points, double* data, double* drv, PEAKPARAM *par, double threshold, double dt, int tshift)
 {
@@ -2450,8 +2363,6 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
    par->maxtime = par->maxtime_pos*dt;
    par->t90 *= dt;
    par->t10 *= dt;
-   par->risetime = (par->t90-par->t10)*dt;
-  cout<<YELLOW<<"risetime = "<<par->risetime<<endlr;
    par->tb10 *= dt;
         //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
    par->sampl = data[par->stime_pos];
@@ -2658,8 +2569,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
    par->t90 *= dt;
    par->t10 *= dt;
    par->tb10 *= dt;
-   par->risetime = (par->t90-par->t10)*dt;
-        //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
+
    par->sampl = data[par->stime_pos];
    par->fampl = data[par->ftime_pos];
    par->bslch = -0.5 * (data[par->stime_pos] + data[par->ftime_pos])*(par->ftime_pos - par->stime_pos +1.)*dt;
