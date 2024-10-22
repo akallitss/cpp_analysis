@@ -1514,7 +1514,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
     	// Add peak parameters to the TClonesArray
-    	PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
+    	// PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
+    	new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
    //     if (ci==1)
    //     {
    //       cout<<RED<<"found ntrigs = "<<ntrigs<<endl;
@@ -1525,7 +1526,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
    //       return 0;
    //     }
 
-   	  AddPar(ppar,&spar[ci][ntrigs]);
+   	  // AddPar(ppar,&spar[ci][ntrigs]);
 ///*************************************************************
 
 	  if (correlated)
