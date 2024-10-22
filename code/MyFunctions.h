@@ -53,16 +53,16 @@ public:
    double e_peak_end_ampl;
    double sampl;
    double fampl;
-   //double t20;
-   //double st20;
+   double t20;
+   double st20;
    double tfit20;
    double tnaive20;
    double te_peak_end;
-   
-   //double sechargefixed;
-   //double secharge;
+
+   double sechargefixed;
+   double secharge;
    double echargefixed;
-   //double echarge;
+   double echarge;
    double echargefit;
    double totchargefixed;
    double risetime;  ///10% - 90%
