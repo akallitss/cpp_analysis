@@ -1487,12 +1487,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
 ///*************************************************************
-      if(oscsetup->DetName[ci] == "MCP")
+
+    	if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci])  // Checks if "MCP" is at the start of the string
       {
+      	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
         if (ti<0) break;
       }
-      if (SIGMOIDFIT[ci])
+      else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
@@ -1507,26 +1509,20 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       }
 
 
-      //cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" Found trig at "<<ti*dt<< "  "<< ti<< "  "<<itrig<< "  "<<itrig*dt<< "  "<<ttrig<< "  "<< endlr;
-      //sparArr[ci]->AddAt(ppar,ntrigs);
-    	//PEAKPARAM* ppar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM();
-    	//sparArr[ci]->Add(ppar);
-
+		//cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" Found trig at "<<ti*dt<< "  "<< ti<< "  "<<itrig<< "  "<<itrig*dt<< "  "<<ttrig<< "  "<< endlr;
 
     	// Add peak parameters to the TClonesArray
     	// PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
-    	new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
+    	new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);// only for storing the peak parameters to the output tree
    //     if (ci==1)
    //     {
    //       cout<<RED<<"found ntrigs = "<<ntrigs<<endl;
-		 // //cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
-   //     	cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
-   //     	//cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
-   //     	 cout<<sparArr[ci]->GetEntries()<<endlr;
+   //       cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
+   //     	cout<<sparArr[ci]->GetEntries()<<endlr;
    //       return 0;
    //     }
 
-   	  // AddPar(ppar,&spar[ci][ntrigs]);
+   	  AddPar(ppar,&spar[ci][ntrigs]); // this is for the output visualization plots and histograms
 ///*************************************************************
 
 	  if (correlated)
