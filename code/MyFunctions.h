@@ -12,6 +12,7 @@
 
 #include <TFile.h>
 #include <TH1F.h>
+#include "TFitResult.h"
 #include <TPostScript.h>
 #include <TPDF.h>
 #include <TH1D.h>
@@ -27,6 +28,8 @@
 #include <TSpline.h>
 #include <TPaveStats.h>
 #include <TLatex.h>
+#include<TLegend.h>
+#include<TMath.h>
 // // 	
 #define DEBUG 1
 #undef DEBUG
