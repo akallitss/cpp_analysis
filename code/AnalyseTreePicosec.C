@@ -257,6 +257,7 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   bool MCP[4]={0,0,0,0};
   bool MM[4]={0,0,0,0};
   bool SIGMOIDFIT[4]={0,0,0,0};
+  bool DOUBLESIGMOIDFIT[4]={0,0,0,0};
   double sig_tshift[4]={1.0,1.0,1.0,1.0};
   
   OSCSETUP* oscsetup = new OSCSETUP;
@@ -279,16 +280,19 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
         MCP[i]=kTRUE;
         sig_tshift[i]=0.1;  //ns
         SIGMOIDFIT[i]=kTRUE;
+      	DOUBLESIGMOIDFIT[i]=false;
       }
       if(strncmp(DetName,"MM",2)==0)
       {
         MM[i]=kTRUE;
         sig_tshift[i]=0.1;  //ns
         SIGMOIDFIT[i]=kTRUE;
+      	DOUBLESIGMOIDFIT[i]=true;
       }
    	  if (amplifierNo==1 || amplifierNo == 3)
       {
          SIGMOIDFIT[i]=kTRUE;
+   	  	 DOUBLESIGMOIDFIT[i]=true;
          sig_tshift[i]=0.5; //ns
       }
 
@@ -1488,7 +1492,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  ppar->bsl=bslC[ci];
 ///*************************************************************
 
-    	if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci])  // Checks if "MCP" is at the start of the string
+    	if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci] && DOUBLESIGMOIDFIT[ci]==false)  // Checks if "MCP" is at the start of the string
       {
       	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
@@ -1939,6 +1943,17 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
          fitcanv[ci]->Update();
 
        }
+	  	if (DOUBLESIGMOIDFIT[ci]==false)
+	  	{
+	  		cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
+	  		fitcanv[ci]->cd(1);
+	  		//cout<<RED<<"TWRA "<<spar[ci][i].tot_sig_end_pos<<endlr;
+	  		TimeSigmoidDraw(maxpoints, amplC[ci], ptime, &spar[ci][i], evNo, fitcanv[ci]);
+	  		gStyle->SetOptFit(1111);
+	  		fitcanv[ci]->Modified();
+	  		fitcanv[ci]->BuildLegend(0.75,0.8,0.99,0.99);
+	  		fitcanv[ci]->Update();
+	  	}
 
     }
 	  evdcanv[ci]->Modified();
