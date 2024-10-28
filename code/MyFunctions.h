@@ -104,6 +104,7 @@ public:
         charge = scharge = t10 = tb10 = t90 = ttrig = bslch = rms = bsl = -999.;
         fitSuccess = false;
 
+
   }
 //  PeakparamDef(PEAKPARAM,1)
   ClassDef(PEAKPARAM,1)
