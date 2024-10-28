@@ -2064,11 +2064,8 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
     //cout<<"Sigmoid rise has been drawn for event "<<evNo<<endlr;
 
 }
-void FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
+bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
-
-
-
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
         //cout<<" loop boundaries "<<par->sig_end_pos - par->sig_start_pos<<endl;
@@ -2118,92 +2115,7 @@ void FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         double sig_lim_max = sigend*dt;
         double sig_pars_d[4];
 
-// ... (previous code remains the same)
-
-/*
-TF1 *sig_fitd = new TF1("sig_fitd", fermi_dirac, sig_lim_min, sig_lim_max, 4);
-TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
-
-for (int i = 0; i < 4; i++)
-    sig_pars_d[i] = par->sigmoidR[i];
-
-sig_fitd->SetParameters(sig_pars_d);
-
-double x_mid_right = par->maxtime_pos * dt + 3.; // ns
-
-// First fit
-TFitResultPtr fitResult_d = sig_waveformd->Fit(sig_fitd, "QS");
-if (!fitResult_d->IsValid()) {
-    cout << "First fit (sig_fitd) failed to converge." << endl;
-    return; // or handle the error as appropriate
-}
-
-// Second fit
-double sig_lim_min2 = par->maxtime_pos * dt;
-double sig_lim_max2 = par->maxtime_pos * dt + (1.5 / dt);
-par->tot_sig_end_pos = par->maxtime_pos + (int)(1.5 / dt) + 1;
-sig_lim_max2 = par->tot_sig_end_pos * dt;
-double sig_pars[4];
-
-sig_pars[0] = arr[par->maxtime_pos];
-sig_pars[1] = x_mid_right;
-sig_pars[2] = -steepness_left;
-sig_pars[3] = arr[par->maxtime_pos] * 0.1;
-
-TF1 *sig_fit2 = new TF1("sig_fit2", fermi_dirac, sig_lim_min2, sig_lim_max2, 4);
-sig_fit2->SetParameters(sig_pars);
-sig_fit2->FixParameter(0, sig_fitd->GetParameter(0));
-sig_fit2->FixParameter(3, sig_fitd->GetParameter(3));
-
-TFitResultPtr fitResult_2 = sig_waveformd->Fit(sig_fit2, "QS");
-if (!fitResult_2->IsValid()) {
-    cout << "Second fit (sig_fit2) failed to converge." << endl;
-    return; // or handle the error as appropriate
-}
-
-sig_fit2->SetRange(sig_lim_min - 3., sig_lim_max2 + 10.);
-
-for (int i = 0; i < 4; i++)
-    par->sigmoidF[i] = sig_fit2->GetParameter(i);
-
-TF1 *sig_fit1 = new TF1("sig_fit1", fermi_dirac_sym_1, sig_lim_min, sig_lim_max2 + 10., 3);
-sig_fit1->SetParameter(1, sig_fit2->GetParameter(1));
-sig_fit1->SetParameter(2, sig_fit2->GetParameter(2));
-
-TF1 *sig_fittot = new TF1("sig_fittot", fermi_dirac_sym_double, sig_lim_min, sig_lim_max2 + SIGMOID_EXTENTION, 6);
-for (int i = 0; i < 4; i++)
-    sig_fittot->SetParameter(i, sig_fitd->GetParameter(i));
-
-sig_fittot->SetParameter(4, sig_fit2->GetParameter(1));
-sig_fittot->SetParameter(5, sig_fit2->GetParameter(2));
-
-// Final fit
-TFitResultPtr fitResult_tot = sig_waveformd->Fit(sig_fittot, "QS", "", sig_lim_min, sig_lim_max2 + 2.6);
-if (!fitResult_tot->IsValid()) {
-    cout << "Final fit (sig_fittot) failed to converge." << endl;
-    return; // or handle the error as appropriate
-}
-
-for (int i = 0; i < 6; i++)
-    par->sigmoidtot[i] = sig_fittot->GetParameter(i);
-
-double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2 + SIGMOID_EXTENTION));
-par->echargefit = abs(fit_integral) / 50;
-
-cout << "Fit Results:" << endl;
-cout << "Chi2/NDF: " << fitResult_tot->Chi2() / fitResult_tot->Ndf() << endl;
-cout << BLUE << "Epeak charge fit = " << par->echargefit << endlr;
-
-// Optional: Print parameter values and errors
-for (int i = 0; i < 6; i++) {
-    cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
-              << " +/- " << sig_fittot->GetParError(i) << endl;
-}
-*/
-
-
- // This  is the old part of the FullSigmoid that encountered the warnings for outbount parameters
-        TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,sig_lim_max, 4);
+  TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,sig_lim_max, 4);
 
         TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
 
@@ -2229,26 +2141,28 @@ for (int i = 0; i < 6; i++) {
       sig_pars[3] = arr[par->maxtime_pos]*0.1;
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
-      TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+
+  TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
       sig_fit2->SetParameters(sig_pars);
       sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
       sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-      cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
-  //the error encontered comes from the fact that all the parameters are fixed while they are not set to be fixed
+      //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
+
+  //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
       //Allow parameters 1 and 2 to vary
       sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
       sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
 
-
-      //if the setparameter is like the following we dont have the output error but the fit fails
-      //sig_fit2->SetParameter(1, sig_fitd->GetParameter(1));
-      //sig_fit->SetParameter(1, sig_fit2->GetParameter(1)); this erases the error but kills the fit
-      //sig_fit2->SetParameter(2, sig_fitd->GetParameter(2));
-      //sig_fit->SetParameter(2, sig_fit2->GetParameter(2));
-
-      // Set initial step sizes for the varying parameters
+  // Set initial step sizes for the varying parameters
       sig_fit2->SetParError(1, 0.2 * abs(sig_fit2->GetParameter(1)));
       sig_fit2->SetParError(2, 0.2 * abs(sig_fit2->GetParameter(2)));
+
+//parameter limits were affecting the fit and producing the error
+      sig_fit2->SetParLimits(1, sig_lim_min2, 230); // Assuming positive midpoint
+      sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
+
+
+     /* //Debugging the fit parameters
 
      // Print initial parameter values and errors, and set step sizes
         cout << GREEN << "Initial parameters BEFORE Fitting for sig_fit2:" << endlr;
@@ -2274,16 +2188,19 @@ for (int i = 0; i < 6; i++) {
             cout << "  Setting step size for parameter " << i << " to " << stepSize << endlr;
           }
         }
+        */
 
         // Perform the fit
-        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
-        //TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S", "", sig_lim_min2, sig_lim_max2, "MINUIT2");
-
-        if (r->IsValid()) {
+  TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMRS");
+//Debugging the fit
+        /*if (r->IsValid()) {
+          r->Print("V"); //prints the info of the fit
+          TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
           cout << MAGENTA << "Fit successful!" << endlr;
         } else {
           cout << RED << "Fit failed."<< endlr;
         }
+
 
         // Print final parameter values
         cout << GREEN << "Final parameters for sig_fit2:" << endlr;
@@ -2300,7 +2217,7 @@ for (int i = 0; i < 6; i++) {
       //sig_waveformd->Fit("sig_fit2", "QMR0S");
       //sig_waveformd->Fit("sig_fit2", "QMR0S");
       cout<<MAGENTA<<"HERE IS THE fitiing SIFIT2!" << endlr;
-
+      */
       sig_fit2->SetRange(sig_lim_min-3.,sig_lim_max2+10.);
       sig_fit2->SetLineColor(kCyan);
 
@@ -2308,241 +2225,67 @@ for (int i = 0; i < 6; i++) {
       for (int i=0;i<4; i++)
         par->sigmoidF[i] = sig_fit2->GetParameter(i);
 
+ //Debugging the fit
+      /*
       TCanvas *c = new TCanvas("c", "Fit Result", 800, 600);
       sig_waveformd->Draw("AP");
       sig_fit2->Draw("same");
       c->SaveAs("fit_result.png");
+      */
 
 
-      cout<<RED<<"HERE IS THE ERROR SIFIT2!" << endlr;
+      //cout<<RED<<"HERE IS THE ERROR SIFIT2!" << endlr;
 
 
-      TF1 *sig_fit1 =  new TF1("sig_fit1",fermi_dirac_sym_1,sig_lim_min,sig_lim_max2+10., 3);
+  TF1 *sig_fit1 =  new TF1("sig_fit1",fermi_dirac_sym_1,sig_lim_min,sig_lim_max2+10., 3);
       sig_fit1->SetParameter(1,sig_fit2->GetParameter(1));
       sig_fit1->SetParameter(2,sig_fit2->GetParameter(2));
 
 
-      TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
+  TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
       for (int i=0;i<4;i++)
         sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
 
       sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
-      //sig_fittot->SetLineColor(kBlue);
-      //sig_fittot->Draw("same");
-      //cout<<GREEN<<"TOTAL sigmoid FIT"<<endlr;
 
-     //sig_waveformd->Fit("sig_fittot","QMR0","",sig_lim_min,sig_lim_max2+2.6);
+  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+  sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
+  sig_fittot->SetLineColor(kRed);
 
-    sig_waveformd->Fit("sig_fittot", "QMR0S", "", sig_lim_min, sig_lim_max2+2.6);
+    //sig_waveformd->Fit("sig_fittot", "QMR0S", "", sig_lim_min, sig_lim_max2+2.6);
 
       for (int i=0;i<6;i++)
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
 
+  bool fitSuccess = isFitSuccessful(r_tot);
+
+  if(fitSuccess) {
+    cout<<GREEN<<"Fit successful!"<<endlr;
+  }
+  else {
+    cout<<RED<<"Fit failed."<<endlr;
+  }
+
+
       double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
       par->echargefit =  abs(fit_integral) / 50;
-      //double fit_integral_fixed = sig_fittot->Integral(par->stime_pos*dt, par->ftime_pos*dt);
-      //par->totchargefixed = abs(fit_integral_fixed) / 50;
 
       //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
       cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
       //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
-    //double IntegrateSigmoid = 0;
-    //double binNo;
-    //int intstart = sigstart
+
+  return fitSuccess;
 
 }
 
-/* //This is the new Draw with updated FullSigmoid
-void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPARAM* par, int evNo, TCanvas *sigcanv)
-{
-    int start = par->sig_start_pos;
-    int end = par->tot_sig_end_pos;
-    double x_d[1000], y_d[1000], erx_d[1000], ery_d[1000];
-
-    int Npointsd = 0;
-    int extention = (int)(SIGMOID_EXTENTION / dt);
-
-    for (int i = 0; i < end + extention - start && i < 1000; ++i)
-    {
-        x_d[i] = (i + start) * dt;
-        y_d[i] = arr[i + start];
-        erx_d[i] = 0;
-        ery_d[i] = par->rms;
-        if (i > end - start) ery_d[i] *= 10.;
-        Npointsd++;
-    }
-
-    TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
-
-    double sig_lim_min = par->sig_start_pos * dt;
-    double sig_lim_max2 = par->tot_sig_end_pos * dt;
-
-    // Total sigmoid fit
-    TF1 *sigmoidFitTOT = new TF1("sigmoidFitTOT", fermi_dirac_sym_double, sig_lim_min, sig_lim_max2 + 2.6, 6);
-    for (int i = 0; i < 6; i++)
-        sigmoidFitTOT->SetParameter(i, par->sigmoidtot[i]);
-
-    // Set up the canvas
-    sig_waveformd->SetTitle(TString::Format("Event %d Sigmoid Fit", evNo));
-    sig_waveformd->GetHistogram()->GetXaxis()->SetTitle("Time [ns]");
-    sig_waveformd->GetHistogram()->GetYaxis()->SetTitle("Amplitude [V]");
-    sig_waveformd->SetMarkerStyle(20);
-    sig_waveformd->SetMarkerSize(0.5);
-    sig_waveformd->Draw("AP");
-
-    // Draw the total fit
-    sigmoidFitTOT->SetLineColor(kBlue);
-    sigmoidFitTOT->Draw("SAME");
-
-    // Left sigmoid
-    TF1 *sig_fitd = new TF1("sig_fitd", fermi_dirac, sig_lim_min, par->sig_end_pos * dt, 4);
-    for (int i = 0; i < 4; i++)
-        sig_fitd->SetParameter(i, par->sigmoidR[i]);
-    sig_fitd->SetLineColor(kGreen + 2);
-    sig_fitd->Draw("L SAME");
-
-    // Right sigmoid
-    TF1 *sig_fit2 = new TF1("sig_fit2", fermi_dirac, par->maxtime_pos * dt - 3, par->maxtime_pos * dt + 1.5 + 10, 4);
-    for (int i = 0; i < 4; i++)
-        sig_fit2->SetParameter(i, par->sigmoidF[i]);
-    sig_fit2->SetLineColor(kCyan + 2);
-    sig_fit2->Draw("L SAME");
-
-    // Symmetric sigmoid
-    TF1 *sig_fit1 = new TF1("sig_fit1", fermi_dirac_sym_1, par->maxtime_pos * dt - 3, par->maxtime_pos * dt + 1.5 + 10, 3);
-    sig_fit1->SetParameter(0, 0);
-    sig_fit1->SetParameter(1, sig_fit2->GetParameter(1));
-    sig_fit1->SetParameter(2, sig_fit2->GetParameter(2));
-    sig_fit1->SetLineColor(kYellow + 2);
-    sig_fit1->Draw("L SAME");
-
-
-    // // Display fit quality
-    // TString fitInfo = TString::Format("Chi2/NDF: %.2f", sigmoidFitTOT->GetChisquare() / sigmoidFitTOT->GetNDF());
-    // TText *text = new TText(0.15, 0.85, fitInfo);
-    // text->SetNDC();
-    // text->SetTextSize(0.03);
-    // text->Draw();
-
-    // Update the canvas
-    //sigcanv->Update();
+bool isFitSuccessful(TFitResultPtr r) {
+  if (r->IsValid()) {
+    return true;
+  } else {
+    return false;
+  }
 }
-*/
-
-//second new version of FullSigmoidDraw
-/*void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPARAM* par, int evNo, TCanvas *sigcanv)
-{
-    int start = par->sig_start_pos;
-    int end = par->tot_sig_end_pos;
-    double x_d[1000], y_d[1000], erx_d[1000], ery_d[1000];
-
-    int Npointsd = 0;
-    int extention = (int)(SIGMOID_EXTENTION / dt);
-
-    for (int i = 0; i < end + extention - start && i < 1000; ++i)
-    {
-        x_d[i] = (i + start) * dt;
-        y_d[i] = arr[i + start];
-        erx_d[i] = 0;
-        ery_d[i] = par->rms;
-        if (i > end - start) ery_d[i] *= 10.;
-        Npointsd++;
-    }
-
-    TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
-
-    double sig_lim_min = start * dt;
-    double sig_lim_max = (end + extention) * dt;
-
-    sig_waveformd->GetXaxis()->SetTitle("Time [ns]");
-    sig_waveformd->GetYaxis()->SetTitle("Amplitude [V]");
-    sig_waveformd->SetTitle(TString::Format("Event %d - Full Sigmoid Fit", evNo));
-    sig_waveformd->Draw("AP");
-
-  // Function to print function values
-  auto printFunctionValues = [](TF1* func, double min, double max) {
-    std::cout << "Function values for " << func->GetName() << ":" << std::endl;
-    for (double x = min; x <= max; x += (max - min) / 10) {
-      std::cout << "x = " << x << ", y = " << func->Eval(x) << std::endl;
-    }
-    std::cout << std::endl;
-  };
-
-  // Total sigmoid fit
-  TF1 *sigmoidFitTOT = new TF1("sigmoidFitTOT", fermi_dirac_sym_double, sig_lim_min, sig_lim_max, 6);
-  for (int i = 0; i < 6; i++)
-    sigmoidFitTOT->SetParameter(i, par->sigmoidtot[i]);
-  sigmoidFitTOT->SetLineColor(kBlue);
-  sigmoidFitTOT->Draw("SAME");
-  printFunctionValues(sigmoidFitTOT, sig_lim_min, sig_lim_max);
-
-  // Left sigmoid fit
-  TF1 *sig_fitd = new TF1("sig_fitd", fermi_dirac, sig_lim_min, sig_lim_max, 4);
-  for (int i = 0; i < 4; i++)
-    sig_fitd->SetParameter(i, par->sigmoidR[i]);
-  sig_fitd->SetLineColor(kGreen + 2);
-  sig_fitd->Draw("SAME");
-  printFunctionValues(sig_fitd, sig_lim_min, sig_lim_max);
-
-  // Right sigmoid fit
-  TF1 *sig_fit2 = new TF1("sig_fit2", fermi_dirac, sig_lim_min, sig_lim_max + 10, 4);
-  for (int i = 0; i < 4; i++)
-    sig_fit2->SetParameter(i, par->sigmoidF[i]);
-  sig_fit2->SetLineColor(kCyan + 2);
-  sig_fit2->Draw("SAME");
-  printFunctionValues(sig_fit2, sig_lim_min, sig_lim_max + 10);
-
-  // Symmetric sigmoid fit
-  TF1 *sig_fit1 = new TF1("sig_fit1", fermi_dirac_sym_1, sig_lim_min, sig_lim_max + 10, 3);
-  sig_fit1->SetParameter(0, 0);
-  sig_fit1->SetParameter(1, sig_fit2->GetParameter(1));
-  sig_fit1->SetParameter(2, sig_fit2->GetParameter(2));
-  sig_fit1->SetLineColor(kYellow + 2);
-  sig_fit1->Draw("SAME");
-  printFunctionValues(sig_fit1, sig_lim_min, sig_lim_max + 10);
-
-
-    // Debug output
-   cout << "Fit ranges and parameters:" << std::endl;
-   cout << "Total fit range: " << sig_lim_min << " to " << sig_lim_max << std::endl;
-    for (int i = 0; i < 6; i++)
-        cout << "Total fit param " << i << ": " << sigmoidFitTOT->GetParameter(i) << std::endl;
-
-    cout << "Left fit range: " << sig_lim_min << " to " << sig_lim_max << std::endl;
-    for (int i = 0; i < 4; i++)
-        cout << "Left fit param " << i << ": " << sig_fitd->GetParameter(i) << std::endl;
-
-    cout << "Right fit range: " << sig_lim_min << " to " << sig_lim_max << std::endl;
-    for (int i = 0; i < 4; i++)
-        cout << "Right fit param " << i << ": " << sig_fit2->GetParameter(i) << std::endl;
-
-    cout << "Symmetric fit range: " << sig_lim_min << " to " << sig_lim_max << std::endl;
-    for (int i = 0; i < 3; i++)
-        cout << "Symmetric fit param " << i << ": " << sig_fit1->GetParameter(i) << std::endl;
-
-  TCanvas *multiCanvas = new TCanvas("multiCanvas", "Multiple Fits", 800, 600);
-  multiCanvas->Divide(2, 2);
-
-  multiCanvas->cd(1);
-  sig_waveformd->Draw("AP");
-  sigmoidFitTOT->Draw("SAME");
-
-  multiCanvas->cd(2);
-  sig_waveformd->Draw("AP");
-  sig_fitd->Draw("SAME");
-
-  multiCanvas->cd(3);
-  sig_waveformd->Draw("AP");
-  sig_fit2->Draw("SAME");
-
-  multiCanvas->cd(4);
-  sig_waveformd->Draw("AP");
-  sig_fit1->Draw("SAME");
-
-  multiCanvas->Update();
-
-}*/
 
 
 //This is the original Draw Function
@@ -2587,7 +2330,7 @@ void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPA
     sigmoidFitTOT->Draw("L SAME");
     //sig_fittot->Draw("same");
 
-  cout<<RED<<"HERE IS THE ERROR SIGFITot from DRAW!" << endlr;
+  //cout<<RED<<"HERE IS THE ERROR SIGFITot from DRAW!" << endlr;
 
 
     TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,par->sig_end_pos*dt, 4);
@@ -2796,12 +2539,12 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
    //cout<<MAGENTA<<"NaiveTime, tfit20 =  "<< par->tfit20 <<endlr;
  cout<<BLUE<<"Starting Double Sigmoid "<<endlr;
 
-///make double sigmoid fit here for charge calculation 
-    FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
+
+// Epeak charge calculation and Fit Success check
+  bool fitSuccess =  FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
+  par->fitSuccess = fitSuccess;
+
     
-
-
-
 //   cout<<"tstart = "<<par->stime_pos*dt<<endl;
 //   cout<<"t10 = "<<par->t10*dt<<endl;
 //   cout<<"t90 = "<<par->t90*dt<<endl;
@@ -3079,6 +2822,7 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    spar->bsl=ipar->bsl;
    spar->rms=ipar->rms;
 
+   spar->fitSuccess = ipar->fitSuccess;
    //copy the values of bsl, rms, stime_pos, ftime_pos, and maxtime_pos 
    //from the ipar object to the corresponding variables in the spar object.
    
