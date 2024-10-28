@@ -643,7 +643,7 @@ cout<<"________________++_________________" << endl;
 const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   PICPARAM *ppar, *ppars[4], *spar;
 //  PEAKPARAM *ppar, *ppars[4], *spar[4];
-  PEAKPARAM *ppar, *newPpar, *spar[4];
+  PEAKPARAM *ppar, *spar[4];
   TClonesArray *sparArr[4];
   
    
@@ -653,8 +653,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       sparArr[i] = new TClonesArray("PEAKPARAM",MAXTRIG);
     }
   ppar = new PEAKPARAM;
-  newPpar = new PEAKPARAM;
-
 
 ///parameters for quick monitor of the analysed run
   double T10;// = new double[20000];
@@ -1211,6 +1209,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //while (eventNo<nevents)
+
+ int successfulFits = 0;
+ int totalFits = 0;
+
   while (1 && eventNo<200)
   {
     if (draw)
@@ -1487,6 +1489,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     int ti = 0;
     while (ti < maxpoints-50 && ntrigs<MAXTRIG)
 	{
+       ppar->Reset();
 	  //cout<<"check: "<<ntrigs+1<<endl;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
@@ -1496,13 +1499,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       {
       	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
-        if (ti<0) break;
+
+    		if (ti<0) break;
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-          if (ti<0) break;
+		successfulFits += ppar->fitSuccess;
+      	totalFits++;
+      	if (ti<0) break;
       }
       else
       { //cout<< CYAN<<"Channel "<<ci+1<<" does not use the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
@@ -1945,9 +1951,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
        }
 	  	if (DOUBLESIGMOIDFIT[ci]==false)
 	  	{
-	  		cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
+	  		//cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
 	  		fitcanv[ci]->cd(1);
-	  		//cout<<RED<<"TWRA "<<spar[ci][i].tot_sig_end_pos<<endlr;
 	  		TimeSigmoidDraw(maxpoints, amplC[ci], ptime, &spar[ci][i], evNo, fitcanv[ci]);
 	  		gStyle->SetOptFit(1111);
 	  		fitcanv[ci]->Modified();
@@ -2010,7 +2015,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   } /// end of the tree while (eventNo < nevents)
   
   
-  
+	cout<<endl<<"Succesful Fits = "<<successfulFits<<endl;
+	cout<<"Total Fits = "<<totalFits<<endl;
+	cout<<"Percentage of successful fits = "<<100.*successfulFits/totalFits<<"%"<<endl;
+
   
   if (draw) 
   {
