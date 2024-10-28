@@ -77,7 +77,8 @@ public:
    double sigmoidF[4];
    double sigmoidtot[6];
 
-   bool fitSuccess;
+   bool doubleSigmoidfitSuccess;
+   bool SigmoidfitSuccess;
 
 
    double charge;
@@ -102,7 +103,7 @@ public:
         for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
         for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
         charge = scharge = t10 = tb10 = t90 = ttrig = bslch = rms = bsl = -999.;
-        fitSuccess = false;
+        doubleSigmoidfitSuccess = SigmoidfitSuccess = false;
 
 
   }
@@ -522,7 +523,8 @@ double fermi_dirac(double*, double *);
 double fermi_dirac_generalsub(double *, double *);
 double slope_at_x(double*, int , int , double);
 
-bool isFitSuccessful(TFitResultPtr );
+bool isdoubleSigmoidfitSuccessful(TFitResultPtr );
+bool isSigmoidfitSuccessful(TFitResultPtr );
 
 GLOBALMAXIMUM FindGlobalMaximum(double *, int , double *);
 

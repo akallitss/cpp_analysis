@@ -1860,7 +1860,7 @@ double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par)
 }
 
 
-double TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
+bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
         //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
         //dt=arrt[1]-arrt[0];
@@ -1929,15 +1929,23 @@ double TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int ev
           par->sigmoidR[i]=sig_pars[i];
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
+      TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+      bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
+      // if(SigmoidfitSuccess) {
+      //     par->sigmoid_success = 1;
+      // }
+      // else {
+      //     par->sigmoid_success = 0;
+      // }
 
         par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
         //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
-        return par->tfit20;
+       return SigmoidfitSuccess;
 
 
 } 
-double TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
+bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
         //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
         //dt=arrt[1]-arrt[0];
@@ -1991,8 +1999,8 @@ double TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int
         //sig_fit->SetLineColor(kGreen);
 
         //sig_waveform->Draw("ap");
-        sig_waveform->Fit("sig_fit", "QR0");
-        sig_waveform->Fit("sig_fit", "QR0");
+        sig_waveform->Fit("sig_fit", "QMR0S");
+        sig_waveform->Fit("sig_fit", "QMR0S");
         //sig_waveform->Fit("sig_fit", "QR0");
         //sig_waveform->Fit("sig_fit", "QR0");
         //sig_waveform->Fit("sig_fit", "QR0");
@@ -2007,10 +2015,19 @@ double TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
 
+    TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+      bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
+      // if(SigmoidfitSuccess) {
+      //     par->sigmoid_success = 1;
+      // }
+      // else {
+      //     par->sigmoid_success = 0;
+      // }
         par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
         //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
-        return par->tfit20;
+
+  return SigmoidfitSuccess;
 
 
 } 
@@ -2258,9 +2275,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       for (int i=0;i<6;i++)
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
 
-  bool fitSuccess = isFitSuccessful(r_tot);
+  bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
 
-  if(fitSuccess) {
+  if(doubleSigmoidfitSuccess) {
     cout<<GREEN<<"Fit successful!"<<endlr;
   }
   else {
@@ -2275,11 +2292,19 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
       //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
 
-  return fitSuccess;
+  return doubleSigmoidfitSuccess;
 
 }
 
-bool isFitSuccessful(TFitResultPtr r) {
+bool isdoubleSigmoidfitSuccessful(TFitResultPtr r) {
+  if (r->IsValid()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool isSigmoidfitSuccessful(TFitResultPtr r) {
   if (r->IsValid()) {
     return true;
   } else {
@@ -2526,12 +2551,12 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 /// make the sig fit for sigmoind timepoint.
  cout<<RED<<"Starting Sigmoid fit "<<endlr;
-
-   par->tfit20 = TimeSigmoid(points, data, dt,par, evNo, sig_shift, tshift);
-   //cout<<BLUE<<"Time Sigmoid processed, tfit20 =  "<< par->tfit20 <<endlr;
+  bool SigmoidfitSuccess = TimeSigmoid(points, data, dt,par, evNo, sig_shift, tshift);
+  par->SigmoidfitSuccess = SigmoidfitSuccess;
  cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
 
    //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
+
    par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
    //cout<<BLUE<<"NAIVE TIME = "<< par->tnaive20<<endlr;
    //cout<<"Sigmoid Timepoint = "<<par->tfit20<<endl;
@@ -2541,8 +2566,10 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 
 // Epeak charge calculation and Fit Success check
-  bool fitSuccess =  FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
-  par->fitSuccess = fitSuccess;
+  bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
+  par->doubleSigmoidfitSuccess = doubleSigmoidfitSuccess;
+
+  // par->SigmoidfitSuccess = SigmoidfitSuccess;
 
     
 //   cout<<"tstart = "<<par->stime_pos*dt<<endl;
@@ -2730,7 +2757,12 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
   //cout<<YELLOW<<"First quick scan of parameters finished "<<endlr;
 
 /// make the sig fit for sigmoind timepoint.
-   par->tfit20 = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
+   // par->tfit20 = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
+
+  bool SigmoidfitSuccess = TimeSigmoid(points, data, dt,par, evNo, sig_shift, tshift);
+  par->SigmoidfitSuccess = SigmoidfitSuccess;
+
+  //cin.get();
    //cout<<BLUE<<"Time Sigmoid processed, tfit20 =  "<< par->tfit20 <<endlr;
 
    //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
@@ -2822,7 +2854,8 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    spar->bsl=ipar->bsl;
    spar->rms=ipar->rms;
 
-   spar->fitSuccess = ipar->fitSuccess;
+  spar->SigmoidfitSuccess = ipar->SigmoidfitSuccess;
+   spar->doubleSigmoidfitSuccess = ipar->doubleSigmoidfitSuccess;
    //copy the values of bsl, rms, stime_pos, ftime_pos, and maxtime_pos 
    //from the ipar object to the corresponding variables in the spar object.
    

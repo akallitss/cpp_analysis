@@ -1210,8 +1210,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //while (eventNo<nevents)
 
- int successfulFits = 0;
- int totalFits = 0;
+  int successfulFits_sigmoid = 0;
+  int totalFits_sigmoid = 0;
+  int successfulFits_double_sigmoid = 0;
+  int totalFits_double_sigmoid = 0;
 
   while (1 && eventNo<200)
   {
@@ -1499,15 +1501,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       {
       	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
         ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
-
+		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+    	totalFits_sigmoid++;
     		if (ti<0) break;
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-		successfulFits += ppar->fitSuccess;
-      	totalFits++;
+      	successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+      	totalFits_sigmoid++;
+      	successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+      	totalFits_double_sigmoid++;
       	if (ti<0) break;
       }
       else
@@ -2014,12 +2019,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       
   } /// end of the tree while (eventNo < nevents)
   
-  
-	cout<<endl<<"Succesful Fits = "<<successfulFits<<endl;
-	cout<<"Total Fits = "<<totalFits<<endl;
-	cout<<"Percentage of successful fits = "<<100.*successfulFits/totalFits<<"%"<<endl;
+  for(int ci=0;ci<4;ci++)
+  {
+  	cout<<endl<<"Succesful Fits = "<<successfulFits_sigmoid<<endl;
+  	cout<<"Total Fits = "<<totalFits_sigmoid<<endl;
+  	cout<<"Percentage of successful fits = "<<100.*successfulFits_sigmoid/totalFits_sigmoid<<"%"<<endl;
 
-  
+  	cout<<endl<<"Succesful Fits Double Sigmoid= "<<successfulFits_double_sigmoid<<endl;
+  	cout<<"Total Fits Double Sigmoid = "<<totalFits_double_sigmoid<<endl;
+  	cout<<"Percentage of successful fits Double Sigmoid= "<<100.*successfulFits_double_sigmoid/totalFits_double_sigmoid<<"%"<<endl;
+
+  }
+
+
   if (draw) 
   {
     cout<<endl<<"Entering the 4rth if(draw)______________________________________________"<<endl<<endl;;
