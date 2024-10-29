@@ -1911,25 +1911,34 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         sig_pars[3] = 0.0;//arr[sig_start_pos];
 
         sig_fit->SetParameters(sig_pars[0],sig_pars[1],sig_pars[2],sig_pars[3]);
-        //sig_fit->SetLineColor(kGreen);
 
-        //sig_waveform->Draw("ap");
-        sig_waveform->Fit("sig_fit", "QR0");
-        sig_waveform->Fit("sig_fit", "QR0");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_fit->Draw("same");
-
+      //        double range = par->maxtime_pos-(int)(0.05/dt);
+      double range = (0.5/dt);
+      sig_fit->SetParError(0, 0.1*abs(sig_fit->GetParameter(0)));
+      sig_fit->SetParError(1, 0.5*range);
+      sig_fit->SetParError(2, 0.5);
+      sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+      for (int i = 0; i < 4; i++) {
+        cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
+             << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
+      }
+      //Save the fit results and get the success of the fit
+      TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+      cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
+      for (int i = 0; i < 4; i++) {
+        cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
+             << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
+      }
        
-        sig_fit->GetParameters(&sig_pars[0]);
+        //sig_fit->GetParameters(&sig_pars[0]);
 
         for (int i=0;i<4;i++)
         {
-          par->sigmoidR[i]=sig_pars[i];
+          //par->sigmoidR[i]=sig_pars[i];
+          par->sigmoidR[i] = sig_fit->GetParameter(i);
+
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
-      TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
       // if(SigmoidfitSuccess) {
@@ -1996,34 +2005,41 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         sig_pars[3] = 0.0;//arr[sig_start_pos];
 
         sig_fit->SetParameters(sig_pars[0],sig_pars[1],sig_pars[2],sig_pars[3]);
-        //sig_fit->SetLineColor(kGreen);
 
-        //sig_waveform->Draw("ap");
-        sig_waveform->Fit("sig_fit", "QMR0S");
-        sig_waveform->Fit("sig_fit", "QMR0S");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_waveform->Fit("sig_fit", "QR0");
-        //sig_fit->Draw("same");
+//        double range = par->maxtime_pos-(int)(0.05/dt);
+        double range = (0.5/dt);
+        sig_fit->SetParError(0, 0.1*abs(sig_fit->GetParameter(0)));
+        sig_fit->SetParError(1, 0.5*range);
+        sig_fit->SetParError(2, 0.5);
+        sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+        for (int i = 0; i < 4; i++) {
+          cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
+               << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
+        }
+  //Save the fit results and get the success of the fit
+        TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+        cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
+        for (int i = 0; i < 4; i++) {
+          cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
+               << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
+        }
+              //sig_waveform->Fit("sig_fit", "QMR0S");
+        //sig_waveform->Fit("sig_fit", "QMR0S");
 
-       
-        sig_fit->GetParameters(&sig_pars[0]);
+        //sig_fit->GetParameters(&sig_pars[0]);
 
         for (int i=0;i<4;i++)
         {
-          par->sigmoidR[i]=sig_pars[i];
+          //par->sigmoidR[i]=sig_pars[i];
+          par->sigmoidR[i] = sig_fit->GetParameter(i);
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
 
-    TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+
+
+  cin.get();
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
-      // if(SigmoidfitSuccess) {
-      //     par->sigmoid_success = 1;
-      // }
-      // else {
-      //     par->sigmoid_success = 0;
-      // }
         par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
         //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
 
@@ -2147,9 +2163,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
  /// double sigmoid fit here
       double sig_lim_min2 = par->maxtime_pos*dt;
-      double sig_lim_max2 = par->maxtime_pos*dt+(1.5/dt);
+      // double sig_lim_max2 = par->maxtime_pos*dt+(1.5); //ns
       par->tot_sig_end_pos = par->maxtime_pos + (int) (1.5/dt) + 1;
-      sig_lim_max2 = par->tot_sig_end_pos*dt;
+      double sig_lim_max2 = par->tot_sig_end_pos*dt;
       double sig_pars[4];
 
       sig_pars[0] = arr[par->maxtime_pos];
@@ -2171,11 +2187,11 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
 
   // Set initial step sizes for the varying parameters
-      sig_fit2->SetParError(1, 0.2 * abs(sig_fit2->GetParameter(1)));
-      sig_fit2->SetParError(2, 0.2 * abs(sig_fit2->GetParameter(2)));
+      sig_fit2->SetParError(1, 0.1 * abs(sig_fit2->GetParameter(1)));
+      sig_fit2->SetParError(2, 0.1 * abs(sig_fit2->GetParameter(2)));
 
 //parameter limits were affecting the fit and producing the error
-      sig_fit2->SetParLimits(1, sig_lim_min2, 230); // Assuming positive midpoint
+      sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
       sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
 
@@ -2210,7 +2226,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         // Perform the fit
   TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMRS");
 //Debugging the fit
-        /*if (r->IsValid()) {
+        if (r->IsValid()) {
           r->Print("V"); //prints the info of the fit
           TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
           cout << MAGENTA << "Fit successful!" << endlr;
@@ -2225,7 +2241,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
                << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
         }
-
+      /*
       cout << "Fit Result:" << endl;
       cout << "Chi-square: " << r->Chi2() << endl;
       cout << "NDF: " << r->Ndf() << endl;
@@ -2254,17 +2270,38 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //cout<<RED<<"HERE IS THE ERROR SIFIT2!" << endlr;
 
 
-  TF1 *sig_fit1 =  new TF1("sig_fit1",fermi_dirac_sym_1,sig_lim_min,sig_lim_max2+10., 3);
-      sig_fit1->SetParameter(1,sig_fit2->GetParameter(1));
-      sig_fit1->SetParameter(2,sig_fit2->GetParameter(2));
-
-
+  // TF1 *sig_fit1 =  new TF1("sig_fit1",fermi_dirac_sym_1,sig_lim_min,sig_lim_max2+10., 3);
+  //     sig_fit1->SetParameter(1,sig_fit2->GetParameter(1));
+  //     sig_fit1->SetParameter(2,sig_fit2->GetParameter(2));
+  //
+  // // Print final parameter values
+  // cout << BLUE << "Final parameters for sig_fit1:" << endlr;
+  // for (int i = 0; i < 4; i++) {
+  //   cout << "Parameter " << i << ": " << sig_fit1->GetParameter(i)
+  //        << " (error: " << sig_fit1->GetParError(i) << ")" << endlr;
+  // }
   TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
       for (int i=0;i<4;i++)
         sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
 
       sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
+
+    double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
+    sig_fittot->SetParError(0, 0.1*abs(sig_fit2->GetParameter(0)));
+    sig_fittot->SetParError(1, 0.1*range);
+    sig_fittot->SetParError(2, 0.2);
+    sig_fittot->SetParError(3, 0.1*abs(sig_fitd->GetParameter(3)));
+    sig_fittot->SetParError(4, 0.1*range);
+    sig_fittot->SetParError(5, 0.3);
+
+
+  // Print final parameter values
+  cout << MAGENTA << "Final parameters for sig_fittot:" << endlr;
+  for (int i = 0; i < 6; i++) {
+    cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
+         << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
+  }
 
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
@@ -2759,7 +2796,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
 /// make the sig fit for sigmoind timepoint.
    // par->tfit20 = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
 
-  bool SigmoidfitSuccess = TimeSigmoid(points, data, dt,par, evNo, sig_shift, tshift);
+  bool SigmoidfitSuccess = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
   par->SigmoidfitSuccess = SigmoidfitSuccess;
 
   //cin.get();
