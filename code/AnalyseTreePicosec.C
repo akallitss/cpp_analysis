@@ -958,7 +958,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     if (!active[i]) continue;
     cout<<"Defining histograms for channel "<<i+1<<endl;
 ///________________________________________________________________
-/// the following plots concern the neutron rates (per pulse) 
+/// the following plots concern the neutron rates (per pulse)
 
 // Nphotons per pulse if > 0, as found by peak detection
     sprintf(hname,"Run%03d_pool%d_C%d_Rate_%s",runNo,poolNo,i+1,ftype);   /// This is used only when long pulse????
@@ -1217,6 +1217,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   while (1 && eventNo<200)
   {
+  	cout << "Event number: " << eventNo << endl;
     if (draw)
 	{
 	  cout<<endl<<"______________________________________________________________________"<<endl<<endl;;
@@ -1500,20 +1501,29 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     	if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci] && DOUBLESIGMOIDFIT[ci]==false)  // Checks if "MCP" is at the start of the string
       {
       	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
-        ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
-		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-    	totalFits_sigmoid++;
-    		if (ti<0) break;
+
+      	cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
+        //ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
+
+  		ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,-0.040,sig_tshift[ci], ti);
+
+    	if (ti<0) break;
+		if (ti < maxpoints-50) {
+    		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+    		totalFits_sigmoid++;
+    	}
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-      	successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-      	totalFits_sigmoid++;
-      	successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
-      	totalFits_double_sigmoid++;
       	if (ti<0) break;
+      	if (ti < maxpoints-50) {
+      		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+      		totalFits_sigmoid++;
+      		successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+      		totalFits_double_sigmoid++;
+	  	}
       }
       else
       { //cout<< CYAN<<"Channel "<<ci+1<<" does not use the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
@@ -2010,7 +2020,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  cout<<"Found ntrigs ="<<ntrigs<<" pulses for event "<<eventNo<<endl;
 	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsGoodPeaks <<" pulses for event "<<eventNo<<endl;
 	}
-      for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
+    //  for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
 
     otree->Fill();
   
@@ -2018,9 +2028,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       
   } /// end of the tree while (eventNo < nevents)
-  
-  for(int ci=0;ci<4;ci++)
-  {
+
+	for (int ci = 0; ci < 4; ++ci) {
+		cout<<"Total number of pulses in channel "<<ci+1<<" = "<<ntrigsTot[ci]<<endl;
+	}
   	cout<<endl<<"Succesful Fits = "<<successfulFits_sigmoid<<endl;
   	cout<<"Total Fits = "<<totalFits_sigmoid<<endl;
   	cout<<"Percentage of successful fits = "<<100.*successfulFits_sigmoid/totalFits_sigmoid<<"%"<<endl;
@@ -2029,7 +2040,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   	cout<<"Total Fits Double Sigmoid = "<<totalFits_double_sigmoid<<endl;
   	cout<<"Percentage of successful fits Double Sigmoid= "<<100.*successfulFits_double_sigmoid/totalFits_double_sigmoid<<"%"<<endl;
 
-  }
 
 
   if (draw) 
