@@ -77,6 +77,9 @@ public:
    double sigmoidF[4];
    double sigmoidtot[6];
 
+   double chi2_sigmoid;
+   double chi2_doubleSigmoid;
+
    bool doubleSigmoidfitSuccess;
    bool SigmoidfitSuccess;
 
@@ -99,6 +102,7 @@ public:
       maxtime_pos = stime_pos = ftime_pos = e_peak_end_pos = sig_start_pos = sig_end_pos = tot_sig_end_pos = -111;
       maxtime = ampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
       echargefixed = echargefit = totchargefixed = risetime = risecharge = width = -9999.;
+      chi2_sigmoid = chi2_doubleSigmoid = -1111.;
         for (int i=0; i<10; i++) tot[i] = -999.;
         for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
         for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
