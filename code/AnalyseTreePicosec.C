@@ -1215,8 +1215,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int successfulFits_double_sigmoid = 0;
   int totalFits_double_sigmoid = 0;
 
+//  while (1 && eventNo<200)
   while (1 && eventNo<200)
   {
+  	if (eventNo!=47) { eventNo++; continue;}
   	cout << "Event number: " << eventNo << endl;
     if (draw)
 	{
@@ -1455,7 +1457,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     {
         DT = 2.;
         nsmooth = 3;
-        npt = TMath::FloorNint(DT/dt)+1;
+        npt = TMath::FloorNint(DT/dt)+1; //2ns derivation window
     }
 //     if (oscsetup->AmplifierNo[ci]==1) nsmooth = 15;
 
