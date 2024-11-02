@@ -1950,6 +1950,7 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
         //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
+        par->chi2_sigmoid = sig_fit->GetChisquare();
        return SigmoidfitSuccess;
 
 
@@ -2034,15 +2035,13 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
           par->sigmoidR[i] = sig_fit->GetParameter(i);
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
-
-
-
-  cin.get();
+//debugging the fit results
+//cin.get(); //press enter to continue
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
-        par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
-        //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
-
+      par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
+      //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
+      par->chi2_sigmoid = sig_fit->GetChisquare();
   return SigmoidfitSuccess;
 
 
@@ -2313,6 +2312,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
 
   bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
+  par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
   if(doubleSigmoidfitSuccess) {
     cout<<GREEN<<"Fit successful!"<<endlr;
@@ -2424,7 +2424,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 {
   /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold) 
   ///pulses are considered negative!!!
-  cout<<MAGENTA<<"Starting Analysis for cividec "<<endlr;
+  cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
   if (points - tshift < 50) return -1;
   
   int ntrig=0;
@@ -2433,6 +2433,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   double drvtrig = 0.00002;
   if (threshold <0.0025)
     drvtrig = 0.000005;
+
+  double start_second_pulse_check_time = 10.0; //ns
   
   par->tot[0]=0;
   
@@ -2447,7 +2449,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       tpoint=i;
   }
   
-  
+  cout << RED << "Trigger point = " << tpoint << endlr;
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
   
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
@@ -2455,6 +2457,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
   
   double miny = data[tpoint];
+  double mindy = drv[tpoint];
+  bool secondary_pulse = false;
   par->charge=0.;
   par->maxtime_pos=tpoint;
   par->ampl=data[tpoint];
@@ -2467,10 +2471,26 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       par->maxtime_pos=i;
       miny=data[i];
     }
+    if(drv[i]<mindy) {
+      mindy = drv[i];
+    }
     if (data[i]<=threshold)
     {
       par->tot[0]++;
       par->ftime_pos=i; /// this is added to avoid a pulse at the end of the data that does not return to 0!!!
+      // cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+
+      if ( (i - tpoint) * dt > start_second_pulse_check_time)
+      { // Check for secondary pulse via derivative
+        // cout<<BLUE<<"Check for derivative "<<par->ftime_pos << " " << drv[i] << " " << mindy <<endlr;
+        if (drv[i] < mindy * 0.1)
+        {
+          // cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+          par->tot[0]--;
+          secondary_pulse = true;
+          break;
+        }
+      }
     }
     else //if (data[i]>threshold)
     {
@@ -2480,6 +2500,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     }
     /// note down the point the signal has gone above the threshold
   }
+  cout << BLUE << "Maxtime position = " << par->maxtime_pos << endlr;
+  cout << BLUE << "End of the pulse = " << par->ftime_pos << endlr;
   /// fast scan for risetime, risecharge and t_start
   par->t90=tpoint;
   par->t10=tpoint;
@@ -2568,7 +2590,17 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
                 break;
     }
    }
-  
+  //calculate the integral from the start point to the end point of the waveform
+  par->totchargefixed = 0;
+  for (int i = par->stime_pos; i < par->ftime_pos; i++) {
+    //integrate the waveform
+    par->totchargefixed += data[i];
+  }
+  //cout<<RED<< "Total Charge: " << par->totchargefixed << endlr;
+  //cin.get();
+
+
+
    par->te_peak_end = par->e_peak_end_pos * dt;
    par->risecharge *= dt;
    par->tot[0] *= dt;
@@ -2584,6 +2616,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
    par->ampl*=-1.;
    par->charge*=-1.*dt;   ///charge is calculated in V * ns. 
    par->risetime = (par->t90-par->t10)*dt;
+   par->totchargefixed*=-1.*dt;
   //cout<<YELLOW<<"First quick scan of parameters finished "<<endlr;
 
 /// make the sig fit for sigmoind timepoint.
