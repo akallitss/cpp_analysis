@@ -1541,13 +1541,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     	// Add peak parameters to the TClonesArray
     	// PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
     	new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);// only for storing the peak parameters to the output tree
-   //     if (ci==1)
-   //     {
-   //       cout<<RED<<"found ntrigs = "<<ntrigs<<endl;
-   //       cout<<((PEAKPARAM*)sparArr[ci]->At(ntrigs))->ampl<<endl;
-   //     	cout<<sparArr[ci]->GetEntries()<<endlr;
-   //       return 0;
-   //     }
+
 
    	  AddPar(ppar,&spar[ci][ntrigs]); // this is for the output visualization plots and histograms
 ///*************************************************************
