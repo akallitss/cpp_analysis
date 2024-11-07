@@ -1505,9 +1505,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       	cout<<BLUE<<"Channel "<<ci+1<<" is MCP"<<endlr;
 
       	cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
-        //ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
+        ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);
 
-  		ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,-0.040,sig_tshift[ci], ti);
+  		//ti = AnalyseLongPulseMCP(maxpoints,evNo,sampl,dt,dsampl,ppar,-0.040,sig_tshift[ci], ti);
 
     	if (ti<0) break;
 		if (ti < maxpoints-50) {
@@ -1756,15 +1756,15 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     sgraphSum->GetYaxis()->SetTitle("Amplitude [V]");
 	sgraphSum->Draw("pl");
 
-    TGraph *sgraphSumS = new TGraph(maxpoints,ptime,samplC);
-	sgraphSumS->SetLineColor(2);
-	sgraphSumS->SetFillColor(0);
-	sgraphSumS->SetLineWidth(2);
-	sprintf(cname,"Smoothed signal 33 event %d",evNo);
-	sgraphSumS->SetTitle(cname);
-    sgraphSumS->GetXaxis()->SetTitle("Time [ns]");
-    sgraphSumS->GetYaxis()->SetTitle("Amplitude [V]");
-	sgraphSumS->Draw("pl");
+ //    TGraph *sgraphSumS = new TGraph(maxpoints,ptime,samplC);
+	// sgraphSumS->SetLineColor(2);
+	// sgraphSumS->SetFillColor(0);
+	// sgraphSumS->SetLineWidth(2);
+	// sprintf(cname,"Smoothed signal 33 event %d",evNo);
+	// sgraphSumS->SetTitle(cname);
+ //    sgraphSumS->GetXaxis()->SetTitle("Time [ns]");
+ //    sgraphSumS->GetYaxis()->SetTitle("Amplitude [V]");
+	// sgraphSumS->Draw("pl");
 
 
 	  evdcanv[ci]->cd(2);
