@@ -2431,13 +2431,11 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   int ntrig=0;
   int tpoint=0;
   
-  //double drvtrig = 0.00002;
-  double drvtrig = 0.002;
+  double drvtrig = 0.00002;
+  //double drvtrig = 0.002;
   if (threshold <0.0025)
     drvtrig = 0.000005;
 
-  //double start_second_pulse_check_time = 10.0; //ns
-  
   par->tot[0]=0;
   
   for (int i=tshift; i<points; i++)   {
@@ -2548,19 +2546,49 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   cout << GREEN << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
   cout<< MAGENTA <<"pulse duration at that point = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
 
-  for (int i=par->ftime_pos; i<points; i++)
-  {
+  //find the point of derivative array that correspond to the par->ftime_pos
+//   cout<<"derivative point value at the ftime_pos = "<<drv[par->ftime_pos]<<endl;
 
+  double tolerance = 1e-5; // Adjust based on your definition of "constant"
+  // int constant_duration = 100; // 100ns
+  // int samples_per_ns = static_cast<int>(1.0 / dt); // Calculate samples per ns
+  // int check_samples = constant_duration * samples_per_ns;
+   double initial_drv = drv[par->ftime_pos];
+  // int constant_count = 0;
+
+
+  for (int i=par->ftime_pos+1; i<points; i++)
+  {
     par->ftime_pos=i;
 
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) || par->ftime_pos - par->stime_pos < CIVIDEC_PULSE_DURATION/dt)
+     if(fabs(drv[i] - initial_drv) < tolerance)
     {
-      // cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
-
-      cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
-      // cin.get();
-      break;
+    //   constant_count++;
+    //   if(constant_count >= check_samples - 1)
+    //   {
+           cout << "Constant derivative detected at " << i <<" derivative is = "<< drv[i] <<endl;
+    //     cout << "Constant duration: " << constant_duration << " ns" << endl;
+    //     cout << "Constant count: " << constant_count << endl;
+    //     cout << "Constant samples: " << check_samples << endl;
+    //     cout << "Derivative value: " << drv[i] << endl;
+    //     cout << "Derivative remains constant for " << constant_count / samples_per_ns << " ns" << endl;
+    //     cout << "Derivative remains constant from " << par->ftime_pos * dt << " ns to " << i * dt << " ns" << endl;
+    //     break;
     }
+
+        if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8))
+        {
+          //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
+
+          cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
+          // cin.get();
+          break;
+        }
+    }
+
+
+
+
     // if ( (i - tpoint) * dt > start_second_pulse_check_time)
     // { // Check for secondary pulse via derivative
     //   // cout<<BLUE<<"Check for derivative "<<par->ftime_pos << " " << drv[i] << " " << mindy <<endlr;
@@ -2572,15 +2600,17 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     //     break;
     //   }
     // }
-  }
 
-/// extend to CIVIDEC_PULSE_DURATION ns in order to get the ion tail
+
+// // extend to CIVIDEC_PULSE_DURATION ns in order to get the ion tail
   // for (int i=par->ftime_pos; i<points && i<par->stime_pos + CIVIDEC_PULSE_DURATION/dt; i++)
   // {
   //   par->ftime_pos=i;
   // }
-    cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
-  //
+
+  cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
+  cin.get();
+
   par->charge=0.;
   for (int i=par->stime_pos;i<=par->ftime_pos;i++)
     par->charge+=data[i];
@@ -2606,7 +2636,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
                 break;
     }
    }
-  cin.get();
+  //cin.get();
 
   //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
     // cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
