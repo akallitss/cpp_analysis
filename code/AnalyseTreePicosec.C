@@ -258,8 +258,9 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   bool MM[4]={0,0,0,0};
   bool SIGMOIDFIT[4]={0,0,0,0};
   bool DOUBLESIGMOIDFIT[4]={0,0,0,0};
-  double sig_tshift[4]={1.0,1.0,1.0,1.0};
-  
+  // double sig_tshift[4]={1.0,1.0,1.0,1.0};
+  double sig_tshift[4]={0.0,0.0,0.0,0.0};
+
   OSCSETUP* oscsetup = new OSCSETUP;
   for (int i=0;i<4;i++)
   {
@@ -602,7 +603,7 @@ cout<<"________________++_________________" << endl;
   char cname[100]; 
   TCanvas *evdcanv[4];
   TCanvas *fitcanv[4];
-  
+
   if (draw)
   {
       for (int i=0; i<4; i++)
@@ -770,6 +771,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   for(int i=0;i<4;i++)
   {
+  	if (Thresholds[i]>0)
+  		Thresholds[i]*=-1;
+
     if(strncmp(DetName,"MCP",3)==0)
     {
       Thresholds[i] = 2/mV;
@@ -822,9 +826,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         cout<<Thresholds[i]*mV<<" mV"<<endl;
 //         Thresholds[i]=threshold;
     }
-    if (Thresholds[i]>0)
-      Thresholds[i]*=-1;
-
   }
 
 /// calculation of duration 
@@ -1218,7 +1219,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //  while (1 && eventNo<200)
   while (1 && eventNo<200)
   {
-  	if (eventNo!=47) { eventNo++; continue;}
+  	//if (eventNo!=47) { eventNo++; continue;}
   	cout << "Event number: " << eventNo << endl;
     if (draw)
 	{
