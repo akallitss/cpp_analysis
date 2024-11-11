@@ -2089,7 +2089,6 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
         h1->GetXaxis()->SetTitle("Time [ns]");
         h1->GetYaxis()->SetTitle("Amplitude [V]");
     }
-
     // Save the canvas to an image file
     //sig_canvas->SaveAs("sigmoid_fit_visualization.png");
     
@@ -2147,9 +2146,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         double sig_lim_max = sigend*dt;
         double sig_pars_d[4];
 
-  TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,sig_lim_max, 4);
+      TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,sig_lim_max, 4);
 
-        TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
+      TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
 
 
       for (int i=0;i<4; i++)
@@ -2160,7 +2159,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
 
 
- /// double sigmoid fit here
+      /// double sigmoid fit here
       double sig_lim_min2 = par->maxtime_pos*dt;
       // double sig_lim_max2 = par->maxtime_pos*dt+(1.5); //ns
       par->tot_sig_end_pos = par->maxtime_pos + (int) (1.5/dt) + 1;
@@ -2174,29 +2173,29 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
 
-  TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+      TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
       sig_fit2->SetParameters(sig_pars);
       sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
       sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
       //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
 
-  //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
+      //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
       //Allow parameters 1 and 2 to vary
       sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
       sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
 
-  // Set initial step sizes for the varying parameters
+      // Set initial step sizes for the varying parameters
       sig_fit2->SetParError(1, 0.1 * abs(sig_fit2->GetParameter(1)));
       sig_fit2->SetParError(2, 0.1 * abs(sig_fit2->GetParameter(2)));
 
-//parameter limits were affecting the fit and producing the error
+      //parameter limits were affecting the fit and producing the error
       sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
       sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
 
-     /* //Debugging the fit parameters
+          /* //Debugging the fit parameters
 
-     // Print initial parameter values and errors, and set step sizes
+        // Print initial parameter values and errors, and set step sizes
         cout << GREEN << "Initial parameters BEFORE Fitting for sig_fit2:" << endlr;
         for (int i = 0; i < 4; i++) {
           double initialError = sig_fit2->GetParError(i);
@@ -2223,13 +2222,16 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         */
 
         // Perform the fit
-  TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMRS");
-//Debugging the fit
-        if (r->IsValid()) {
+        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMRS");
+        //Debugging the fit
+        if (r->IsValid())
+          {
           r->Print("V"); //prints the info of the fit
           TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
           cout << MAGENTA << "Fit successful!" << endlr;
-        } else {
+        }
+
+        else {
           cout << RED << "Fit failed."<< endlr;
         }
 
@@ -2321,14 +2323,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
     cout<<RED<<"Fit failed."<<endlr;
   }
 
+  double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
+  //par->echargefit =  abs(fit_integral) / 50;
+  par->echargefit =  fit_integral;
 
-      double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
-//      par->echargefit =  abs(fit_integral) / 50;
-        par->echargefit =  fit_integral;
-
-      //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
-      //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
-      //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
+  //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
+  //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
+  //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
 
   return doubleSigmoidfitSuccess;
 
@@ -2430,32 +2431,34 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   
   int ntrig=0;
   int tpoint=0;
-  
-  double drvtrig = 0.00002;
-  //double drvtrig = 0.002;
+
+  double drv_start_trig = -0.05;
+  double drv_end_trig = 0.00002;
+  double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
+  //double drv_end_trig = 0.002;
   if (threshold <0.0025)
-    drvtrig = 0.000005;
+    drv_end_trig = 0.000005;
 
   par->tot[0]=0;
-  
+
   for (int i=tshift; i<points; i++)   {
-    if (data[i]<=threshold) {
+    if (data[i]<=threshold && drv[i]<drv_start_trig) {
       tpoint = i;
       ntrig=1;
 //       par->tot[0]=1;
       break;
     }
-    else 
+    else
       tpoint=i;
   }
-  
+
   cout << RED << "Trigger point = " << tpoint << endlr;
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
-  
+
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
   if (tpoint>=points-10) return (-1);
 
-  
+
   double miny = data[tpoint];
   double mindy = drv[tpoint];
   bool secondary_pulse = false;
@@ -2474,7 +2477,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     if(drv[i]<mindy) {
       mindy = drv[i];
     }
-    if (data[i]<=threshold)
+    if (data[i]<=threshold || drv[i]<drv_start_trig)
     {
       par->tot[0]++;
       par->ftime_pos=i; /// this is added to avoid a pulse at the end of the data that does not return to 0!!!
@@ -2510,8 +2513,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 //find the 10% time
   for (int i=par->t90; i>0; i--)
   {
-    par->risecharge+=data[i]; 
-    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drvtrig ))
+    par->risecharge+=data[i];
+    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drv_end_trig ))
     {
       par->t10=i;
       break;
@@ -2521,7 +2524,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   for (int i=par->maxtime_pos; i<points; i++)
   {
 
-    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drvtrig ))
+    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drv_end_trig ))
     {
       par->tb10=i;
       break;
@@ -2536,56 +2539,39 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 //     {
 //       par->charge+=data[i];
 //     }
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) )
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8 ) )
     {
       par->stime_pos=i;
       break;
     }
   }
 
-  cout << GREEN << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
-  cout<< MAGENTA <<"pulse duration at that point = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
-
+//   cout << GREEN << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
+//   cout<< MAGENTA <<"pulse duration at that point = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
+// cin.get();
   //find the point of derivative array that correspond to the par->ftime_pos
 //   cout<<"derivative point value at the ftime_pos = "<<drv[par->ftime_pos]<<endl;
 
-  double tolerance = 1e-5; // Adjust based on your definition of "constant"
-  // int constant_duration = 100; // 100ns
-  // int samples_per_ns = static_cast<int>(1.0 / dt); // Calculate samples per ns
-  // int check_samples = constant_duration * samples_per_ns;
-   double initial_drv = drv[par->ftime_pos];
-  // int constant_count = 0;
 
-
-  for (int i=par->ftime_pos+1; i<points; i++)
-  {
+  for (int i=par->ftime_pos; i<points; i++) {
     par->ftime_pos=i;
 
-     if(fabs(drv[i] - initial_drv) < tolerance)
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8))
     {
-    //   constant_count++;
-    //   if(constant_count >= check_samples - 1)
-    //   {
-           cout << "Constant derivative detected at " << i <<" derivative is = "<< drv[i] <<endl;
-    //     cout << "Constant duration: " << constant_duration << " ns" << endl;
-    //     cout << "Constant count: " << constant_count << endl;
-    //     cout << "Constant samples: " << check_samples << endl;
-    //     cout << "Derivative value: " << drv[i] << endl;
-    //     cout << "Derivative remains constant for " << constant_count / samples_per_ns << " ns" << endl;
-    //     cout << "Derivative remains constant from " << par->ftime_pos * dt << " ns to " << i * dt << " ns" << endl;
-    //     break;
+      //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
+
+      //cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
+      // cin.get();
+      break;
     }
 
-        if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8))
-        {
-          //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
-
-          cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
-          // cin.get();
-          break;
-        }
+    if (drv[i] < mindy * drv_second_pulse_fraction_trigger)
+    {
+      cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+      secondary_pulse = true;
+      break;
     }
-
+  }
 
 
 
@@ -2608,8 +2594,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   //   par->ftime_pos=i;
   // }
 
-  cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
-  cin.get();
+  // cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
+  // cin.get();
 
   par->charge=0.;
   for (int i=par->stime_pos;i<=par->ftime_pos;i++)
@@ -2738,34 +2724,62 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
   int ntrig=0;
   int tpoint=0;
   
-  double drvtrig = 0.00002;
+  // double drvtrig = 0.00002;
+  // if (threshold <0.0025)
+  //   drvtrig = 0.000005;
+
+
+  double drv_start_trig = -0.05;
+  double drv_end_trig = 0.00002;
+  double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
+  //double drv_end_trig = 0.002;
   if (threshold <0.0025)
-    drvtrig = 0.000005;
-  
+    drv_end_trig = 0.000005;
+
   par->tot[0]=0;
   
+//   for (int i=tshift; i<points; i++)   {
+//     if (data[i]<=threshold) {
+//       tpoint = i;
+//       ntrig=1;
+// //       par->tot[0]=1;
+//       break;
+//     }
+//     else
+//       tpoint=i;
+//   }
+
   for (int i=tshift; i<points; i++)   {
-    if (data[i]<=threshold) {
+    if (data[i]<=threshold && drv[i]<drv_start_trig) {
       tpoint = i;
       ntrig=1;
-//       par->tot[0]=1;
+      //       par->tot[0]=1;
       break;
     }
-    else 
+    else
       tpoint=i;
   }
   
-  
+  cout << RED << "Trigger point  MCP = " << tpoint << endlr;
+
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
   
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
   if (tpoint>=points-10) return (-1);
 
   
+  // double miny = data[tpoint];
+  // par->charge=0.;
+  // par->maxtime_pos=tpoint;
+  // par->ampl=data[tpoint];
+
   double miny = data[tpoint];
+  double mindy = drv[tpoint];
+  bool secondary_pulse = false;
   par->charge=0.;
   par->maxtime_pos=tpoint;
   par->ampl=data[tpoint];
+
 
   for (int i=tpoint; i<points; i++)
   {
@@ -2775,10 +2789,15 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
       par->maxtime_pos=i;
       miny=data[i];
     }
-    if (data[i]<=threshold)
+    if(drv[i]<mindy) {
+      mindy = drv[i];
+    }
+    if (data[i]<=threshold || drv[i]<drv_start_trig)
     {
       par->tot[0]++;
       par->ftime_pos=i; /// this is added to avoid a pulse at the end of the data that does not return to 0!!!
+      // cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+
     }
     else //if (data[i]>threshold)
     {
@@ -2788,11 +2807,17 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
     }
     /// note down the point the signal has gone above the threshold
   }
+
+  cout << BLUE << "Maxtime position MCP = " << par->maxtime_pos << endlr;
+  cout << BLUE << "End of the pulse MCP = " << par->ftime_pos << endlr; //correct end of the pulse
+
   /// fast scan for risetime, risecharge and t_start
   par->t90=tpoint;
   par->t10=tpoint;
   par->stime_pos=tpoint;
-  par->ttrig=tpoint; 
+  par->ttrig=tpoint;
+  par->risecharge=0.;
+
   for (int i=par->maxtime_pos; i>0; i--)
   {
      if (data[i]>=par->ampl*0.9)
@@ -2801,54 +2826,76 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
        break;
      }
   }
-  par->risecharge=0.;
+
   for (int i=par->t90; i>0; i--)
   {
-    par->risecharge+=data[i]; 
-    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drvtrig ))
+    par->risecharge+=data[i];
+    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drv_end_trig ))
     {
       par->t10=i;
       break;
     }
   }
+  //find the 10% time at the falling edge
 
   for (int i=par->maxtime_pos; i<points; i++)
   {
-    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drvtrig ))
+
+    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drv_end_trig ))
     {
       par->tb10=i;
       break;
     }
   }
   
+  //find start point
   for (int i=(int) par->t10; i>0; i--)
   {
-//     cout<<data[i]<<"  "<<fabs(drv[i])<<"   "<<threshold<<endl;
+    //     cout<<data[i]<<"  "<<fabs(drv[i])<<"   "<<threshold<<endl;
     par->stime_pos=i;
-//     if (i<tpoint)
-//     {
-//       par->charge+=data[i];
-//     }
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) )
+    //     if (i<tpoint)
+    //     {
+    //       par->charge+=data[i];
+    //     }
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8 ) )
     {
       par->stime_pos=i;
       break;
     }
   }
-  for (int i=par->ftime_pos; i<points; i++)
-  {
+
+  // cout << GREEN << "End of the pulse MCP = " << par->ftime_pos << endlr; //correct end of the pulse
+  // cout<< MAGENTA <<"pulse duration at that point MCP = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
+  // cin.get();
+
+  for (int i=par->ftime_pos; i<points; i++) {
     par->ftime_pos=i;
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) )
+
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8))
     {
+      //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
+
+      //cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
+      // cin.get();
+      break;
+    }
+
+    if (drv[i] < mindy * drv_second_pulse_fraction_trigger)
+    {
+      //cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+      secondary_pulse = true;
       break;
     }
   }
 //   cout<<"ftime_pos = "<<par->ftime_pos<<endl;
 /// extend to CIVIDEC_PULSE_DURATION ns in order to get the ion tail
-  for (int i=par->ftime_pos; i<points && i<par->stime_pos + CIVIDEC_PULSE_DURATION/dt; i++)
-  {
-    par->ftime_pos=i;
-  }
+///
+  // cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
+  // cin.get();
+  // for (int i=par->ftime_pos; i<points && i<par->stime_pos + CIVIDEC_PULSE_DURATION/dt; i++)
+  // {
+  //   par->ftime_pos=i;
+  // }
 //   cout<<"extended to = "<<par->ftime_pos<<endl;
   
   par->charge=0.;
