@@ -1918,18 +1918,21 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(1, 0.5*range);
       sig_fit->SetParError(2, 0.5);
       sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+#ifdef DEBUGMSG
       for (int i = 0; i < 4; i++) {
         cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
              << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
       }
-      //Save the fit results and get the success of the fit
+#endif
+//Save the fit results and get the success of the fit
       TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+#ifdef DEBUGMSG
       cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
       for (int i = 0; i < 4; i++) {
         cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
              << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
       }
-       
+#endif       
         //sig_fit->GetParameters(&sig_pars[0]);
 
         for (int i=0;i<4;i++)
@@ -2013,18 +2016,22 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         sig_fit->SetParError(1, 0.5*range);
         sig_fit->SetParError(2, 0.5);
         sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+#ifdef DEBUGMSG
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
                << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
         }
-  //Save the fit results and get the success of the fit
+#endif
+        //Save the fit results and get the success of the fit
         TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+#ifdef DEBUGMSG
         cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
                << " (error: " << sig_fit->GetParError(i) << ")" << endlr;
         }
-              //sig_waveform->Fit("sig_fit", "QMR0S");
+#endif
+        //sig_waveform->Fit("sig_fit", "QMR0S");
         //sig_waveform->Fit("sig_fit", "QMR0S");
 
         //sig_fit->GetParameters(&sig_pars[0]);
@@ -2222,14 +2229,16 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         */
 
         // Perform the fit
-        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMRS");
+        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
         //Debugging the fit
         if (r->IsValid())
           {
           r->Print("V"); //prints the info of the fit
           TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
+#ifdef DEBUGMSG
           cout << MAGENTA << "Fit successful!" << endlr;
-        }
+#endif
+          }
 
         else {
           cout << RED << "Fit failed."<< endlr;
@@ -2237,11 +2246,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
 
         // Print final parameter values
+#ifdef DEBUGMSG
         cout << GREEN << "Final parameters for sig_fit2:" << endlr;
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
                << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
         }
+#endif
       /*
       cout << "Fit Result:" << endl;
       cout << "Chi-square: " << r->Chi2() << endl;
@@ -2298,11 +2309,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
 
   // Print final parameter values
+#ifdef DEBUGMSG
   cout << MAGENTA << "Final parameters for sig_fittot:" << endlr;
   for (int i = 0; i < 6; i++) {
     cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
          << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
   }
+#endif
 
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
@@ -2316,13 +2329,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
+#ifdef DEBUGMSG
   if(doubleSigmoidfitSuccess) {
     cout<<GREEN<<"Fit successful!"<<endlr;
   }
   else {
     cout<<RED<<"Fit failed."<<endlr;
   }
-
+#endif
   double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
@@ -2426,7 +2440,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 {
   /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold) 
   ///pulses are considered negative!!!
+#ifdef DEBUGMSG
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
+#endif
   if (points - tshift < 50) return -1;
   
   int ntrig=0;
@@ -2452,7 +2468,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       tpoint=i;
   }
 
+#ifdef DEBUGMSG
   cout << RED << "Trigger point = " << tpoint << endlr;
+#endif
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
 
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
@@ -2492,8 +2510,10 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     }
     /// note down the point the signal has gone above the threshold
   }
+#ifdef DEBUGMSG
   cout << BLUE << "Maxtime position = " << par->maxtime_pos << endlr;
   cout << BLUE << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
+#endif
   /// fast scan for risetime, risecharge and t_start
   par->t90=tpoint;
   par->t10=tpoint;
@@ -2567,7 +2587,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
     if (drv[i] < mindy * drv_second_pulse_fraction_trigger)
     {
+#ifdef DEBUGMSG
       cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
+#endif
       secondary_pulse = true;
       break;
     }
@@ -2644,11 +2666,14 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       // cin.get();
 
     /// make the sig fit for sigmoind timepoint.
+#ifdef DEBUGMSG
      cout<<RED<<"Starting Sigmoid fit "<<endlr;
+#endif
      bool SigmoidfitSuccess = TimeSigmoid(points, data, dt,par, evNo, sig_shift, tshift);
      par->SigmoidfitSuccess = SigmoidfitSuccess;
+#ifdef DEBUGMSG
      cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
-
+#endif
        //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
 
        par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
@@ -2656,8 +2681,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
        //cout<<"Sigmoid Timepoint = "<<par->tfit20<<endl;
        //double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par )
        //cout<<MAGENTA<<"NaiveTime, tfit20 =  "<< par->tfit20 <<endlr;
+#ifdef DEBUGMSG
      cout<<BLUE<<"Starting Double Sigmoid "<<endlr;
-
+#endif
 
     // Epeak charge calculation and Fit Success check
       bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
@@ -2718,7 +2744,9 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
 {
   /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold) 
   ///pulses are considered negative!!!
+#ifdef DEBUGMSG
   cout<<MAGENTA<<"Starting Analysis for cividec MCP "<<endlr;
+#endif
   if (points - tshift < 50) return -1;
   
   int ntrig=0;
@@ -2760,8 +2788,9 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
       tpoint=i;
   }
   
+#ifdef DEBUGMSG
   cout << RED << "Trigger point  MCP = " << tpoint << endlr;
-
+#endif
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
   
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
@@ -2808,9 +2837,10 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
     /// note down the point the signal has gone above the threshold
   }
 
+#ifdef DEBUGMSG
   cout << BLUE << "Maxtime position MCP = " << par->maxtime_pos << endlr;
   cout << BLUE << "End of the pulse MCP = " << par->ftime_pos << endlr; //correct end of the pulse
-
+#endif
   /// fast scan for risetime, risecharge and t_start
   par->t90=tpoint;
   par->t10=tpoint;
