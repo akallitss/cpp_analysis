@@ -48,6 +48,8 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   cout<<"RunNo= " <<runNo<< " poolNo = "<<poolNo<<endl;
 
   gROOT->LoadMacro("MyFunctions.C");
+  
+  
 
   threshold/=1000.;   /// make it in V
   peTh/=1000.;
@@ -752,7 +754,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   double rbins = 20;
   double rmax = 20.;
   int dtbins = 800;
-	// double tmax = 1.;
   double tmax = 0.002;  //  [ms]
 
   for(int i=0;i<4;i++)
@@ -871,7 +872,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   if (nevents>40000)
     nbins=256;
   
-  //  if (maxpoints < 5000)
+  
   if (maxpoints < 11000)
   {
     tmax = (1./exprate ) * 6.;
@@ -954,12 +955,12 @@ cin.get();
     hRate[i]=new TH1D(hname,htitle,rbins,0.,rmax);
 
 // // Nphotons per pulse as found by rate evolution plot!!!
-//     sprintf(htitle,"Rate (photons per %gs) from evolution plot",period);
-//     sprintf(hname,"Run%03d_pool%d_C%d_Rate_GoodPeaks_per%3.1fseconds_%s",preamNo,runNo,period,ftype);
+    sprintf(htitle,"Rate (photons per %gs) from evolution plot",period);
+    sprintf(hname,"Run%03d_pool%d_C%d_Rate_GoodPeaks_per%3.1fseconds_%s",runNo,poolNo,i+1,period,ftype);
     hGoodPeaksRate[i]=new TH1D(hname,htitle,rbins,0.,rmax);
 //     sprintf(axtitle,"goodpeaks / %gsec",period);
     hGoodPeaksRate[i]->GetXaxis()->SetTitle(axtitle);
-    
+//     cout<<RED<<"Histo rate "<<i+1<<" ready"<<endlr;
 ///________________________________________________________________
 /// the following plots concern the neutron (and gamma) rate evolution 
 /// (per pulse periode multiple, as it has been calculated from the timebinwidth) 
@@ -1001,7 +1002,7 @@ cin.get();
 //     hSparkEvolution=new TH1D(hname,htitle,tbins,epochS,epochF);
     
  // auxiliary plot for the normalization of the rate per pulse. 
-    sprintf(hname,"Run%03d_pool%d_C%d_Rate_Evolution_Check_%s",runNo,poolNo,i+1,ftype);
+    sprintf(hname,"Run%03d_pool%d_C%d_RateEvolution_Check_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"Rate normalization plot C%d",i+1);
     hRateEvolutionCheck[i]=new TH1D(hname,htitle,tbins,epochS,epochF);
 
@@ -1199,7 +1200,7 @@ cin.get();
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  while (1 && eventNo<2000)
+  while (1 && eventNo<200000)
   {
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
@@ -1631,9 +1632,10 @@ cin.get();
 
       npeaks[ci] = ntrigs;
       ngoodPeaks[ci] = ntrigsGoodPeaks;
-
+#ifdef DEBUGMSG
       cout<<'C' << ci+1 <<" :   Found "<<ntrigsGoodPeaks<<" goodpeaks"<<endl;
-//       if (ngoodPeaks[ci]>1) cout <<"event "<<eventNo<<" n = "<<ngoodPeaks[ci]<<"  "<< epoch - epochS<< "  "<< evtime - epochS<< endl;
+#endif
+      //       if (ngoodPeaks[ci]>1) cout <<"event "<<eventNo<<" n = "<<ngoodPeaks[ci]<<"  "<< epoch - epochS<< "  "<< evtime - epochS<< endl;
 
       ntrigsTot[ci] += npeaks[ci];
       ngoodTrigsTot[ci] += ngoodPeaks[ci];
@@ -1673,7 +1675,7 @@ cin.get();
             //intantaneous flux ("peak flux")
             //cout<<"tnow = "<<tnow<<"  nn = "<<nn*1e-9<<endl;
             dtlast[ci] = tnow - tlast[ci];
-    	    cout<<GREEN<<'C'<<ci+1<<" :   tlast = "<<tlast<<" + "<< + nn*1e-9+spar[ci][npeaks[ci]-1].t10*1e-9<<"  dtlast = "<<dtlast[ci]<<endlr;
+//     	    cout<<GREEN<<'C'<<ci+1<<" :   tlast = "<<tlast[ci]<<" + "<< + nn*1e-9+spar[ci][npeaks[ci]-1].t10*1e-9<<"  dtlast = "<<dtlast[ci]<<endlr;
             if (tlast[ci]>0)
                hDt[ci]->Fill(dtlast[ci]);
         }
@@ -1687,7 +1689,7 @@ cin.get();
         // 	  {
         // 	    cout<<"negative DT!!!!\n event ="<<eventNo<<endl;
         // 	    printf("tnow = %18.8lf,    tlast =  %18.8lf ,     DT =  %18.8lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
-         	    cout<<CYAN<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks[ci]<<"    DT = "<< dtlastgoodpeaks[ci]<<endlr;
+//          	    cout<<CYAN<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks[ci]<<"    DT = "<< dtlastgoodpeaks[ci]<<endlr;
         // 	  }
         //  	  printf("tnow = %Lf,    tlast =  %Lf ,     DT =  %Lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
         // 	  cout<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks<<"    DT = "<< dtlastgoodpeaks<<endl;
