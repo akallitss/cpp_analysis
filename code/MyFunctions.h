@@ -30,7 +30,8 @@
 #include <TLatex.h>
 #include<TLegend.h>
 #include<TMath.h>
-
+#include "Math/Minimizer.h"
+#include "Math/Factory.h"
 // // 	
 #define DEBUG 1
 #undef DEBUG
@@ -369,15 +370,15 @@ const int MAX_N_FILES=11000;
 
 //local PC directories
 
-//
-// const char *CODEDIR="/diskb/picosec/2024/code";
-// const char *BASEDIRNAME="/diskb/picosec/2024/2022_October_h4";
-// const char *WORKDIR="/diskb/picosec/2024/2022_October_h4/wdir";
-// const char *PLOTDIR="/diskb/picosec/2024/2022_October_h4/plots";
-// const char *DATADIRNAME="/diskb/picosec/2024/2022_October_h4/dataTrees";
-// const char *TRACKDIRNAME="/diskb/picosec/2024/2022_October_h4/tracking";
-// const char *OUTDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees";
-// const char *PARAMDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees/ParameterTrees";
+
+const char *CODEDIR="/diskb/picosec/2024/code";
+const char *BASEDIRNAME="/diskb/picosec/2024/2022_October_h4";
+const char *WORKDIR="/diskb/picosec/2024/2022_October_h4/wdir";
+const char *PLOTDIR="/diskb/picosec/2024/2022_October_h4/plots";
+const char *DATADIRNAME="/diskb/picosec/2024/2022_October_h4/dataTrees";
+const char *TRACKDIRNAME="/diskb/picosec/2024/2022_October_h4/tracking";
+const char *OUTDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees";
+const char *PARAMDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees/ParameterTrees";
 
 // /*
 // 
