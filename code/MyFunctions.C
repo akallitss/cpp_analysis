@@ -1878,10 +1878,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         int Npoints = par->sig_end_pos - par->sig_start_pos+1; 
         if(Npoints >100 || Npoints<=1)
         {
-          cout<<MAGENTA<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
-          cout<<MAGENTA<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
-          cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
-//           return (kFALSE);  
+          cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
+          cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
+          cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+
+         //           return (kFALSE);
         }
 
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -1951,6 +1952,19 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         }
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
+      if(!SigmoidfitSuccess) {
+        cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+        // Open a file to write the failed event number
+        ofstream failedEventsFile("failed_events_sigmoid.txt", ios::app);
+        if (failedEventsFile.is_open()) {
+          failedEventsFile << "Event " << evNo << " failed to Sigmoid fit." << endl;
+          failedEventsFile.close();
+        } else {
+          cerr << "Unable to open file to write failed event." << endl;
+        }
+      }
+
+
       // if(SigmoidfitSuccess) {
       //     par->sigmoid_success = 1;
       // }
@@ -1981,9 +1995,8 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         while(par->sig_end_pos>=maxpoints-50) par->sig_end_pos-=1;
 
         int Npoints = par->sig_end_pos - par->sig_start_pos+1; 
-        if(Npoints >100 || Npoints<=1)
-        {
-          cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+        if(Npoints >100 || Npoints<=1) {
+          cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit with low number of points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
         }
           
 
@@ -2056,7 +2069,19 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         }
 //debugging the fit results
 //cin.get(); //press enter to continue
-      bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+    bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+    if(!SigmoidfitSuccess) {
+      cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+      // Open a file to write the failed event number
+      ofstream failedEventsFile("failed_events_sigmoid_MCP.txt", ios::app);
+      if (failedEventsFile.is_open()) {
+        failedEventsFile << "Event " << evNo << " failed to Sigmoid fit." << endl;
+        failedEventsFile.close();
+      } else {
+        cerr << "Unable to open file to write failed event." << endl;
+      }
+    }
+
 
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
       //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
@@ -2117,11 +2142,12 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
       ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
-      minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
-      minimizer->SetMaxIterations(10000);  // for GSL 
+      //minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+      minimizer->SetMaxFunctionCalls(10);
+      minimizer->SetMaxIterations(10000);  // for GSL
       minimizer->SetTolerance(5e-4);
       minimizer->SetPrintLevel(0);  
-      
+
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
         //cout<<" loop boundaries "<<par->sig_end_pos - par->sig_start_pos<<endl;
@@ -2179,6 +2205,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       for (int i=0;i<4; i++)
         sig_pars_d[i] = par->sigmoidR[i];
 
+
       sig_fitd->SetParameters(sig_pars_d);
 
       double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
@@ -2204,24 +2231,28 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
 
-      TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
-      sig_fit2->SetParameters(sig_pars);
-      sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
-      sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-      //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
+//Fit implementation with custom minimizer
+  TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
 
-      //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
-      //Allow parameters 1 and 2 to vary
-      sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
-      sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
-
-      // Set initial step sizes for the varying parameters
-      sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
-      sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
-
-      //parameter limits were affecting the fit and producing the error
-      sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
-      sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
+  //Fit implementation with Root Default minimizer
+      // TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+      // sig_fit2->SetParameters(sig_pars);
+      // sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
+      // sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
+      // //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
+      //
+      // //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
+      // //Allow parameters 1 and 2 to vary
+      // sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
+      // sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
+      //
+      // // Set initial step sizes for the varying parameters
+      // sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
+      // sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
+      //
+      // //parameter limits were affecting the fit and producing the error
+      // sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
+      // sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
           /* //Debugging the fit parameters
 
@@ -2264,8 +2295,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           }
 
         else {
-          cout << RED << "Fit failed."<< endlr;
+          cout << RED << "Fit failed." << endlr;
         }
+
 
 
         // Print final parameter values
@@ -2340,7 +2372,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   }
 #endif
 
-  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+  // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
   sig_fittot->SetLineColor(kRed);
 
@@ -2348,6 +2381,30 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
       for (int i=0;i<6;i++)
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
+
+      if (r_tot->IsValid())
+      {
+    #ifdef DEBUGMSG
+        r_tot->Print("V"); //prints the info of the fit
+        TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
+    #endif
+        cout << MAGENTA << "Fit successful!" << endlr;
+      }
+
+      else {
+        cout << RED << "Fit failed." << endlr;
+        //cin.get(); //press enter to continue
+
+        // Open a file to write the failed event number
+        ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
+
+        if (failedEventsFile.is_open()) {
+          failedEventsFile << "Event " << evNo << " failed to fit." << endl;
+          failedEventsFile.close();
+        } else {
+          cerr << "Unable to open file to write failed event." << endl;
+        }
+      }
 
   bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
