@@ -1863,6 +1863,11 @@ double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par)
 bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
         //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
+      ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+      minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
+      minimizer->SetMaxIterations(10000);  // for GSL 
+      minimizer->SetTolerance(1e-3);
+      minimizer->SetPrintLevel(1);  
         //dt=arrt[1]-arrt[0];
         par->sig_start_pos = (int) (par->stime_pos - 1./dt ); // minus 1 ns
         while(par->sig_start_pos<tshift) par->sig_start_pos+=1;
@@ -1873,9 +1878,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         int Npoints = par->sig_end_pos - par->sig_start_pos+1; 
         if(Npoints >100 || Npoints<=1)
         {
+          cout<<MAGENTA<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
+          cout<<MAGENTA<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
           cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+//           return (kFALSE);  
         }
-          
 
        double x[1000], y[1000], erx[1000], ery[1000];
        int points =0;
@@ -1914,10 +1921,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
       //        double range = par->maxtime_pos-(int)(0.05/dt);
       double range = (0.5/dt);
-      sig_fit->SetParError(0, 0.1*abs(sig_fit->GetParameter(0)));
-      sig_fit->SetParError(1, 0.5*range);
-      sig_fit->SetParError(2, 0.5);
-      sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+      sig_fit->SetParError(0, 0.01*abs(sig_fit->GetParameter(0)));
+      sig_fit->SetParError(1, 0.05*range);
+      sig_fit->SetParError(2, 0.05);
+      sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 #ifdef DEBUGMSG
       for (int i = 0; i < 4; i++) {
         cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
@@ -1960,6 +1967,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 } 
 bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
+      ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+      minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
+      minimizer->SetMaxIterations(10000);  // for GSL 
+      minimizer->SetTolerance(1e-3);
+      minimizer->SetPrintLevel(1);  
         //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
         //dt=arrt[1]-arrt[0];
         par->sig_start_pos = (int) (par->stime_pos - 0.1/dt ); // minus 1 ns
@@ -2012,10 +2024,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 
 //        double range = par->maxtime_pos-(int)(0.05/dt);
         double range = (0.5/dt);
-        sig_fit->SetParError(0, 0.1*abs(sig_fit->GetParameter(0)));
-        sig_fit->SetParError(1, 0.5*range);
-        sig_fit->SetParError(2, 0.5);
-        sig_fit->SetParError(3, 0.01*abs(sig_fit->GetParameter(0)));
+        sig_fit->SetParError(0, 0.01*abs(sig_fit->GetParameter(0)));
+        sig_fit->SetParError(1, 0.05*range);
+        sig_fit->SetParError(2, 0.05);
+        sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 #ifdef DEBUGMSG
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
@@ -2104,6 +2116,12 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
 }
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
+      ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+      minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
+      minimizer->SetMaxIterations(10000);  // for GSL 
+      minimizer->SetTolerance(5e-4);
+      minimizer->SetPrintLevel(0);  
+      
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
         //cout<<" loop boundaries "<<par->sig_end_pos - par->sig_start_pos<<endl;
@@ -2173,6 +2191,12 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       double sig_lim_max2 = par->tot_sig_end_pos*dt;
       double sig_pars[4];
 
+      if (x_mid_right <= sig_lim_min2 || x_mid_right >= sig_lim_max2)
+         x_mid_right = (sig_lim_min2+sig_lim_max2)/2.;
+
+      if (steepness_left <= 0 || steepness_left >= 5)
+         steepness_left = (0.+5.)/2.;
+         
       sig_pars[0] = arr[par->maxtime_pos];
       sig_pars[1] = x_mid_right;
       sig_pars[2] = -steepness_left;
@@ -2192,13 +2216,12 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
 
       // Set initial step sizes for the varying parameters
-      sig_fit2->SetParError(1, 0.1 * abs(sig_fit2->GetParameter(1)));
-      sig_fit2->SetParError(2, 0.1 * abs(sig_fit2->GetParameter(2)));
+      sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
+      sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
 
       //parameter limits were affecting the fit and producing the error
       sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
       sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
-
 
           /* //Debugging the fit parameters
 
@@ -2233,9 +2256,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         //Debugging the fit
         if (r->IsValid())
           {
+#ifdef DEBUGMSG
           r->Print("V"); //prints the info of the fit
           TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
-#ifdef DEBUGMSG
           cout << MAGENTA << "Fit successful!" << endlr;
 #endif
           }
@@ -2300,12 +2323,12 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
 
     double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
-    sig_fittot->SetParError(0, 0.1*abs(sig_fit2->GetParameter(0)));
-    sig_fittot->SetParError(1, 0.1*range);
-    sig_fittot->SetParError(2, 0.2);
-    sig_fittot->SetParError(3, 0.1*abs(sig_fitd->GetParameter(3)));
-    sig_fittot->SetParError(4, 0.1*range);
-    sig_fittot->SetParError(5, 0.3);
+    sig_fittot->SetParError(0, 0.01*abs(sig_fit2->GetParameter(0)));
+    sig_fittot->SetParError(1, 0.01*range);
+    sig_fittot->SetParError(2, 0.02);
+    sig_fittot->SetParError(3, 0.01*abs(sig_fitd->GetParameter(3)));
+    sig_fittot->SetParError(4, 0.01*range);
+    sig_fittot->SetParError(5, 0.03);
 
 
   // Print final parameter values
@@ -2449,6 +2472,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   int tpoint=0;
 
   double drv_start_trig = -0.05;
+  drv_start_trig = -threshold;
   double drv_end_trig = 0.00002;
   double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
   //double drv_end_trig = 0.002;
@@ -2544,7 +2568,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   for (int i=par->maxtime_pos; i<points; i++)
   {
 
-    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold && fabs(drv[i])<=drv_end_trig ))
+    if (data[i]>=par->ampl*0.1 || (data[i]>0.5*threshold  && fabs(drv[i])<=drv_end_trig ))
     {
       par->tb10=i;
       break;
@@ -2559,7 +2583,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 //     {
 //       par->charge+=data[i];
 //     }
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8 ) )
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig ) ) // && data[i]>threshold*0.8 ) )
     {
       par->stime_pos=i;
       break;
