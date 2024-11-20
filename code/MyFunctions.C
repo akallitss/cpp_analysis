@@ -2146,7 +2146,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       minimizer->SetMaxFunctionCalls(10);
       minimizer->SetMaxIterations(10000);  // for GSL
       minimizer->SetTolerance(5e-4);
-      minimizer->SetPrintLevel(0);  
+      minimizer->SetPrintLevel(0);
+
+
+      ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
+      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(100000);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-8);
+      ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -2231,56 +2238,55 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
 
-//Fit implementation with custom minimizer
-  TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
 
   //Fit implementation with Root Default minimizer
-      // TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
-      // sig_fit2->SetParameters(sig_pars);
-      // sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
-      // sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-      // //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
-      //
-      // //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
-      // //Allow parameters 1 and 2 to vary
-      // sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
-      // sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
-      //
-      // // Set initial step sizes for the varying parameters
-      // sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
-      // sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
-      //
-      // //parameter limits were affecting the fit and producing the error
-      // sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
-      // sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
+        TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+        sig_fit2->SetParameters(sig_pars);
+        sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
+        sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
+        //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
 
-          /* //Debugging the fit parameters
+        //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
+        //Allow parameters 1 and 2 to vary
+        sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
+        sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
 
-        // Print initial parameter values and errors, and set step sizes
-        cout << GREEN << "Initial parameters BEFORE Fitting for sig_fit2:" << endlr;
-        for (int i = 0; i < 4; i++) {
-          double initialError = sig_fit2->GetParError(i);
-          double initialValue = sig_fit2->GetParameter(i);
+        // Set initial step sizes for the varying parameters
+        sig_fit2->SetParError(1, 0.2 * abs(sig_fit2->GetParameter(1)));
+        sig_fit2->SetParError(2, 0.2 * abs(sig_fit2->GetParameter(2)));
+
+        //parameter limits were affecting the fit and producing the error
+        sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
+        sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
 
-          // Check if parameter is fixed
-          Double_t parMin, parMax;
-          sig_fit2->GetParLimits(i, parMin, parMax);
-          //bool isFixed = (parMin == parMax);
-          bool isFixed = (initialError == 0);
+  /* //Debugging the fit parameters
 
-          cout << "Parameter " << i << ": " << initialValue
-               << " +/- " << initialError
-               << " (fixed: " << (isFixed ? "yes" : "no") << ")" << endlr;
+          // Print initial parameter values and errors, and set step sizes
+          cout << GREEN << "Initial parameters BEFORE Fitting for sig_fit2:" << endlr;
+          for (int i = 0; i < 4; i++) {
+            double initialError = sig_fit2->GetParError(i);
+            double initialValue = sig_fit2->GetParameter(i);
 
-          // Set step size if parameter is not fixed
-          if (!isFixed) {
-            double stepSize = (initialError > 0) ? initialError : 0.1 * std::abs(initialValue);
-            sig_fit2->SetParError(i, stepSize);
-            cout << "  Setting step size for parameter " << i << " to " << stepSize << endlr;
+
+            // Check if parameter is fixed
+            Double_t parMin, parMax;
+            sig_fit2->GetParLimits(i, parMin, parMax);
+            //bool isFixed = (parMin == parMax);
+            bool isFixed = (initialError == 0);
+
+            cout << "Parameter " << i << ": " << initialValue
+                 << " +/- " << initialError
+                 << " (fixed: " << (isFixed ? "yes" : "no") << ")" << endlr;
+
+            // Set step size if parameter is not fixed
+            if (!isFixed) {
+              double stepSize = (initialError > 0) ? initialError : 0.1 * std::abs(initialValue);
+              sig_fit2->SetParError(i, stepSize);
+              cout << "  Setting step size for parameter " << i << " to " << stepSize << endlr;
+            }
           }
-        }
-        */
+   */
 
         // Perform the fit
         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
@@ -2354,13 +2360,30 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
 
+  cout<<" sig_lim_min = "<<sig_lim_min<<" sig_lim_max2 = "<<" Sigmoid extension "<<SIGMOID_EXTENTION<<endl;
     double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
-    sig_fittot->SetParError(0, 0.01*abs(sig_fit2->GetParameter(0)));
-    sig_fittot->SetParError(1, 0.01*range);
+    sig_fittot->SetParError(0, 0.1*abs(sig_fit2->GetParameter(0)));
+    sig_fittot->SetParError(1, 0.2*range);
     sig_fittot->SetParError(2, 0.02);
     sig_fittot->SetParError(3, 0.01*abs(sig_fitd->GetParameter(3)));
     sig_fittot->SetParError(4, 0.01*range);
     sig_fittot->SetParError(5, 0.03);
+
+  // Set parameter limits
+
+
+  bool any_zero = false;
+  for (int i = 0; i < 6; i++) {
+    if (sig_fittot->GetParError(i) == 0) {
+      any_zero = true;
+      break;
+    }
+  }
+
+  if (any_zero) {
+    cout << RED << "At least one parameter has an error of 0." << endlr;
+    cin.get(); //press enter to continue
+  }
 
 
   // Print final parameter values
@@ -2372,12 +2395,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   }
 #endif
 
+  // gErrorIgnoreLevel = kError;
   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+  // gErrorIgnoreLevel = kInfo;
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
   sig_fittot->SetLineColor(kRed);
 
-    //sig_waveformd->Fit("sig_fittot", "QMR0S", "", sig_lim_min, sig_lim_max2+2.6);
 
       for (int i=0;i<6;i++)
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
@@ -2406,6 +2430,31 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         }
       }
 
+
+  //Debugging the fit
+#ifdef DEBUGMSG
+  TCanvas *c1 = new TCanvas("c1", "Fit Result", 800, 600);
+  sig_waveformd->Draw("AP");
+  sig_fit2->Draw("same");
+  c1->SaveAs("fit_result_single.png");
+
+  TCanvas *c3 = new TCanvas("c3", "Fit Result", 800, 600);
+  sig_waveformd->Draw("AP");
+  sig_fitd->Draw("same");
+  c3->SaveAs("fit_result_single_left.png");
+
+  TCanvas *c2 = new TCanvas("c2", "Fit Result", 800, 600);
+  sig_waveformd->Draw("AP");
+  sig_fittot->Draw("same");
+  c2->SaveAs("fit_result_tot.png");
+
+  // Print final parameter values
+  cout << BLUE << "Final parameters for sig_fittot:" << endlr;
+  for (int i = 0; i < 6; i++) {
+    cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
+         << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
+  }
+#endif
   bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
