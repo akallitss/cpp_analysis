@@ -32,6 +32,8 @@
 #include<TMath.h>
 #include "Math/Minimizer.h"
 #include "Math/Factory.h"
+#include <Math/Functor.h>
+
 // // 	
 #define DEBUG 1
 #undef DEBUG
@@ -549,7 +551,7 @@ double IntegrateA(int , double* , double* ,double );
 //void FindGlobalMaximum(double, int, float);
 double FindBaselineLevel(double*, int);
 double fermi_dirac_general(double*, double* );
-double fermi_dirac(double*, double *);
+double fermi_dirac(const double*, const double *);
 double fermi_dirac_generalsub(double *, double *);
 double slope_at_x(double*, int , int , double);
 
