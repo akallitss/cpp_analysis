@@ -1789,7 +1789,7 @@ double fermi_dirac_general(double *x, double *par)
     return fdreturn;
 }
 
-double fermi_dirac(double *x, double *par)
+double fermi_dirac(const double *x, const double *par)
 {
     //double fdreturn = par[0]/(par[1]+TMath::Exp(-par[2]*(x[0]-par[3])))+par[4];
     double fdreturn = par[0]/(1.+TMath::Exp(-par[2]*(x[0]-par[1])))+par[3];
@@ -2146,7 +2146,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       minimizer->SetMaxFunctionCalls(10);
       minimizer->SetMaxIterations(10000);  // for GSL
       minimizer->SetTolerance(5e-4);
-      minimizer->SetPrintLevel(0);  
+      minimizer->SetPrintLevel(0);
 
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -2231,28 +2231,71 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
 
-//Fit implementation with custom minimizer
-  TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+    //Fit implementation with custom minimizer
+      ROOT::Math::Functor fcn([&](const double *params) {
+        double chi2 = 0;
+        for (int i = 0; i < Npointsd; ++i) {
+            double x[] = {x_d[i]};
+            double y_model = fermi_dirac(x, params);
+            chi2 += pow((y_d[i] - y_model), 2) / pow(ery_d[i], 2);
+        }
+        return chi2;
+    }, 4);
 
-  //Fit implementation with Root Default minimizer
-      // TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
-      // sig_fit2->SetParameters(sig_pars);
-      // sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
-      // sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-      // //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
-      //
-      // //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
-      // //Allow parameters 1 and 2 to vary
-      // sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
-      // sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
-      //
-      // // Set initial step sizes for the varying parameters
-      // sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
-      // sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
-      //
-      // //parameter limits were affecting the fit and producing the error
-      // sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
-      // sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
+      //set function to minimizer
+      minimizer->SetFunction(fcn);
+    //set initial parameter and step sizes
+      minimizer->SetVariable(0,"max_amplitude",sig_fitd->GetParameter(0),0.);//p0
+      minimizer->SetVariable(1,"x_mid_point",sig_pars[1], 0.01*abs(sig_pars[1]));//p1
+      minimizer->SetVariable(2,"steepness_right",sig_pars[2], 0.01*abs(sig_pars[2]));//p2
+      minimizer->SetVariable(3,"baseline",sig_fitd->GetParameter(3),0.);//p3
+
+      //Fix parameters 0, 3
+      minimizer->FixVariable(0);
+      minimizer->FixVariable(3);
+
+      //Set parameter limits for par 1,2
+
+      minimizer->SetVariableLimits(1,sig_lim_min2,sig_lim_max2);
+      minimizer->SetVariableLimits(2,-5,0);
+
+      //Perform minimization
+      bool fitSuccess_sig_fit2 = minimizer->Minimize();
+      const double *results_sig_fit2;
+      if(fitSuccess_sig_fit2) {
+        results_sig_fit2 = minimizer->X();
+        //sig_fit2 ->SetParameters(results_sig_fit2);
+        TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+        sig_fit2->SetParameters(results_sig_fit2);
+        sig_fit2->SetLineColor(kCyan);
+        cout<<GREEN<<"Fit successful!"<<endlr;
+        minimizer->PrintResults();
+      }
+      else
+        cout<<RED<<"Fit failed."<<endlr;
+
+
+
+
+  // //Fit implementation with Root Default minimizer
+  //     TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
+  //     sig_fit2->SetParameters(sig_pars);
+  //     sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
+  //     sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
+  //     //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
+  //
+  //     //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
+  //     //Allow parameters 1 and 2 to vary
+  //     sig_fit2->SetParameter(1, sig_fit2->GetParameter(1));
+  //     sig_fit2->SetParameter(2, sig_fit2->GetParameter(2));
+  //
+  //     // Set initial step sizes for the varying parameters
+  //     sig_fit2->SetParError(1, 0.01 * abs(sig_fit2->GetParameter(1)));
+  //     sig_fit2->SetParError(2, 0.01 * abs(sig_fit2->GetParameter(2)));
+  //
+  //     //parameter limits were affecting the fit and producing the error
+  //     sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
+  //     sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
           /* //Debugging the fit parameters
 
@@ -2282,31 +2325,39 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         }
         */
 
-        // Perform the fit
-        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
-        //Debugging the fit
-        if (r->IsValid())
-          {
+//         // Perform the fit with TF1 definition
+//         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
+//         //Debugging the fit
+//         if (r->IsValid())
+//           {
+// #ifdef DEBUGMSG
+//           r->Print("V"); //prints the info of the fit
+//           TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
+//           cout << MAGENTA << "Fit successful!" << endlr;
+// #endif
+//           }
+        //
+        // else {
+        //   cout << RED << "Fit failed." << endlr;
+        // }
+
+
+//         // Print final parameter values with TF1 definition
+// #ifdef DEBUGMSG
+//         cout << GREEN << "Final parameters for sig_fit2:" << endlr;
+//         for (int i = 0; i < 4; i++) {
+//           cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
+//                << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
+//         }
+// #endif
+
+  // Print final parameter values with custom minimizer
 #ifdef DEBUGMSG
-          r->Print("V"); //prints the info of the fit
-          TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
-          cout << MAGENTA << "Fit successful!" << endlr;
-#endif
-          }
-
-        else {
-          cout << RED << "Fit failed." << endlr;
-        }
-
-
-
-        // Print final parameter values
-#ifdef DEBUGMSG
-        cout << GREEN << "Final parameters for sig_fit2:" << endlr;
-        for (int i = 0; i < 4; i++) {
-          cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
-               << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
-        }
+  cout << GREEN << "Final parameters for sig_fit2:" << endlr;
+  for (int i = 0; i < 4; i++) {
+    cout << "Parameter " << i << ": " << minimizer->X()[i]
+         << " (error: " << minimizer->Errors()[i] << ")" << endlr;
+  }
 #endif
       /*
       cout << "Fit Result:" << endl;
@@ -2318,12 +2369,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //sig_waveformd->Fit("sig_fit2", "QMR0S");
       cout<<MAGENTA<<"HERE IS THE fitiing SIFIT2!" << endlr;
       */
-      sig_fit2->SetRange(sig_lim_min-3.,sig_lim_max2+10.);
-      sig_fit2->SetLineColor(kCyan);
 
-
-      for (int i=0;i<4; i++)
-        par->sigmoidF[i] = sig_fit2->GetParameter(i);
+      // Sat range and save parameters with TF1 definition for sig_fit2
+      // sig_fit2->SetRange(sig_lim_min-3.,sig_lim_max2+10.);
+      // sig_fit2->SetLineColor(kCyan);
+      //
+      //
+      // for (int i=0;i<4; i++)
+      //   par->sigmoidF[i] = sig_fit2->GetParameter(i);
 
  //Debugging the fit
       /*
@@ -2347,85 +2400,149 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   //   cout << "Parameter " << i << ": " << sig_fit1->GetParameter(i)
   //        << " (error: " << sig_fit1->GetParError(i) << ")" << endlr;
   // }
-  TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
-      for (int i=0;i<4;i++)
-        sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
 
-      sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
-      sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
+  cin.get(); //press enter to continue
 
-    double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
-    sig_fittot->SetParError(0, 0.01*abs(sig_fit2->GetParameter(0)));
-    sig_fittot->SetParError(1, 0.01*range);
-    sig_fittot->SetParError(2, 0.02);
-    sig_fittot->SetParError(3, 0.01*abs(sig_fitd->GetParameter(3)));
-    sig_fittot->SetParError(4, 0.01*range);
-    sig_fittot->SetParError(5, 0.03);
+  //Perform the fit with the TF1 definition
+//   TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
+//       for (int i=0;i<4;i++)
+//         sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
+//
+//       sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
+//       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
+//
+//     double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
+//     sig_fittot->SetParError(0, 0.01*abs(sig_fit2->GetParameter(0)));
+//     sig_fittot->SetParError(1, 0.01*range);
+//     sig_fittot->SetParError(2, 0.02);
+//     sig_fittot->SetParError(3, 0.01*abs(sig_fitd->GetParameter(3)));
+//     sig_fittot->SetParError(4, 0.01*range);
+//     sig_fittot->SetParError(5, 0.03);
+//
+//
+//   // Print final parameter values
+// #ifdef DEBUGMSG
+//   cout << MAGENTA << "Final parameters for sig_fittot:" << endlr;
+//   for (int i = 0; i < 6; i++) {
+//     cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
+//          << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
+//   }
+// #endif
+//
+//   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+//   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
+//   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
+//   sig_fittot->SetLineColor(kRed);
+//
+//     //sig_waveformd->Fit("sig_fittot", "QMR0S", "", sig_lim_min, sig_lim_max2+2.6);
+//
+//       for (int i=0;i<6;i++)
+//         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
+//
+//       if (r_tot->IsValid())
+//       {
+//     #ifdef DEBUGMSG
+//         r_tot->Print("V"); //prints the info of the fit
+//         TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
+//     #endif
+//         cout << MAGENTA << "Fit successful!" << endlr;
+//       }
+//
+//       else {
+//         cout << RED << "Fit failed." << endlr;
+//         //cin.get(); //press enter to continue
+//
+//         // Open a file to write the failed event number
+//         ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
+//
+//         if (failedEventsFile.is_open()) {
+//           failedEventsFile << "Event " << evNo << " failed to fit." << endl;
+//           failedEventsFile.close();
+//         } else {
+//           cerr << "Unable to open file to write failed event." << endl;
+//         }
+//       }
 
+//Perform sig_fittot with custom minimizer
 
-  // Print final parameter values
-#ifdef DEBUGMSG
-  cout << MAGENTA << "Final parameters for sig_fittot:" << endlr;
-  for (int i = 0; i < 6; i++) {
-    cout << "Parameter " << i << ": " << sig_fittot->GetParameter(i)
-         << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
-  }
-#endif
+  ROOT::Math::Functor fcn_tot([&](const double *params) {
+    double chi2 = 0;
+    for (int i = 0; i < Npointsd; ++i) {
+        const double x[] = {x_d[i]};
+        double y_model = fermi_dirac_sym_double(x, params);
+        chi2 += pow((y_d[i] - y_model), 2) / pow(ery_d[i], 2);
+    }
+    return chi2;
+}, 6);
 
-  // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
-  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
-  sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
-  sig_fittot->SetLineColor(kRed);
+// Set the function in the minimizer
+minimizer->SetFunction(fcn_tot);
 
-    //sig_waveformd->Fit("sig_fittot", "QMR0S", "", sig_lim_min, sig_lim_max2+2.6);
+// Set the initial parameters and step sizes
+for(int i=0; i<4; i++) {
+  minimizer->SetVariable(i, Form("p%d", i), sig_fitd->GetParameter(i), 0.01*abs(sig_fitd->GetParameter(i)));
+}
 
-      for (int i=0;i<6;i++)
-        par->sigmoidtot[i]=sig_fittot->GetParameter(i);
+minimizer->SetVariable(4, "p4", results_sig_fit2[1], 0.01 * range);
+minimizer->SetVariable(5, "p5", results_sig_fit2[2], 0.03);
 
-      if (r_tot->IsValid())
-      {
-    #ifdef DEBUGMSG
-        r_tot->Print("V"); //prints the info of the fit
-        TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
-    #endif
-        cout << MAGENTA << "Fit successful!" << endlr;
-      }
+  bool fitSuccess_sig_fittot = minimizer->Minimize();
 
-      else {
-        cout << RED << "Fit failed." << endlr;
-        //cin.get(); //press enter to continue
-
-        // Open a file to write the failed event number
-        ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
-
-        if (failedEventsFile.is_open()) {
-          failedEventsFile << "Event " << evNo << " failed to fit." << endl;
-          failedEventsFile.close();
-        } else {
-          cerr << "Unable to open file to write failed event." << endl;
-        }
-      }
-
-  bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
-  par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
-
-#ifdef DEBUGMSG
-  if(doubleSigmoidfitSuccess) {
-    cout<<GREEN<<"Fit successful!"<<endlr;
+  if(fitSuccess_sig_fittot) {
+    const double *results_sig_fittot = minimizer->X();
+    for (int i = 0; i<6; i++) {
+      par->sigmoidtot[i] = results_sig_fittot[i];
+    }
+    cout<<MAGENTA<<"Fit successful!"<<endlr;
+    minimizer->PrintResults();
   }
   else {
-    cout<<RED<<"Fit failed."<<endlr;
+    cout << RED << "Fit failed." << endlr;
+    ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
+    if (failedEventsFile.is_open()) {
+      failedEventsFile << "Event " << evNo << " failed to fit." << endl;
+      failedEventsFile.close();
+    } else {
+      cerr << "Unable to open file to write failed event." << endl;
+    }
+
   }
-#endif
-  double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
+
+  par->chi2_doubleSigmoid = minimizer->MinValue();
+  //bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
+  //par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
+//  // Print final parameter values with TF1 definition
+// #ifdef DEBUGMSG
+//   if(doubleSigmoidfitSuccess) {
+//     cout<<GREEN<<"Fit successful!"<<endlr;
+//   }
+//   else {
+//     cout<<RED<<"Fit failed."<<endlr;
+//   }
+// #endif
+  //double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
   //par->echargefit =  abs(fit_integral) / 50;
+
+  // Calculate the fit integral
+  double fit_integral = 0;
+  int num_points = 1000;
+  double step = (sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min) / num_points;
+  const double *integrate_results = minimizer->X();
+
+  for (int i = 0; i < num_points; i++) {
+    double x = sig_lim_min + i * step;
+    const double x_arr[] = {x};
+    fit_integral += fermi_dirac_sym_double(x_arr, integrate_results) * step;
+  }
+
   par->echargefit =  fit_integral;
 
   //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
   //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
   //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
 
-  return doubleSigmoidfitSuccess;
+  //return doubleSigmoidfitSuccess;
+  return fitSuccess_sig_fittot;
 
 }
 
