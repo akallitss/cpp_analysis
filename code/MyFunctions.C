@@ -1867,7 +1867,14 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
       minimizer->SetMaxIterations(10000);  // for GSL 
       minimizer->SetTolerance(1e-3);
-      minimizer->SetPrintLevel(1);  
+      minimizer->SetPrintLevel(1);
+
+
+      ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
+      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(100000);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-8);
+      ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
         //dt=arrt[1]-arrt[0];
         par->sig_start_pos = (int) (par->stime_pos - 1./dt ); // minus 1 ns
         while(par->sig_start_pos<tshift) par->sig_start_pos+=1;
@@ -1902,9 +1909,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
        
 
         TGraphErrors* sig_waveform = new TGraphErrors(points, x, y, erx, ery);
-        
+        gErrorIgnoreLevel = kError;
         TF1 *sig_fit =  new TF1("sig_fit",fermi_dirac,x[0],x[par->sig_end_pos], 4);
-        
+        gErrorIgnoreLevel = kInfo;
+
         double sig_pars[4];
      
         double y_half_point = 0.5*par->ampl;
@@ -1926,6 +1934,13 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(1, 0.05*range);
       sig_fit->SetParError(2, 0.05);
       sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
+  //Set parameter Limits
+
+  sig_fit->SetParLimits(1, par->sig_start_pos, par->maxtime_pos); // midpoint
+  sig_fit->SetParLimits(2, -5, 5);  // steepness left
+  sig_fit->SetParLimits(3, par->bsl, 0);  // baseline
+
+
 #ifdef DEBUGMSG
       for (int i = 0; i < 4; i++) {
         cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
@@ -1933,7 +1948,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       }
 #endif
 //Save the fit results and get the success of the fit
+  gErrorIgnoreLevel = kError;
+
       TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+
+  gErrorIgnoreLevel = kInfo;
 #ifdef DEBUGMSG
       cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
       for (int i = 0; i < 4; i++) {
@@ -1985,8 +2004,15 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
       minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
       minimizer->SetMaxIterations(10000);  // for GSL 
       minimizer->SetTolerance(1e-3);
-      minimizer->SetPrintLevel(1);  
-        //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
+      minimizer->SetPrintLevel(1);
+
+
+      ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
+      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(100000);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-8);
+      ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
+  //cout<<MAGENTA<<"Preparing for Sigmoind Fit" <<endlr;
         //dt=arrt[1]-arrt[0];
         par->sig_start_pos = (int) (par->stime_pos - 0.1/dt ); // minus 1 ns
         while(par->sig_start_pos<tshift) par->sig_start_pos+=1;
@@ -2017,9 +2043,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
        
 
         TGraphErrors* sig_waveform = new TGraphErrors(points, x, y, erx, ery);
-        
+
+
+
         TF1 *sig_fit =  new TF1("sig_fit",fermi_dirac,x[0],x[par->sig_end_pos], 4);
-        
         double sig_pars[4];
      
         double y_half_point = 0.5*par->ampl;
@@ -2041,6 +2068,11 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         sig_fit->SetParError(1, 0.05*range);
         sig_fit->SetParError(2, 0.05);
         sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
+
+
+        sig_fit->SetParLimits(1, par->sig_start_pos, par->maxtime_pos); // midpoint
+        sig_fit->SetParLimits(2, -5, 5);  // steepness left
+        sig_fit->SetParLimits(3, par->bsl, 0);  // baseline
 #ifdef DEBUGMSG
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
@@ -2048,7 +2080,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         }
 #endif
         //Save the fit results and get the success of the fit
+
         TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+
+
 #ifdef DEBUGMSG
         cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
         for (int i = 0; i < 4; i++) {
@@ -2370,7 +2405,12 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
     sig_fittot->SetParError(5, 0.03);
 
   // Set parameter limits
-
+//  sig_fittot->SetParLimits(0, par->ampl, 1.1*par->ampl); // Assuming negative amplitude
+    sig_fittot->SetParLimits(1, sig_lim_min, par->maxtime_pos); // midpoint
+    sig_fittot->SetParLimits(2, -5, 5);  // steepness left
+    sig_fittot->SetParLimits(3, par->bsl, 0);  // baseline
+    sig_fittot->SetParLimits(4, par->maxtime_pos, sig_lim_max2); // midpoint
+    sig_fittot->SetParLimits(5, -5, 5);  // steepness right
 
   bool any_zero = false;
   for (int i = 0; i < 6; i++) {
@@ -2396,6 +2436,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 #endif
 
   // gErrorIgnoreLevel = kError;
+
   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
   // gErrorIgnoreLevel = kInfo;
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
