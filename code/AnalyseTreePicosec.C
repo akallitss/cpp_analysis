@@ -938,7 +938,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   TH2D *h2dGoodPeaksAMPL[4];
 
 //   TH1D* hSparkEvolution;
-cin.get();
+//cin.get();
 
   char hname[200], htitle[200], axtitle[200];
   
@@ -1192,7 +1192,6 @@ cin.get();
 //   if (oscsetup->AmplifierNo[i]==5) eventNo=2000; ///skip first events because of the time change in the osciloscope.
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
-  //while (eventNo<nevents)
 
   int successfulFits_sigmoid = 0;
   int totalFits_sigmoid = 0;
@@ -1200,7 +1199,8 @@ cin.get();
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  while (1 && eventNo<200000)
+//  while (1 && eventNo<200000)
+  while (eventNo<nevents)
   {
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
