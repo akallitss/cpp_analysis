@@ -451,7 +451,9 @@ int FitaGraph(double* x, double*y, int nbins, double* par, double endval)
    //int npar=0;
    TGraph* gr=new TGraph(nbins,x,y);
    TF1 *f2= new TF1("FitChi2","pol9",0.001,endval);
-   gr->Fit(f2,"NB0Q","",0.001,endval);
+  gErrorIgnoreLevel = kError;
+     gr->Fit(f2,"NB0Q","",0.001,endval);
+  gErrorIgnoreLevel = kInfo;
    for (int i=0;i<f2->GetNpar();i++)
      par[i] = f2->GetParameter(i);
    return (f2->GetNpar());
@@ -695,7 +697,9 @@ int GetProjectionTParameters(TH2D* histo2d, double* mean, double* sigma, double*
 //        double maxy=proj->GetBinLowEdge(nbins-1);
 /// /////////gaus is here!!!!!!       
        TF1* f1 = new TF1("gauss","gaus",miny,maxy);
-       proj->Fit(f1,"QRW0");
+      gErrorIgnoreLevel = kError;
+         proj->Fit(f1,"QRW0");
+      gErrorIgnoreLevel = kInfo;
        
        sigma[gpoints] = (2.3*f1->GetParameter(2)) / f1->GetParameter(1);
 //        sigma[gpoints] = (f1->GetParameter(2));
@@ -1909,10 +1913,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
        
 
         TGraphErrors* sig_waveform = new TGraphErrors(points, x, y, erx, ery);
+  cout<<YELLOW<<"HERE IS THE fitiing SIFIT!" << endl;
         gErrorIgnoreLevel = kError;
         TF1 *sig_fit =  new TF1("sig_fit",fermi_dirac,x[0],x[par->sig_end_pos], 4);
         gErrorIgnoreLevel = kInfo;
-
+  cout<<YELLOW<<"HERE IS THE fitiing SIFIT!" << endlr;
         double sig_pars[4];
      
         double y_half_point = 0.5*par->ampl;
@@ -2080,9 +2085,11 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         }
 #endif
         //Save the fit results and get the success of the fit
-
+  cout<<BLUE<<"HERE IS THE fitiing SIFIT MCP!" << endl;
+  gErrorIgnoreLevel = kError;
         TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
-
+  gErrorIgnoreLevel = kInfo;
+  cout<<BLUE<<"HERE IS THE fitiing SIFIT MCP!" << endlr;
 
 #ifdef DEBUGMSG
         cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
@@ -2324,7 +2331,18 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
    */
 
         // Perform the fit
-        TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
+  // cout the fit parameters, errors and limits for variable 1 and 2
+  cout << GREEN << "Initial parameters for sig_fit2:" << endlr;
+  for (int i = 0; i < 4; i++) {
+    cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
+         << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
+  }
+  cout<<RED<<"HERE IS THE fitiing SIFIT2!" << endl;
+  cin.get();
+  gErrorIgnoreLevel = kError;
+          TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
+  gErrorIgnoreLevel = kInfo;
+  cout<<RED<<"HERE IS THE fitiing SIFIT2!" << endlr;
         //Debugging the fit
         if (r->IsValid())
           {
@@ -2439,7 +2457,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
   // gErrorIgnoreLevel = kInfo;
-  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
+  gErrorIgnoreLevel = kError;
+    TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "VMR0S");
+  gErrorIgnoreLevel = kInfo;
   sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
   sig_fittot->SetLineColor(kRed);
 

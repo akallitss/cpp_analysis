@@ -1998,6 +1998,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       
   } /// end of the tree while (eventNo < nevents)
+	cout<<MAGENTA<<"End of event loop"<<endlr;
+	cin.get();
 
 	for (int ci = 0; ci < 4; ++ci) {
 		cout<<"Total number of pulses in channel "<<ci+1<<" = "<<ntrigsTot[ci]<<endl;
