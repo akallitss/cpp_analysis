@@ -1813,7 +1813,8 @@ double fermi_dirac_sym_1(double *x, double *par)
 }
 double fermi_dirac_sym_double(double *x, double *par)
 {
-    double fdreturn = (par[0]/(1.+TMath::Exp(-par[2]*(x[0]-par[1])))+par[3])*(1./(1.+TMath::Exp(-par[5]*(x[0]-par[4]))));
+    // double fdreturn = (par[0]/(1.+TMath::Exp(-par[2]*(x[0]-par[1])))+par[3])*(1./(1.+TMath::Exp(-par[5]*(x[0]-par[4]))));
+    double fdreturn = (par[0]/(1.+TMath::Exp(-par[2]*(x[0]-par[1]))))*(1./(1.+TMath::Exp(-par[5]*(x[0]-par[4]))))+par[3];
     //double fdreturn = par[0]/(1+TMath::Exp((x[0]-par[1])*par[2]))+par[3];
     return fdreturn;
 }
