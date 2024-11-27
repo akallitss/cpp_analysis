@@ -1506,6 +1506,62 @@ cin.get();
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
+#ifdef DEBUGMSG
+      	// cout all sampl and dsampl
+
+  //     	cout << "Event data:" << endl;
+  //     	cout << "const int points = " << maxpoints << ";" << endl;
+  //     	cout << "dt: " << dt << endl;
+		// cout << "double data[" << maxpoints << "] = {";
+  //     	for (int i = 0; i < maxpoints; ++i) {
+  //     		cout << fixed << setprecision(6) << sampl[i];
+  //     		if (i < maxpoints - 1) cout << ", ";
+  //     	}
+  //     	cout << "};" << endl;
+	 //
+  //     	cout << "double drv[" << maxpoints << "] = {";
+  //     	for (int i = 0; i < maxpoints; ++i) {
+  //     		cout << fixed << setprecision(6) << dsampl[i];
+  //     		if (i < maxpoints - 1) cout << ", ";
+  //     	}
+  //     	cout << "};" << endl;
+
+      	// Open a file to write the data
+      	if(ci == 1) {
+      		ofstream outFile("waveform_data.txt");
+      		if (!outFile) {
+      			cerr << "Error: Could not open file for writing!" << endl;
+      			return 1;
+      		}
+
+      		// Write event metadata
+      		outFile << "Event data:\n";
+      		outFile << "const int points = " << maxpoints << ";\n";
+      		outFile << "dt: " << dt << "\n";
+      		outFile << "RMS: " << ppar->rms << "\n";
+      		outFile << "BSL: " << ppar->bsl << "\n";
+
+      		// Write the sampl array
+      		outFile << "double data[" << maxpoints << "] = {";
+      		for (int i = 0; i < maxpoints; ++i) {
+      			outFile << fixed << setprecision(6) << sampl[i];
+      			if (i < maxpoints - 1) outFile << ", ";
+      		}
+      		outFile << "};\n";
+
+      		// Write the dsampl array
+      		outFile << "double drv[" << maxpoints << "] = {";
+      		for (int i = 0; i < maxpoints; ++i) {
+      			outFile << fixed << setprecision(6) << dsampl[i];
+      			if (i < maxpoints - 1) outFile << ", ";
+      		}
+      		outFile << "};\n";
+
+      		// Close the file
+      		outFile.close();
+      		cout << "Waveform data written to waveform_data.txt" << endl;
+      	}
+#endif
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
       	if (ti < maxpoints-50) {
