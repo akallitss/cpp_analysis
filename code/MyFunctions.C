@@ -1973,17 +1973,9 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         }
       }
 
-
-      // if(SigmoidfitSuccess) {
-      //     par->sigmoid_success = 1;
-      // }
-      // else {
-      //     par->sigmoid_success = 0;
-      // }
-
-        par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
-        //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
-        par->chi2_sigmoid = sig_fit->GetChisquare();
+      par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
+      //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
+      par->chi2_sigmoid = sig_fit->GetChisquare();
 
 #ifdef DEBUGMSG
   cout << "chi2 sigmoid " << par->chi2_sigmoid << endl;
@@ -2210,9 +2202,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
 
       ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
-      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(1000);
-      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(1000);
-      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-4);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(1000000);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-5);
       ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
        int points;
@@ -2280,7 +2272,6 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
       double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
 
-
       /// double sigmoid fit here
       double sig_lim_min2 = par->maxtime_pos*dt;
       // double sig_lim_max2 = par->maxtime_pos*dt+(1.5); //ns
@@ -2322,8 +2313,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
         sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
 
-
-  /* //Debugging the fit parameters
+#ifdef DEBUGMSG
+   //Debugging the fit parameters
 
           // Print initial parameter values and errors, and set step sizes
           cout << GREEN << "Initial parameters BEFORE Fitting for sig_fit2:" << endlr;
@@ -2349,8 +2340,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
               cout << "  Setting step size for parameter " << i << " to " << stepSize << endlr;
             }
           }
-   */
 
+#endif
         // Perform the fit
         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
         //Debugging the fit
@@ -2374,8 +2365,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
                << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
         }
-#endif
-      /*
+
       cout << "Fit Result:" << endl;
       cout << "Chi-square: " << r->Chi2() << endl;
       cout << "NDF: " << r->Ndf() << endl;
@@ -2384,22 +2374,22 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //sig_waveformd->Fit("sig_fit2", "QMR0S");
       //sig_waveformd->Fit("sig_fit2", "QMR0S");
       cout<<MAGENTA<<"HERE IS THE fitiing SIFIT2!" << endlr;
-      */
+
+ #endif
       sig_fit2->SetRange(sig_lim_min-3.,sig_lim_max2+10.);
       sig_fit2->SetLineColor(kCyan);
 
 
       for (int i=0;i<4; i++)
         par->sigmoidF[i] = sig_fit2->GetParameter(i);
-
+#ifdef DEBUGMSG
  //Debugging the fit
-      /*
-      TCanvas *c = new TCanvas("c", "Fit Result", 800, 600);
-      sig_waveformd->Draw("AP");
-      sig_fit2->Draw("same");
-      c->SaveAs("fit_result.png");
-      */
-
+      // TCanvas *c = new TCanvas("c", "Fit Result", 800, 600);
+      // sig_waveformd->Draw("AP");
+      // sig_fit2->Draw("same");
+      // c->SaveAs("fit_result.png");
+      //
+#endif
 
       //cout<<RED<<"HERE IS THE ERROR SIFIT2!" << endlr;
 
@@ -2414,6 +2404,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   //   cout << "Parameter " << i << ": " << sig_fit1->GetParameter(i)
   //        << " (error: " << sig_fit1->GetParError(i) << ")" << endlr;
   // }
+
   TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
       for (int i=0;i<4;i++)
         sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
@@ -2431,6 +2422,11 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
     sig_fittot->SetParError(5, 0.03);
 
   // Set parameter limits
+  sig_fittot->SetParLimits(1, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION); // Assuming positive midpoint
+  sig_fittot->SetParLimits(2, -5, 5);  // Assuming negative steepness
+  sig_fittot->SetParLimits(4, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION); // Assuming positive midpoint
+  sig_fittot->SetParLimits(5, -5, 5);  // Assuming negative steepness
+
 
 
   bool any_zero = false;
@@ -2456,11 +2452,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   }
 #endif
 
+  double fit_double_start_point = sig_lim_min;
+  double fit_double_end_point = sig_lim_max2+2.6;
   // gErrorIgnoreLevel = kError;
   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
   // gErrorIgnoreLevel = kInfo;
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "MR0S");
-  sig_fittot->SetRange(sig_lim_min,sig_lim_max2+2.6);
+  sig_fittot->SetRange(fit_double_start_point,fit_double_end_point);
   sig_fittot->SetLineColor(kRed);
 
 
@@ -2535,7 +2533,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   stats2->AddText(Form("Param 1: %.3f #pm %.3f", sig_fitd->GetParameter(1), sig_fitd->GetParError(1)));
   stats2->AddText(Form("Param 2: %.3f #pm %.3f", sig_fitd->GetParameter(2), sig_fitd->GetParError(2)));
   stats2->AddText(Form("Param 3: %.3f #pm %.3f", sig_fitd->GetParameter(3), sig_fitd->GetParError(3)));
-  stats2->AddText(Form("Chi2/NDF: %.3f", sig_fitd->GetChisquare() / sig_fitd->GetNDF()));
+  //stats2->AddText(Form("Chi2/NDF: %.3f", sig_fitd->GetChisquare() / sig_fitd->GetNDF()));
 
   stats2->Draw();
 
@@ -2585,6 +2583,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
+  par->e_peak_end_pos = fit_double_end_point;
+
+
 
   //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
   //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
@@ -2593,23 +2594,6 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   return doubleSigmoidfitSuccess;
 
 }
-
-bool isdoubleSigmoidfitSuccessful(TFitResultPtr r) {
-  if (r->IsValid()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool isSigmoidfitSuccessful(TFitResultPtr r) {
-  if (r->IsValid()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 
 //This is the original Draw Function
 void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPARAM* par, int evNo, TCanvas *sigcanv)
@@ -2678,6 +2662,23 @@ void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPA
       sig_fit1->SetLineColor(kYellow+2);
       sig_fit1->Draw("L SAME");
 
+}
+
+
+bool isdoubleSigmoidfitSuccessful(TFitResultPtr r) {
+  if (r->IsValid()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool isSigmoidfitSuccessful(TFitResultPtr r) {
+  if (r->IsValid()) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 
@@ -2866,6 +2867,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   // cin.get();
 
   par->charge=0.;
+  par->echarge=0.;
+  par->ioncharge=0.;
   for (int i=par->stime_pos;i<=par->ftime_pos;i++)
     par->charge+=data[i];
 
@@ -2890,7 +2893,14 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
                 break;
     }
    }
-  //cin.get();
+//Calculate the charge from the start to the end of the electron peak
+  for (int i = par->stime_pos ; i<par->e_peak_end_pos; i++)
+  {
+    par->charge +=data[i];
+  }
+  // cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_point ="<< par->e_peak_end_pos*dt<<endlr;
+  // cin.get();
+
 
   //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
     // cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
@@ -2934,7 +2944,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     // Epeak charge calculation and Fit Success check
       bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, sig_shift, tshift);
       par->doubleSigmoidfitSuccess = doubleSigmoidfitSuccess;
-
+//Calculate the epeak charge in a fixed window of 6ns after the peak
       par->echargefixed = 0;
       double epeak_charge_fixed_position = 0;
       epeak_charge_fixed_position = par->stime_pos+CIVIDEC_PEAK_DURATION/dt;
@@ -2942,6 +2952,13 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
         //integrate the waveform
         par->echargefixed += data[i];
       }
+//Calculate the charge of the ion tail
+      for (int i = par->e_peak_end_pos/dt; i<par->ftime_pos; i++)
+      {
+        par->ioncharge +=data[i];
+      }
+       cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_point ="<< par->e_peak_end_pos/dt<<endlr;
+       cin.get();
       // cout<<RED<< "Epeak Charge FIXED on 6ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Epeak Charge fit: "<<par->echargefit<<endlr;
       // cin.get();
@@ -2961,6 +2978,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       par->ampl*=-1.;
       par->charge*=-1.*dt;   ///charge is calculated in V * ns.
       par->totchargefixed*=-1.*dt; ///charge is calculated in V * ns.
+      par->ioncharge*=-1.*dt; ///charge is calculated in V * ns.
       par->risecharge*=-1.*dt;
       par->risetime = (par->t90-par->t10)*dt;
       par->echargefit *= -1.*dt;  ///calculated from the integral of the fit V * ns.
