@@ -1606,13 +1606,13 @@ int AnalyseLongPulse(int points, double* data, double* drv, PEAKPARAM *par, doub
   
   for (int i=par->t10; i>0; i--)
   {
-//     cout<<data[i]<<"  "<<fabs(drv[i])<<"   "<<threshold<<endl;
+    cout<<data[i]<<"  "<<fabs(drv[i])<<"   "<<threshold<<endl;
     par->stime_pos=i;
 //     if (i<tpoint)
 //     {
 //       par->charge+=data[i];
 //     }
-    if (data[i]>threshold/5. || (fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) )
+    if (data[i]>threshold/5. || ((fabs(drv[i])<=drvtrig && data[i]>threshold*0.8 ) ) )
     {
       par->stime_pos=i;
       break;
@@ -2694,8 +2694,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   int ntrig=0;
   int tpoint=0;
 
-  double drv_start_trig = -0.05;
-  drv_start_trig = -threshold;
+  double drv_start_trig = -0.0025;  /// emperical
+//   drv_start_trig = -threshold;
   double drv_end_trig = 0.00002;
   double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
   //double drv_end_trig = 0.002;
@@ -2800,13 +2800,13 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 //find start point
   for (int i=(int) par->t10; i>0; i--)
   {
-//     cout<<data[i]<<"  "<<fabs(drv[i])<<"   "<<threshold<<endl;
+    cout<<MAGENTA<<i<<"  "<<i*dt<<"  "<<data[i]<<"  "<<drv[i]<<"   "<<drv[i]*drv[tpoint]<<"   "<<threshold<<endlr;
     par->stime_pos=i;
 //     if (i<tpoint)
 //     {
 //       par->charge+=data[i];
 //     }
-    if (data[i]>threshold/5. || fabs(drv[i])<=drv_end_trig ) // && data[i]>threshold*0.8 ) )
+    if (data[i]>threshold/5. || (fabs(drv[i])<=drv_end_trig || drv[i]*drv[tpoint]<0 ) ) // && data[i]>threshold*0.8 ) )
     {
       par->stime_pos=i;
       break;
