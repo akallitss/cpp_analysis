@@ -49,6 +49,18 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
 
   gROOT->LoadMacro("MyFunctions.C");
   
+  bool activeDraw[]={0,0,0,0};
+  if (draw)
+  {
+     int whichchannel=0;
+     cout<<RED<<"  which channel is active for drawing? \n 1-4 or 0 for all --------> " ;
+     cin>>whichchannel;
+     if (whichchannel>=1 && whichchannel<=4)
+       activeDraw[whichchannel-1]=kTRUE;
+     else
+       for (int i=0;i<4;i++)
+       activeDraw[i]=kTRUE;
+  }
   
 
   threshold/=1000.;   /// make it in V
@@ -611,7 +623,7 @@ cout<<"________________++_________________" << endl;
       for (int i=0; i<4; i++)
       {
         TString channel = TString::Itoa(i+1,10);        
-        if (active[i]==1)
+        if (active[i]==1 && activeDraw[i])
         {
             evdcanv[i] = new TCanvas("EventDisplayC"+channel,"Event display C"+channel,800*2,600*3);
             //evdcanv[i]->SetGrid(1,1);
@@ -620,8 +632,6 @@ cout<<"________________++_________________" << endl;
             //fitcanv[i]->SetGrid(1,1);
             fitcanv[i]->Divide(1,3);
         }
-
-        if (!active[i]) continue;
 
       }
 //     ecanv = new TCanvas("EventDisplay","Event display");
@@ -1251,6 +1261,10 @@ cin.get();
   for (int ci = 0; ci < 4; ++ci)
   {
       if (!active[ci]) continue;
+      
+      if (draw)
+        if (!activeDraw[ci]) continue;
+        
       peTh = Thresholds[ci];
 
       ntrigs = 0;
@@ -1317,9 +1331,11 @@ cin.get();
 
 
 ///  Smoothing array when no "bit filter" !!!!
+      int nsmooth = 33;
+      SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
 
       evdcanv[ci]->cd(2); gPad->SetGrid(1,1);
-      DerivateArray(amplC[ci],dampl[ci],maxpoints,dt,npt,1); ///with the number of points
+      DerivateArray(samplC,dampl[ci],maxpoints,dt,npt,1); ///with the number of points
       double maxelement_dampl[4]= {0,0,0,0};
       maxelement_dampl[ci] = TMath::MaxElement(maxpoints, dampl[ci]);
       double minelement_dampl[4] = {0,0,0,0};
@@ -1342,9 +1358,8 @@ cin.get();
 
 ///  Derivate smoothed signals for analysis  (may not be used...)
       cout<<BLUE<< "Smooting start"<<endlr;
-      int nsmooth = 33;
     //if (oscsetup->AmplifierNo[ci]==1) nsmooth = 3;
-      SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
+// //       SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
       //cout<<RED<<"Ready to derivate smoothed array"<<endlr;
       DerivateArray(samplC,dsampl,maxpoints,dt,npt,1);
       //cout<<YELLOW<<"Ready to plot Smoothed derivative"<<endlr;
