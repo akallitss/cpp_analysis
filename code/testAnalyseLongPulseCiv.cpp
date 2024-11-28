@@ -25,7 +25,6 @@
 #include <TObjString.h>
 #include<TMultiGraph.h>
 #include<TClonesArray.h>
-//#include "MyFunctions.h" // Include your header file
 #include "MyFunctions.C"
 
 #include <fstream>
@@ -62,14 +61,6 @@ void testAnalyseLongPulseCiv() {
     gStyle->SetNdivisions(507);
     gStyle->SetMarkerSize(100);
 
-    // Set up global style to show fit stats
-//    gStyle->SetOptFit(1111); // Show full fit statistics
-//    gStyle->SetStatX(0.9);   // Place stats box on the top-right
-//    gStyle->SetStatY(0.9);
-
-    // Allocate memory for data and drv
-//    double data[points];
-//    double drv[points];
 
     // Open the file for reading
     std::ifstream inFile("/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt");
@@ -135,23 +126,15 @@ void testAnalyseLongPulseCiv() {
     }
     std::cout << std::endl;
 
-    // Generate synthetic waveform
-//    for (int i = 0; i < points; ++i) {
-//        double t = i * dt; // Time in microseconds
-//        // Example waveform: sum of a sine wave and a Gaussian pulse
-//        data[i] = -0.05 * sin(2 * M_PI * 50 * t) + exp(-0.5 * pow((t - 5) / 0.5, 2));
-//        drv[i] = 0.0; // Initialize drv to zero; it will be calculated during analysis
-//    }
 
     // Prepare PEAKPARAM structure
     PEAKPARAM par;
     par.Reset();
     par.rms = rms;
     par.bsl = bsl;
-    // Initialize fields of PEAKPARAM if necessary
 
     // Call the AnalyseLongPulseCiv function
-    int evNo = 1; // Example event number
+    int evNo = 27; // Example event number
     int result = AnalyseLongPulseCiv(points, evNo, data, dt, drv, &par, threshold, sig_shift, tshift);
 
     // Check result
@@ -161,25 +144,4 @@ void testAnalyseLongPulseCiv() {
     }
     std::cout << "Analysis succeeded, result: " << result << std::endl;
 
-    // Plot the waveforms
-//    TCanvas *c1 = new TCanvas("c1", "Waveform Analysis", 800, 600);
-//    TGraph *gData = new TGraph(points);
-//    TGraph *gDrv = new TGraph(points);
-//
-//    for (int i = 0; i < points; ++i) {
-//        gData->SetPoint(i, i * dt, data[i]);
-//        gDrv->SetPoint(i, i * dt, drv[i]);
-//    }
-//
-//    gData->SetTitle("Input and Processed Waveforms;Time (#mus);Amplitude");
-//    gData->SetLineColor(kBlue);
-//    gDrv->SetLineColor(kRed);
-//
-//    gData->Draw("AL");
-//    gDrv->Draw("L SAME");
-//
-//    c1->BuildLegend();
-//    c1->Update();
-
-//    cin.get(); // Wait for user input
 }
