@@ -29,16 +29,15 @@
 #include <TPaveStats.h>
 #include <TLatex.h>
 #include<TLegend.h>
+#include<TLine.h>
 #include<TMath.h>
 #include "Math/Minimizer.h"
 #include "Math/Factory.h"
-#include <Math/Functor.h>
-
 // // 	
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-// #undef DEBUGMSG
+//#undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
@@ -69,8 +68,9 @@ public:
    //double sechargefixed;
    //double secharge;
    double echargefixed;
-   //double echarge;
+   double echarge;
    double echargefit;
+   double ioncharge;
    double totchargefixed;
    double risetime;  ///10% - 90%
    double risecharge;
@@ -104,7 +104,7 @@ public:
     void Reset() {
       maxtime_pos = stime_pos = ftime_pos = e_peak_end_pos = sig_start_pos = sig_end_pos = tot_sig_end_pos = -111;
       maxtime = ampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
-      echargefixed = echargefit = totchargefixed = risetime = risecharge = width = -9999.;
+      echarge = echargefixed = echargefit = totchargefixed = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
         for (int i=0; i<10; i++) tot[i] = -999.;
         for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
@@ -333,14 +333,14 @@ const int MAX_N_FILES=11000;
  //const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/processedTrees";
  //const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/processedTrees/ParameterTrees";
 
-// const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code";
-// const char *BASEDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4";
-// const char *WORKDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/wdir";
-// const char *PLOTDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots";
-// const char *DATADIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/dataTrees";
-// const char *TRACKDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
-// const char *OUTDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
-// const char *PARAMDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
+// // const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code";
+// // const char *BASEDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4";
+// // const char *WORKDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/wdir";
+// // const char *PLOTDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots";
+// // const char *DATADIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/dataTrees";
+// // const char *TRACKDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
+// // const char *OUTDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
+// // const char *PARAMDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
 
 //const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code";
 //const char *BASEDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2023_April_h4";
@@ -373,26 +373,26 @@ const int MAX_N_FILES=11000;
 //local PC directories
 
 //
-// const char *CODEDIR="/diskb/picosec/2024/code";
-// const char *BASEDIRNAME="/diskb/picosec/2024/2022_October_h4";
-// const char *WORKDIR="/diskb/picosec/2024/2022_October_h4/wdir";
-// const char *PLOTDIR="/diskb/picosec/2024/2022_October_h4/plots";
-// const char *DATADIRNAME="/diskb/picosec/2024/2022_October_h4/dataTrees";
-// const char *TRACKDIRNAME="/diskb/picosec/2024/2022_October_h4/tracking";
-// const char *OUTDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees";
-// const char *PARAMDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees/ParameterTrees";
+const char *CODEDIR="/diskb/picosec/2024/code/code";
+const char *BASEDIRNAME="/diskb/picosec/2024/2022_October_h4";
+const char *WORKDIR="/diskb/picosec/2024/2022_October_h4/wdir";
+const char *PLOTDIR="/diskb/picosec/2024/2022_October_h4/plots";
+const char *DATADIRNAME="/diskb/picosec/2024/2022_October_h4/dataTrees";
+const char *TRACKDIRNAME="/diskb/picosec/2024/2022_October_h4/tracking";
+const char *OUTDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees";
+const char *PARAMDIRNAME="/diskb/picosec/2024/2022_October_h4/processedTrees/ParameterTrees";
 
 //
 // 
 // 
-const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
-const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4";
-const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/wdir";
-const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots";
-const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/dataTrees";
-const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
-const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
-const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
+// const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
+// const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4";
+// const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/wdir";
+// const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots";
+// const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/dataTrees";
+// const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
+// const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
+// const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
 //
 
 
@@ -551,7 +551,7 @@ double IntegrateA(int , double* , double* ,double );
 //void FindGlobalMaximum(double, int, float);
 double FindBaselineLevel(double*, int);
 double fermi_dirac_general(double*, double* );
-double fermi_dirac(const double*, const double *);
+double fermi_dirac(double*, double *);
 double fermi_dirac_generalsub(double *, double *);
 double slope_at_x(double*, int , int , double);
 
