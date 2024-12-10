@@ -948,7 +948,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   TH2D *h2dGoodPeaksAMPL[4];
 
 //   TH1D* hSparkEvolution;
-cin.get();
+// cin.get();
 
   char hname[200], htitle[200], axtitle[200];
   
