@@ -2193,16 +2193,16 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
 }
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
-      ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
-      //minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
-      minimizer->SetMaxFunctionCalls(10);
-      minimizer->SetMaxIterations(10000);  // for GSL
-      minimizer->SetTolerance(5e-4);
-      minimizer->SetPrintLevel(0);
-
+      // ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+      // //minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
+      // minimizer->SetMaxFunctionCalls(10);
+      // minimizer->SetMaxIterations(10000);  // for GSL
+      // minimizer->SetTolerance(5e-4);
+      // minimizer->SetPrintLevel(0);
+      //
 
       ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
-      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(1000000);
+      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
       ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
       ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-5);
       ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
