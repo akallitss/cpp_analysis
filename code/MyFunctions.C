@@ -2204,7 +2204,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
       ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
       ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
-      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-5);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-4);
       ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
        int points;
@@ -2454,10 +2454,10 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   double fit_double_start_point = sig_lim_min;
   double fit_double_end_point = sig_lim_max2+2.6;
-  // gErrorIgnoreLevel = kError;
-  // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
-  // gErrorIgnoreLevel = kInfo;
-  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "MR0S");
+  gErrorIgnoreLevel = kError;
+  TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
+  gErrorIgnoreLevel = kInfo;
+  // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "MR0S");
   sig_fittot->SetRange(fit_double_start_point,fit_double_end_point);
   sig_fittot->SetLineColor(kRed);
 
@@ -2697,7 +2697,8 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   double drv_start_trig = -0.0025;  /// emperical
 //   drv_start_trig = -threshold;
   double drv_end_trig = 0.00002;
-  double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
+  double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is
+                                                   // less than this fraction of the first pulse
   //double drv_end_trig = 0.002;
   if (threshold <0.0025)
     drv_end_trig = 0.000005;
@@ -2800,7 +2801,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 //find start point
   for (int i=(int) par->t10; i>0; i--)
   {
+#ifdef DEBUGMSG
     cout<<MAGENTA<<i<<"  "<<i*dt<<"  "<<data[i]<<"  "<<drv[i]<<"   "<<drv[i]*drv[tpoint]<<"   "<<threshold<<endlr;
+#endif
     par->stime_pos=i;
 //     if (i<tpoint)
 //     {
@@ -2898,18 +2901,16 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   {
     par->charge +=data[i];
   }
-  // cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_point ="<< par->e_peak_end_pos*dt<<endlr;
-  // cin.get();
 
-
-  //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
-    // cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
-    //
-    //  cout<<"CIVIDEC epeak pulse duration in points = "<<CIVIDEC_PEAK_DURATION/dt<<" or in ns = "<<CIVIDEC_PEAK_DURATION<<endl;
-    //  cout<<"trigger point "<<par->stime_pos<<endl;
-    //  cin.get();
-
-
+  #ifdef DEBUGMSG
+   cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_point ="<< par->e_peak_end_pos*dt<<endlr;
+   cin.get();
+ //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
+     cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
+     cout<<"CIVIDEC epeak pulse duration in points = "<<CIVIDEC_PEAK_DURATION/dt<<" or in ns = "<<CIVIDEC_PEAK_DURATION<<endl;
+     cout<<"trigger point "<<par->stime_pos<<endl;
+     cin.get();
+#endif
       par->totchargefixed = 0;
       double tot_charge_fixed_position = 0;
       tot_charge_fixed_position = par->stime_pos+CIVIDEC_PULSE_DURATION/dt;
@@ -2930,8 +2931,6 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 #ifdef DEBUGMSG
      cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
 #endif
-       //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
-
        par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
        //cout<<BLUE<<"NAIVE TIME = "<< par->tnaive20<<endlr;
        //cout<<"Sigmoid Timepoint = "<<par->tfit20<<endl;
@@ -2939,6 +2938,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
        //cout<<MAGENTA<<"NaiveTime, tfit20 =  "<< par->tfit20 <<endlr;
 #ifdef DEBUGMSG
      cout<<BLUE<<"Starting Double Sigmoid "<<endlr;
+     cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
 #endif
 
     // Epeak charge calculation and Fit Success check
@@ -2957,8 +2957,10 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       {
         par->ioncharge +=data[i];
       }
+      #ifdef DEBUGMSG
        cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_point ="<< par->e_peak_end_pos/dt<<endlr;
        cin.get();
+       #endif
       // cout<<RED<< "Epeak Charge FIXED on 6ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Epeak Charge fit: "<<par->echargefit<<endlr;
       // cin.get();
