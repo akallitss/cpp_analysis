@@ -75,7 +75,7 @@ int main(int argc, char *argv[]){
   
   if (poolNo==0)
 	sprintf(basedatapath,"%s/GDD",DATA_PATH_NAME);
-  else
+ else
     sprintf(basedatapath,"%s/Pool%d",DATA_PATH_NAME,poolNo);
     
 //     sprintf(basedatapath,"%s",argv[3]);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
       cout<<"Folder name = |"<<fnametmp<<"|"<<endl;
       int stst = sscanf(fnametmp,"Run%3d%30[^ /,\n\t]",&rtmp,ftypetmp);
       //       int stst = sscanf(fnametmp,"S%03d-%d-%d-%3f-%3f%30s",&rtmp,&vm,&vd,&Rd,&dgap,ftypetmp);
-      cout <<KGRN<<"___________________________________________________\n\narguments read = "<<stst<<endl;
+      cout <<KGRN<<"___________________________________________________\n\narguments read = "<<stargumentsst<<endl;
       filetype.assign(ftypetmp);
       cout<<"run = "<<rtmp<<" ("<<runNo<<")"<<endl;
       cout<<"amplifier = "<<dtmp<<endl;
