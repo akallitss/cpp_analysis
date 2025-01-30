@@ -606,11 +606,11 @@ cout<<"________________++_________________" << endl;
 /// follows a simple event display  - activate with draw = 1 in the input command
 /// graphs to draw ecent waveforms and derivatives / integrals
   TGraph* waveform;
-  TGraph* waveform2;
+//  TGraph* waveform2;
   TGraph* derivative;
   TGraph* derivative2; 
   TGraph* integralh;
-  TGraph* integralh2;
+  // TGraph* integralh2;
   TGraph* sig_waveform;
   TGraph* sig_d_waveform;
 /// canvades for the event display
@@ -1295,12 +1295,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     if (draw)
     {
-      cout<<endl<<"Entering 2nd if(draw)_________________________________________________"<<endl<<endl;;
+      cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
 
         cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
         long double epochX = (1.*epoch + nn*1e-9);
-    //  TTimeStamp *tstamp = new TTimeStamp((time_t)epoch+(rootConv-unixConv),(Int_t)nn);
         TTimeStamp *tstamp = new TTimeStamp(epochX+(rootConv-unixConv),0);
         printf("Event time : %s = %10.9Lf  DT = %10.9LF s = %10.7LF ms\n",tstamp->AsString("l"),epochX,epochX-drawdt,1000.*(epochX-drawdt));
         drawdt = epochX;
@@ -1309,7 +1308,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
         evdcanv[ci]->cd(1);gPad->SetGrid(1,1);
         waveform = new TGraph(maxpoints,ptime,amplC[ci]);
-        waveform2 = new TGraph(maxpoints,ptime,amplC[ci]);
+        //waveform2 = new TGraph(maxpoints,ptime,amplC[ci]);
         maxc[ci]=TMath::MaxElement(maxpoints,amplC[ci]);
         minc[ci]=TMath::MinElement(maxpoints,amplC[ci]); //the peak amplitude of the pulse
 	      sprintf(cname,"Event %d Waveform C%d\n",evNo,ci+1);
@@ -1331,14 +1330,20 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
 ///  Smoothing array when no "bit filter" !!!!
-      int nsmooth = 33;
-      SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
 
       evdcanv[ci]->cd(2); gPad->SetGrid(1,1);
-      DerivateArray(samplC,dampl[ci],maxpoints,dt,npt,1); ///with the number of points
       double maxelement_dampl[4]= {0,0,0,0};
-      maxelement_dampl[ci] = TMath::MaxElement(maxpoints, dampl[ci]);
       double minelement_dampl[4] = {0,0,0,0};
+      int nsmooth = 3;
+    	cout<<BLUE<< "Smooting starts here for: "<< npt <<" points"<<endlr;
+    	cout<<BLUE<<"                           "<<endlr;
+    	cout<<BLUE<<" data to Sampl"<<endlr;
+    	cout<<YELLOW<<"                           "<<endlr;
+    	cout<<YELLOW<<" Derivation of to Sampl to dampl"<<endlr;
+      SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
+      DerivateArray(samplC,dampl[ci],maxpoints,dt,npt,1); ///with the number of points
+
+      maxelement_dampl[ci] = TMath::MaxElement(maxpoints, dampl[ci]);
       minelement_dampl[ci] = TMath::MinElement(maxpoints, dampl[ci]);
       derivative = new TGraph(maxpoints,ptime,dampl[ci]); // the dapl arr has changed
       derivative2 = new TGraph(maxpoints,ptime,dampl[ci]);
@@ -1348,20 +1353,21 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       derivative->SetFillColor(0);
       derivative->SetTitle(cname);
       derivative->Draw("apl");
-      //derivative->SetMaximum(0.02);
-      //derivative->SetMinimum(-0.02);
       derivative->SetMaximum(maxelement_dampl[ci]+0.1);
       derivative->SetMinimum(minelement_dampl[ci]-0.1);
       evdcanv[ci]->Modified();
       evdcanv[ci]->Update();
       //continue;
-
 ///  Derivate smoothed signals for analysis  (may not be used...)
-      cout<<BLUE<< "Smooting start"<<endlr;
     //if (oscsetup->AmplifierNo[ci]==1) nsmooth = 3;
 // //       SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
       //cout<<RED<<"Ready to derivate smoothed array"<<endlr;
-      DerivateArray(samplC,dsampl,maxpoints,dt,npt,1);
+      cout<<RED<< "Smooting here for: "<< npt <<" points"<<endlr;
+      cout << RED << "                           " << endlr;
+      cout << RED << " data to Sampl" << endlr;
+      cout << YELLOW << "                           " << endlr;
+      cout << YELLOW << " Derivation of to Sampl to dsampl now" << endlr;;
+      DerivateArray(samplC, dsampl,maxpoints,dt,npt,1);
       //cout<<YELLOW<<"Ready to plot Smoothed derivative"<<endlr;
       TGraph *graph22 = new TGraph(maxpoints,ptime,dsampl);
       sprintf(cname,"Smoothed Derivative C%d\n",ci+1);
@@ -1400,7 +1406,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       maxd[ci]=TMath::MaxElement(maxpoints,iampl);
       mind[ci]=TMath::MinElement(maxpoints,iampl);
       integralh = new TGraph(maxpoints,ptime,iampl);
-      integralh2 = new TGraph(maxpoints,ptime,iampl);
+      // integralh2 = new TGraph(maxpoints,ptime,iampl);
       sprintf(cname,"Event %d - Integral %g of C%d\n",evNo, nint*dt,ci+1);
       integralh->SetMarkerColor(clr[ci+4]);
       integralh->SetLineColor(clr[ci+4]);
@@ -1409,20 +1415,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       integralh->SetMaximum(maxelement_dampl[ci]+0.1);
       integralh->SetMinimum(mind[ci]-0.1);
       integralh->Draw("apl");
-      //derivative2->SetMarkerColor(clr[ci+11]);
-      //derivative2->SetLineColor(clr[ci+11]);
-      //derivative2->SetFillColor(0);
-      //sprintf(cname,"Derivative C%d\n",ci+1);
-      //derivative2->SetTitle(cname);
-      //derivative2->Draw("pl");
       evdcanv[ci]->Modified();
       evdcanv[ci]->Update();
 
-      //intgr = IntegratePulse(maxpoints,amplC[ci],iampl,dt,50.);
       DTI2 = 1.5;
       nint = TMath::FloorNint(DTI2/dt)+1;;
       intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
-      //graph22 = new TGraph(maxpoints,ptime,iampl);
       TGraph *graph23 = new TGraph(maxpoints,ptime,iampl);
       sprintf(cname,"Event %d - Integral %g of C%d\n",evNo, nint*dt,ci+1);
       graph23->SetMarkerColor(clr[ci+10]);
@@ -1449,20 +1447,23 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   }///end (if(draw))
 
-    ///  subtract baseline it is done during the creation of the tree
-//     for (int i=0;i<maxpoints;i++)
-//       amplSum[i]-=bslC[ci];
-
     /// smooth sumn array for analysis
-    int nsmooth = 3;
-    if (oscsetup->AmplifierNo[ci]==1 || oscsetup->AmplifierNo[ci] == 3 )
+    int nsmooth = 1;
+  	//int nsmooth = 3;
+    if (oscsetup->AmplifierNo[ci]==1 || oscsetup->AmplifierNo[ci] == 3 ) // smoothing with 3 points
     {
         DT = 2.;
         nsmooth = 3;
         npt = TMath::FloorNint(DT/dt)+1; //2ns derivation window
     }
 //     if (oscsetup->AmplifierNo[ci]==1) nsmooth = 15;
-
+#ifdef DEBUGMSG
+  	cout<<BLUE<< "Smooting for analysis here : "<< npt <<" points"<<endlr;
+  	cout<<BLUE<<"                           "<<endlr;
+  	cout<<BLUE<<" data to Sampl"<<endlr;
+  	cout<<YELLOW<<"                           "<<endlr;
+  	cout<<YELLOW<<" Derivation of to ampl to dsampl"<<endlr;
+#endif
 
     SmoothArray(amplC[ci], sampl, maxpoints, nsmooth, 1);
 
@@ -1771,11 +1772,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       }
 
- /// 2nd IF DRAW
+ /// 3rd IF DRAW
       //----------------------
     if (draw)
 	{
-    cout<<endl<<"Entering 3rd if (draw)______________________________________________________________"<<endl<<endl;;
+    cout<<endl<<"Entering 3rd if (draw) after the analysis________________________"<<endl<<endl;;
 	  cout<<"Found "<<ntrigs<<" pulses "<<endl;
 
 	  evdcanv[ci]->cd(1);
@@ -1881,6 +1882,23 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     sprintf(cname,"Raw signal channel %d", evNo, ci+1);
     graphSum->SetTitle(cname);
     mg->Add(graphSum);
+
+    DTI2 = 150.; //time window for integration in ns
+    nint = TMath::FloorNint(DTI2/dt)+1; // make it int at >= of the setted time window
+    intgr = IntegratePulse(maxpoints,dampl[ci],iampl,dt,nint*dt);
+    integralh = new TGraph(maxpoints,ptime,iampl);
+    sprintf(cname,"Event %d - Integral Derivative %g of C%d\n",evNo, nint*dt,ci+1);
+    integralh->SetMarkerColor(clr[ci+1]);
+    integralh->SetMarkerStyle(7);
+    integralh->SetLineColor(clr[ci+1]);
+    integralh->SetFillColor(0);
+    integralh->SetLineWidth(2);
+    integralh->SetLineStyle(10);
+    integralh->SetTitle(cname);
+    //integralh->SetMaximum(maxelement_dampl[ci]+0.1);
+    //integralh->SetMinimum(mind[ci]-0.1);
+    mg->Add(integralh);
+
 /*
     double intgrA = IntegrateA(maxpoints,iampl,iamplC,nint*dt);
     TGraph *iwaveform3 = new TGraph(maxpoints,ptime,iamplC);
