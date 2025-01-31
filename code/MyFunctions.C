@@ -2133,8 +2133,32 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         cerr << "Unable to open file to write failed event." << endl;
       }
     }
+#ifdef DEBUGMSG
+      TCanvas *c1 = new TCanvas("c1-a", "Fit Result MCP", 1000, 800);
+      // sig_waveformd->SetMarkerColor(kRed); // Optional: Set a marker color
+      sig_waveform->Draw("AP");
+      sig_fit->Draw("same");
 
+      // Create a TPaveText to manually display the fit parameters
+      TPaveText *stats1 = new TPaveText(0.6, 0.7, 0.9, 0.9, "NDC"); // NDC: normalized coordinates
+      stats1->SetFillColor(0);  // Transparent background
+      stats1->SetTextAlign(12); // Align left
+      stats1->SetBorderSize(1);
 
+      // Add fit parameters manually (adjust based on your parameters)
+      stats1->AddText("Fit Parameters (sig_fit_mcp):");
+      stats1->AddText(Form("Param 0: %.3f #pm %.3f", sig_fit->GetParameter(0), sig_fit->GetParError(0)));
+      stats1->AddText(Form("Param 1: %.3f #pm %.3f", sig_fit->GetParameter(1), sig_fit->GetParError(1)));
+      stats1->AddText(Form("Param 2: %.3f #pm %.3f", sig_fit->GetParameter(2), sig_fit->GetParError(2)));
+      stats1->AddText(Form("Param 3: %.3f #pm %.3f", sig_fit->GetParameter(3), sig_fit->GetParError(3)));
+      stats1->AddText(Form("Chi2/NDF: %.3f", sig_fit->GetChisquare() / sig_fit->GetNDF()));
+
+      stats1->Draw();
+
+      c1->Update();
+      c1->SaveAs("fit_result_single_mcp.png");
+
+#endif
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
       //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
       par->chi2_sigmoid = sig_fit->GetChisquare();
