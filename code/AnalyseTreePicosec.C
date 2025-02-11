@@ -747,14 +747,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     Thresholds[i]=threshold;
     double rstep = (frmax[i]-frmin[i])/256.;
     cout<<GREEN<<"Rmin["<<i<<"] = "<<frmin[i]<<"  , Rmax = "<<frmax[i]<<"  step = "<<rstep*mV<<" mV"<<endl;
-    if (fabs(threshold)<3*rstep)
+	if (fabs(threshold)<3*rstep)
     {
         cout << "setting new threshold from "<< Thresholds[i] *mV <<" mV   to    ";
         Thresholds[i] = -floor(10000 * 3* rstep)/10000.;
         cout<<Thresholds[i]*mV<<" mV"<<endl;
 //         Thresholds[i]=threshold;
     }
-    amplMax[i]=(rstep*mV*256);
+	amplMax[i]=(rstep*mV*256);
   }
 
   double pwMax[4] = {40.,40.,40.,40.};
@@ -766,6 +766,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int dtbins = 800;
   double tmax = 0.002;  //  [ms]
 
+/// vvv This for loop makes threshold +0.02!!!
   for(int i=0;i<4;i++)
   {
   	if (Thresholds[i]>0)
@@ -809,7 +810,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     }
     else
       Thresholds[i] = 20/mV;
-  }    
+  }
+  /// ^^^ This for loop makes threshold +0.02!!!
 
   for(int i=0;i<4;i++)
   {
@@ -1578,6 +1580,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		cout << "Waveform data written to waveform_data.txt" << endl;
       	}
 #endif
+			cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
       	if (ti < maxpoints-50) {
