@@ -107,6 +107,7 @@ int IntegratePulse() {
 	double x_values[npoints];
     double x_Avg[npoints];
     // Array of tint values
+    // double tintValues[] = {1.0,20.0, 50.0, 100.0, 150.0};
     double tintValues[] = {1.0,20.0, 50.0, 100.0, 150.0};
     int nTint = sizeof(tintValues) / sizeof(tintValues[0]);
 
