@@ -1223,7 +1223,7 @@ double IntegrateA(int npoints, double* data, double* integral,double dt)
   return (sum);
 }
     
-double IntegratePulse(int npoints, const double* data, double* integral,double dt,double tint)
+double IntegratePulse(int npoints, const double* data, double* integral,double dt, double tint)
 {
 //   dt*=1e9;
   double sum=data[0]*dt;
@@ -2162,6 +2162,7 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
       //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
       par->chi2_sigmoid = sig_fit->GetChisquare();
+
   return SigmoidfitSuccess;
 
 
@@ -2201,6 +2202,7 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
     sigmoidFit->Draw("L SAME");
 
 
+
     
     if(sig_waveform!=0)
     {
@@ -2213,6 +2215,7 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
     //sig_canvas->SaveAs("sigmoid_fit_visualization.png");
     
     //cout<<"Sigmoid rise has been drawn for event "<<evNo<<endlr;
+
 
 }
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
@@ -2228,7 +2231,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
       ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
       ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
-      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-4);
+      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
       ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
        int points;
@@ -2542,6 +2545,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   c1->Update();
   c1->SaveAs("fit_result_single.png");
+  c1->SaveAs("fit_result_single.eps");
 
   TCanvas *c2 = new TCanvas("c2-a", "Fit Result", 1000, 800);
   sig_waveformd->Draw("AP");
@@ -2563,6 +2567,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   c2->Update();
   c2->SaveAs("fit_result_single_left.png");
+  c2->SaveAs("fit_result_single_left.eps");
 
   TCanvas *c3 = new TCanvas("c3-a", "Fit Result", 1000, 800);
   sig_waveformd->Draw("AP");
@@ -2585,6 +2590,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   c3->Update();
   c3->SaveAs("fit_result_tot.png");
+  c3->SaveAs("fit_result_tot.eps");
 
   // Print final parameter values
   cout << BLUE << "Final parameters for sig_fittot:" << endlr;
@@ -2714,6 +2720,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
 #endif
   if (points - tshift < 50) return -1;
+
+  cout << "Threshold = " << threshold << endlr;
+  cin.get();
   
   int ntrig=0;
   int tpoint=0;
@@ -2730,7 +2739,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   par->tot[0]=0;
 
   for (int i=tshift; i<points; i++)   {
-    if (data[i]<=threshold && drv[i]<drv_start_trig) {
+      //cout << i << "  data[i] = " << data[i] << " threshold = " << threshold << " drv[i] = " << drv[i] << " drv_start_trig = " << drv_start_trig << endlr;
+      if (i > 2500) break;
+      if (data[i]<=threshold && drv[i]<drv_start_trig) {
       tpoint = i;
       ntrig=1;
 //       par->tot[0]=1;
@@ -2758,6 +2769,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
   for (int i=tpoint; i<points; i++)
   {
+    // cout << "i = " << i << " data[i] = " << data[i] << " miny = " << miny << endlr;
     if (data[i]<miny)
     {
       par->ampl=data[i];
@@ -2769,6 +2781,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     }
     if (data[i]<=threshold || drv[i]<drv_start_trig)
     {
+      // cout << "data[i] = " << data[i] << " threshold = " << threshold << " drv[i] = " << drv[i] << " drv_start_trig = " << drv_start_trig << endlr;
       par->tot[0]++;
       par->ftime_pos=i; /// this is added to avoid a pulse at the end of the data that does not return to 0!!!
       // cout<<RED<<"Secondary pulse detected in event "<<evNo<<" derivative start point"<<par->ftime_pos<<endlr;
@@ -2776,6 +2789,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
     }
     else //if (data[i]>threshold)
     {
+      // cout << "data[i] = " << data[i] << " threshold = " << threshold << " drv[i] = " << drv[i] << " drv_start_trig = " << drv_start_trig << endlr;
       par->ftime_pos=i;
       par->tot[0]--;
       break;
