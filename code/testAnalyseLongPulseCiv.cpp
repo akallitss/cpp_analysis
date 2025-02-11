@@ -40,7 +40,8 @@ void testAnalyseLongPulseCiv() {
   // Parameters
     const int points = 10002; // Number of points in the waveform
 //    const double dt = 0.1;   // Time step in microseconds
-    const double threshold = -0.05; // Threshold for the trigger
+//    const double threshold = -0.05; // Threshold for the trigger
+    const double threshold = -0.015; // Threshold for the trigger
     const double sig_shift = 2.0;   // Signal shift for analysis
     const int tshift = 0;           // Time shift
     double dt = 0.0;
@@ -129,6 +130,34 @@ void testAnalyseLongPulseCiv() {
     }
     std::cout << std::endl;
 
+    // Plot the data  in root
+    TCanvas *c1 = new TCanvas("c1", "Waveform Data", 800, 800);
+    TGraph *graphData = new TGraph(points);
+    for (int i = 0; i < points; i++) {
+        graphData->SetPoint(i, i * dt, data[i]);
+    }
+    graphData->SetTitle("Waveform Data;Time [ns];Amplitude [V]");
+    graphData->SetLineColor(kBlack);
+    graphData->SetLineWidth(2);
+    graphData->Draw("AL");
+    graphData->GetXaxis()->SetRangeUser(0, points * dt);
+    graphData->GetYaxis()->SetRangeUser(-0.1, 0.1);
+    c1->Draw();
+
+//Plot the derivative
+    TCanvas *c2 = new TCanvas("c2", "Derivative Data", 800, 800);
+    TGraph *graphDrv = new TGraph(points);
+    for (int i = 0; i < points; i++) {
+        graphDrv->SetPoint(i, i * dt, drv[i]);
+    }
+    graphDrv->SetTitle("Derivative Data;Time [ns];Amplitude [V/ns]");
+    graphDrv->SetLineColor(kBlack);
+    graphDrv->SetLineWidth(2);
+    graphDrv->Draw("AL");
+    graphDrv->GetXaxis()->SetRangeUser(0, points * dt);
+    graphDrv->GetYaxis()->SetRangeUser(-0.1, 0.1);
+    c2->Draw();
+
 
     // Prepare PEAKPARAM structure
     PEAKPARAM par;
@@ -137,7 +166,8 @@ void testAnalyseLongPulseCiv() {
     par.bsl = bsl;
 
     // Call the AnalyseLongPulseCiv function
-    int evNo = 27; // Example event number
+    int evNo = 10; // Example event number
+
     int result = AnalyseLongPulseCiv(points, evNo, data, dt, drv, &par, threshold, sig_shift, tshift);
 
     // Check result
