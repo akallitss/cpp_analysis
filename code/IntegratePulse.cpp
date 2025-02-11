@@ -86,10 +86,12 @@ int IntegratePulse() {
 //        data[i] = 10 * TMath::Sin(0.1 * time) + 2 * gRandom->Gaus();
 //    }
     // File containing waveform data
-    string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+    // string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
 
+    string filename ="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
     // Variables to hold dt and data values
     double dt = 0.0;
+
     vector<double> dataValues;
 
     // Read the waveform data
