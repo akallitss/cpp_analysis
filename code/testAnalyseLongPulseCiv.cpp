@@ -64,9 +64,9 @@ void testAnalyseLongPulseCiv() {
 
 
     // Open the file for reading
-    std::ifstream inFile("/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt");
+//   std::ifstream inFile("/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt");
 
-   // std::ifstream inFile("/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt");
+    std::ifstream inFile("/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt");
 
     if (!inFile) {
         std::cerr << "Error: Could not open file for reading!" << std::endl;
