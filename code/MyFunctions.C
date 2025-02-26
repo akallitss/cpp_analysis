@@ -2439,8 +2439,10 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fittot->SetParameter(3+1,sig_fit2->GetParameter(1));
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
 
+#ifdef DEBUGMSG
   cout<<" sig_lim_min = "<<sig_lim_min<<" sig_lim_max2 = "<<" Sigmoid extension "<<SIGMOID_EXTENTION<<endl;
-    double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
+#endif
+  double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
     sig_fittot->SetParError(0, 0.1*abs(sig_fit2->GetParameter(0)));
     sig_fittot->SetParError(1, 0.2*range);
     sig_fittot->SetParError(2, 0.02);
@@ -2720,10 +2722,10 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
 #endif
   if (points - tshift < 50) return -1;
-
+#ifdef DEBUGMSG
   cout << "Threshold = " << threshold << endlr;
   cin.get();
-  
+#endif
   int ntrig=0;
   int tpoint=0;
 
@@ -2753,6 +2755,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 #ifdef DEBUGMSG
   cout << RED << "Trigger point = " << tpoint << endlr;
+  cout << RED << "value = "<<data[tpoint]<<endlr;
 #endif
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
 
@@ -2799,6 +2802,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 #ifdef DEBUGMSG
   cout << BLUE << "Maxtime position = " << par->maxtime_pos << endlr;
   cout << BLUE << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
+  cout << BLUE << "TOT (points) = "<< par->tot[0] <<" = " <<par->tot[0]*dt<<" ns"<<endlr;
 #endif
   /// fast scan for risetime, risecharge and t_start
   par->t90=tpoint;

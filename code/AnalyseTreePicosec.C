@@ -769,8 +769,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 /// vvv This for loop makes threshold +0.02!!!
   for(int i=0;i<4;i++)
   {
-  	if (Thresholds[i]>0)
-  		Thresholds[i]*=-1;
 
     if(strncmp(DetName,"MCP",3)==0)
     {
@@ -810,6 +808,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     }
     else
       Thresholds[i] = 20/mV;
+
+  	if (Thresholds[i]>0)
+  		Thresholds[i]*=-1;
+
   }
   /// ^^^ This for loop makes threshold +0.02!!!
 
@@ -1212,8 +1214,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  while (1 && eventNo<200000)
-  {
+  // while (1 && eventNo<300)
+while (eventNo >= 250 && eventNo < nevents)
+	{
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
     cout << "Event number: " << eventNo << endl;
@@ -1460,7 +1463,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     }
 //     if (oscsetup->AmplifierNo[ci]==1) nsmooth = 15;
 #ifdef DEBUGMSG
-  	cout<<BLUE<< "Smooting for analysis here : "<< npt <<" points"<<endlr;
+  	cout<<BLUE<<" Event number =" << evNo <<" Smoothing for analysis here : "<< npt <<" points"<<endlr; //here is 20 points
   	cout<<BLUE<<"                           "<<endlr;
   	cout<<BLUE<<" data to Sampl"<<endlr;
   	cout<<YELLOW<<"                           "<<endlr;
@@ -1579,9 +1582,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile.close();
       		cout << "Waveform data written to waveform_data.txt" << endl;
       	}
+      	cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
+
 #endif
-			cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
-          ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
+      	  ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
       	if (ti < maxpoints-50) {
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
@@ -1962,9 +1966,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //         label2->SetLineColor(2);
 //         label2->Draw();
         line2->Draw();
-	      TLine *line3 = new TLine(spar[ci][i].ttrig,Thresholds[ci],spar[ci][i].ttrig+spar[ci][i].tot[0],Thresholds[ci]);
-// 	      TLatex *label3 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
-        line3->SetLineColor(3);
+	       TLine *line3 = new TLine(spar[ci][i].ttrig*dt,Thresholds[ci],spar[ci][i].ttrig*dt+spar[ci][i].tot[0],Thresholds[ci]);
+	  	//TLatex *label3 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
+#ifdef DEBUGMSG
+	  	cout<<"(x1,y1) = "<<spar[ci][i].ttrig<<" , "<<Thresholds[ci] << "  (x2,y2) = "<<spar[ci][i].ttrig+spar[ci][i].tot[0]<<" , "<<Thresholds[ci]<<endl;
+#endif
+	  	line3->SetLineColor(3);
 //         label3->SetLineColor(3);
 //         label3->Draw();
         line3->Draw();
