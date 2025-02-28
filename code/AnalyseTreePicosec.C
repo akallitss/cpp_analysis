@@ -1214,8 +1214,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  // while (1 && eventNo<300)
-while (eventNo >= 250 && eventNo < nevents)
+  while (1 && eventNo<300)
+// while (eventNo >= 250 && eventNo < nevents)
 	{
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
