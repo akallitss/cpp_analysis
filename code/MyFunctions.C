@@ -1883,12 +1883,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 #ifdef DEBUGMSG
           cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
           cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
+          cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
 #endif
           cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
-#ifdef DEBUGMSG
-          cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
          //           return (kFALSE);
-#endif
         }
 
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -2046,16 +2044,14 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         while(par->sig_end_pos>=maxpoints-50) par->sig_end_pos-=1;
 
         int Npoints = par->sig_end_pos - par->sig_start_pos+1; 
-        if(Npoints >100 || Npoints<=1) {
+        if(Npoints >100 || Npoints<=1) 
+        {
 #ifdef DEBUGMSG
           cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
-
           cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
-#endif
-          cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit MCP has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
-#ifdef DEBUGMSG
           cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
 #endif
+          cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit MCP has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
         }
           
 
@@ -2452,7 +2448,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 #ifdef DEBUGMSG
   cout<<" sig_lim_min = "<<sig_lim_min<<" sig_lim_max2 = "<<" Sigmoid extension "<<SIGMOID_EXTENTION<<endl;
 #endif
-  double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
+    double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
     sig_fittot->SetParError(0, 0.1*abs(sig_fit2->GetParameter(0)));
     sig_fittot->SetParError(1, 0.2*range);
     sig_fittot->SetParError(2, 0.02);
@@ -2510,8 +2506,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         r_tot->Print("V"); //prints the info of the fit
         TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
         cout << MAGENTA << "Fit successful!" << endlr;
-
-        #endif
+    #endif
       }
 
       else {
@@ -2731,12 +2726,12 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   ///pulses are considered negative!!!
 #ifdef DEBUGMSG
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
-#endif
-  if (points - tshift < 50) return -1;
-#ifdef DEBUGMSG
   cout << "Threshold = " << threshold << endlr;
   cin.get();
 #endif
+  if (points - tshift < 50) return -1;
+
+  
   int ntrig=0;
   int tpoint=0;
 
@@ -3081,8 +3076,6 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
   double drv_end_trig = 0.00002;
   double drv_second_pulse_fraction_trigger = 0.2;  // Look for second pulse, end first pulse if derivative is less than this fraction of the first pulse
   //double drv_end_trig = 0.002;
-  if (threshold <0.0025)
-    drv_end_trig = 0.000005;
 
   par->tot[0]=0;
   
@@ -3103,7 +3096,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
   if (ntrig<=0) return (-1); // cout<<"No trigger in event!"<<endl;
   
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
-  if (tpoint>=points-20) return (-1);
+  if (tpoint>=points-2/dt) return (-1);   /// 2 ns
 
   double miny = data[tpoint];
   double mindy = drv[tpoint];
@@ -3139,6 +3132,8 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
     }
     /// note down the point the signal has gone above the threshold
   }
+  
+  if (par->ftime_pos>=points-1) return (-1);   /// 2 ns
 
 #ifdef DEBUGMSG
   cout << BLUE << "Maxtime position MCP = " << par->maxtime_pos << endlr;
@@ -3204,7 +3199,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
   for (int i=par->ftime_pos; i<points; i++) {
     par->ftime_pos=i;
 
-    if (/*data[i]>threshold/5. || */(fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8))
+    if (/*data[i]>threshold/5. ||*/ (fabs(drv[i])<=drv_end_trig && data[i]>threshold*0.8))
     {
       //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
 
