@@ -319,7 +319,17 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
       cout<<"Vm = "<<vm[i]<<" , ";
       cout<<"Vd = "<<vd[i]<<endlr;
   }
-    
+
+  bool callibrationRun=kFALSE;
+
+  cout<<BLUE<<"SRS channel = "<<oscsetup->srsCh <<endlr;
+  if (oscsetup->srsCh<1 || oscsetup->srsCh>4)
+  {
+     cout<<RED<<"No or invalid SRS channel. Treat as callibration run."<< endlr;
+     callibrationRun = kTRUE;
+  }
+  
+  
   cout<<GREEN<<"Info tree OK..."<<endlr;
     
   RUNPAR *runpar = new RUNPAR;
@@ -733,7 +743,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   }
 
 
-  const double microsec = 1e-3;
+  const double microsec = 1e-3;  ///values are in ns by default. Multiply any number by this to convert to microsec
   const double msec = 1e-6;
   
   int nbins = 128;
@@ -772,14 +782,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     if(strncmp(DetName,"MCP",3)==0)
     {
-      Thresholds[i] = 2/mV;
+        Thresholds[i] = 5/mV;
+        rtMax[i]=1.;
+        pwMax[i]=2.;
+        totMax[i]=2.;
+        chMax[i]=amplMax[i]/mV*12.5;
     }
-    if (oscsetup->AmplifierNo[i]==1)
+    if (oscsetup->AmplifierNo[i]==1 || oscsetup->AmplifierNo[i]==4)
     {
-        rtMax[i]=10;
+        rtMax[i]=5;
         pwMax[i]=40;
-        totMax[i]=100;
-        chMax[i]=amplMax[i]*12.5;
+        totMax[i]=200;
+        chMax[i]=amplMax[i]/mV*12.5;
         Thresholds[i] = 20/mV;
     }
     else if (oscsetup->AmplifierNo[i]==3)
@@ -798,18 +812,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         chMax[i]=120*20;
         Thresholds[i] = 20/mV;
     }
-    else if (oscsetup->AmplifierNo[i]==4)
-    {
-        rtMax[i]=180*6;
-        pwMax[i]=600*6;
-        totMax[i]=600*6;
-        chMax[i]=120*20;
-        Thresholds[i] = 20/mV;
-    }
+//     else if (oscsetup->AmplifierNo[i]==4)
+//     {
+//         rtMax[i]=5;
+//         pwMax[i]=600*6;
+//         totMax[i]=600*6;
+//         chMax[i]=120*20;
+//         Thresholds[i] = 20/mV;
+//     }
     else
       Thresholds[i] = 20/mV;
-
-  	if (Thresholds[i]>0)
+    
+    if (Thresholds[i]>0)
   		Thresholds[i]*=-1;
 
   }
@@ -820,6 +834,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     double rstep = (frmax[i]-frmin[i])/256.;
     cout<<GREEN<<"Rmin["<<i<<"] = "<<frmin[i]<<"  , Rmax = "<<frmax[i]<<"  step = "<<rstep*mV<<" mV"<<endl;
+    cout<<"Treshold = "<<Thresholds[i]*mV<<" mV"<<endl;
     if (fabs(Thresholds[i])<3*rstep)
     {
         cout << "setting new threshold from "<< Thresholds[i] *mV <<" mV   to    ";
@@ -923,23 +938,23 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   TH1D *hPW[4];
   TH1D *hPD[4];
   TH1D *hDt[4];
-  TH1D *hGoodPeaksAMPL[4];
-  TH1D *hGoodPeaksCH[4];
-  TH1D *hGoodPeaksDt[4];
-  //TH1D *hGoodPeaksRT[4];
-  //TH1D *hGoodPeaksPW[4];
-  //TH1D *hGoodPeaksTOT[4];
-  TH1D *hGoodPeaksRate[4];
+  TH1D *hCutsAMPL[4];
+  TH1D *hCutsCH[4];
+  TH1D *hCutsDt[4];
+  //TH1D *hCutsRT[4];
+  //TH1D *hCutsPW[4];
+  //TH1D *hCutsTOT[4];
+  TH1D *hRateCuts[4];
   TH1D *hCHovAmpl[4];
   TH1D *hsCHovAmpl[4];
   TH1D *hRate[4];
   TH1D *hRateStructure[4];
-  TH1D *hStructTrigger[4];
+  TH1D *hSRStriggerStruct[4];
   TH1D *hRateEvolution[4];
   TH1D *hRateEvolutionCheck[4];
-  //TH1D *hGoodPeaksRateStructure[4];
-  TH1D *hGoodPeaksRateEvolution[4];
-  //TH1D *hGoodPeaksRateStructTrigger[4];//time corrected by trigger position
+  //TH1D *hCutsRateStructure[4];
+  TH1D *hRateEvolutionCuts[4];
+  //TH1D *hCutsRateStructTrigger[4];//time corrected by trigger position
   //TH1D *hBkgGoodPeaksRateEvolution[4];
 //   TH1D *hSparkEvolution[4];
   //   TH1D *hPD;
@@ -948,8 +963,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   TH2D *hCHvsAMPL[4];
   TH2D *hAmplvsPD[4];
   TH2D *hAmplvsRT[4];
-  //TH2D *h2dGoodPeaksCH[4];
-  TH2D *h2dGoodPeaksAMPL[4];
+  TH2D *h2dCutsCH[4];
+  TH2D *h2dCutsAMPL[4];
+  
+  TH2D *hXY[4];
+  TH2D *hXYcuts[4];
 
 //   TH1D* hSparkEvolution;
 // cin.get();
@@ -970,10 +988,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 // // Nphotons per pulse as found by rate evolution plot!!!
     sprintf(htitle,"Rate (photons per %gs) from evolution plot",period);
-    sprintf(hname,"Run%03d_pool%d_C%d_Rate_GoodPeaks_per%3.1fseconds_%s",runNo,poolNo,i+1,period,ftype);
-    hGoodPeaksRate[i]=new TH1D(hname,htitle,rbins,0.,rmax);
+    sprintf(hname,"Run%03d_pool%d_C%d_Rate_Cuts_per%3.1fseconds_%s",runNo,poolNo,i+1,period,ftype);
+    hRateCuts[i]=new TH1D(hname,htitle,rbins,0.,rmax);
 //     sprintf(axtitle,"goodpeaks / %gsec",period);
-    hGoodPeaksRate[i]->GetXaxis()->SetTitle(axtitle);
+    hRateCuts[i]->GetXaxis()->SetTitle(axtitle);
 //     cout<<RED<<"Histo rate "<<i+1<<" ready"<<endlr;
 ///________________________________________________________________
 /// the following plots concern the neutron (and gamma) rate evolution 
@@ -995,17 +1013,17 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     
 // neutron average rate per pulse . Exclude spark events && correlated (pulse uncorrelated) goodpeaks    
     sprintf(hname,"Run%03d_pool%d_C%d_RateEvolutiongoodPeaks[ci]_%s",runNo,poolNo,i+1,ftype);
-    sprintf(htitle,"Rate evolution (single p.e.)");
-    hGoodPeaksRateEvolution[i]=new TH1D(hname,htitle,tbins,epochS,epochF);
-    hGoodPeaksRateEvolution[i]->GetYaxis()->SetTitle("#LT events #GT / sec");
-    hGoodPeaksRateEvolution[i]->GetYaxis()->SetLabelSize(0.03);
-    hGoodPeaksRateEvolution[i]->GetYaxis()->SetTitleSize(0.04);
-    hGoodPeaksRateEvolution[i]->GetYaxis()->SetTitleOffset(1.3);
-    hGoodPeaksRateEvolution[i]->GetXaxis()->SetTimeDisplay(1);
-    hGoodPeaksRateEvolution[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
-    hGoodPeaksRateEvolution[i]->GetXaxis()->SetLabelSize(0.03);
-    hGoodPeaksRateEvolution[i]->GetXaxis()->SetLabelOffset(0.02);
-    hGoodPeaksRateEvolution[i]->SetMinimum(0);
+    sprintf(htitle,"Rate evolution (cuts)");
+    hRateEvolutionCuts[i]=new TH1D(hname,htitle,tbins,epochS,epochF);
+    hRateEvolutionCuts[i]->GetYaxis()->SetTitle("#LT events #GT / sec");
+    hRateEvolutionCuts[i]->GetYaxis()->SetLabelSize(0.03);
+    hRateEvolutionCuts[i]->GetYaxis()->SetTitleSize(0.04);
+    hRateEvolutionCuts[i]->GetYaxis()->SetTitleOffset(1.3);
+    hRateEvolutionCuts[i]->GetXaxis()->SetTimeDisplay(1);
+    hRateEvolutionCuts[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
+    hRateEvolutionCuts[i]->GetXaxis()->SetLabelSize(0.03);
+    hRateEvolutionCuts[i]->GetXaxis()->SetLabelOffset(0.02);
+    hRateEvolutionCuts[i]->SetMinimum(0);
 
     timebinwidth = hRateEvolution[i]->GetBinWidth(1);
     cout <<"Time bin = "<< timebinwidth<<endl;
@@ -1026,9 +1044,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     
      //sprintf(hname,"Run%03d_pool%d_C%d_RateStructure_GE_%s",runNo,poolNo,i+1,ftype);
      //sprintf(htitle,"Single p.e.");
-     //hGoodPeaksRateStructure[i]=new TH1D(hname,htitle,250,0.,framesize);
-     //hGoodPeaksRateStructure[i]->GetXaxis()->SetTitle("t [#mus]");
-     //hGoodPeaksRateStructure[i]->SetMinimum(0);
+     //hCutsRateStructure[i]=new TH1D(hname,htitle,250,0.,framesize);
+     //hCutsRateStructure[i]->GetXaxis()->SetTitle("t [#mus]");
+     //hCutsRateStructure[i]->SetMinimum(0);
 
     sprintf(hname,"Run%03d_pool%d_C%d_RateStructure_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"Single p.e.");
@@ -1038,8 +1056,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     
     sprintf(hname,"Run%03d_pool%d_C%d_TriggerStructure_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"SRS trigger ");
-    hStructTrigger[i]=new TH1D(hname,htitle,250,0.,framesize);
-    hStructTrigger[i]->SetLineColor(kGreen+2);
+    hSRStriggerStruct[i]=new TH1D(hname,htitle,250,0.,framesize);
+    hSRStriggerStruct[i]->SetLineColor(kGreen+2);
 
 ///________________________________________________________________
 ///  DeltaT plots 
@@ -1049,10 +1067,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hDt[i] = new TH1D(hname,htitle,dtbins,0.,tmax);
     hDt[i]->GetXaxis()->SetTitle("#DeltaT [sec]");
 
-    sprintf(hname,"Run%03d_pool%d_C%d_consecutivePulses_#DeltaT_GoodPeaks_%s",runNo,poolNo,i+1,ftype);
+    sprintf(hname,"Run%03d_pool%d_C%d_consecutivePulses_#DeltaT_Cuts_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"#DeltaT goodpeaks");
-    hGoodPeaksDt[i] = new TH1D(hname,htitle,dtbins,0.,tmax);
-    hGoodPeaksDt[i]->GetXaxis()->SetTitle("#DeltaT [sec]");
+    hCutsDt[i] = new TH1D(hname,htitle,dtbins,0.,tmax);
+    hCutsDt[i]->GetXaxis()->SetTitle("#DeltaT [sec]");
 
 ///________________________________________________________________
 ///  Amplitude plots 
@@ -1062,19 +1080,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]);
     hAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
 
-    sprintf(htitle,"Pulse amplitude (single p.e. cut)");
-    sprintf(hname,"Run%03d_pool%d_C%d_Amplitude_GoodPeaks_%s",runNo,poolNo,i+1,ftype);
-    hGoodPeaksAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]*mV);
-    hGoodPeaksAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    sprintf(htitle,"Pulse amplitude (cuts cut)");
+    sprintf(hname,"Run%03d_pool%d_C%d_Amplitude_Cuts_%s",runNo,poolNo,i+1,ftype);
+    hCutsAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]);
+    hCutsAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
     
     sprintf(htitle,"Pulse amplitude evolution C%d",i+1);
     sprintf(hname,"Run%03d_pool%d_C%d_AmplitudeEvolution_%s",runNo,poolNo,i+1,ftype);
-    h2dGoodPeaksAMPL[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,amplMax[i]);
-    h2dGoodPeaksAMPL[i]->GetXaxis()->SetTimeDisplay(1);
-    h2dGoodPeaksAMPL[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
-    h2dGoodPeaksAMPL[i]->GetXaxis()->SetLabelSize(0.03);
-    h2dGoodPeaksAMPL[i]->GetXaxis()->SetLabelOffset(0.02);
-    h2dGoodPeaksAMPL[i]->GetYaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dCutsAMPL[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,amplMax[i]);
+    h2dCutsAMPL[i]->GetXaxis()->SetTimeDisplay(1);
+    h2dCutsAMPL[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
+    h2dCutsAMPL[i]->GetXaxis()->SetLabelSize(0.03);
+    h2dCutsAMPL[i]->GetXaxis()->SetLabelOffset(0.02);
+    h2dCutsAMPL[i]->GetYaxis()->SetTitle("Pulse amplitude [mV]");
 
 ///________________________________________________________________
 ///  Charge plots 
@@ -1084,19 +1102,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
     hCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
     
-    sprintf(htitle,"Pulse charge (single p.e. cut)");
-    sprintf(hname,"Run%03d_pool%d_C%d_Charge_GoodPeaks_%s",runNo,poolNo,i+1,ftype);
-    hGoodPeaksCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
-    hGoodPeaksCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
+    sprintf(htitle,"Pulse charge (cuts cut)");
+    sprintf(hname,"Run%03d_pool%d_C%d_Charge_Cuts_%s",runNo,poolNo,i+1,ftype);
+    hCutsCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    hCutsCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
 
-    //sprintf(htitle,"Pulse charge evolution C%d",i+1);
-    //sprintf(hname,"Run%03d_pool%d_C%d_ChargeEvolution_%s",runNo,poolNo,i+1,ftype);
-    //h2dGoodPeaksCH[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,chMax[i]);
-    //h2dGoodPeaksCH[i]->GetXaxis()->SetTimeDisplay(1);
-    //h2dGoodPeaksCH[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
-    //h2dGoodPeaksCH[i]->GetXaxis()->SetLabelSize(0.03);
-    //h2dGoodPeaksCH[i]->GetXaxis()->SetLabelOffset(0.02);
-    //h2dGoodPeaksCH[i]->GetYaxis()->SetTitle("charge [a.u.]");
+    sprintf(htitle,"Pulse charge evolution C%d",i+1);
+    sprintf(hname,"Run%03d_pool%d_C%d_ChargeEvolution_%s",runNo,poolNo,i+1,ftype);
+    h2dCutsCH[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,chMax[i]);
+    h2dCutsCH[i]->GetXaxis()->SetTimeDisplay(1);
+    h2dCutsCH[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
+    h2dCutsCH[i]->GetXaxis()->SetLabelSize(0.03);
+    h2dCutsCH[i]->GetXaxis()->SetLabelOffset(0.02);
+    h2dCutsCH[i]->GetYaxis()->SetTitle("charge [a.u.]");
 ///________________________________________________________________    
 ///  pulse time properties plots     
     
@@ -1118,7 +1136,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 ///  Correlation plots    
     double chovamax = 500.;
     if (dv[i]<=50 || vm[i]>490) chovamax = 800.;
-    if (oscsetup->AmplifierNo[i]==1)
+    
+    if (oscsetup->AmplifierNo[i]==1 || oscsetup->AmplifierNo[i]==4)
     {
        chovamax =20;   
     }
@@ -1130,11 +1149,17 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     {
        chovamax =30000;   
     }
+    else
+    {
+       chovamax =30000;   
+    }
 
+    chovamax = (hCH[i]->GetXaxis()->GetXmax())/(hAMPL[i]->GetXaxis()->GetXmax());
+    
     sprintf(htitle,"Charge over Amplitude");
     sprintf(hname,"Run%03d_pool%d_C%d_Charge_ov_Amplitude_%s",runNo,poolNo,i+1,ftype);
     hCHovAmpl[i]=new TH1D(hname,htitle,nbins*2,0.,chovamax);
-    hCHovAmpl[i]->GetXaxis()->SetTitle("ratio [nC/V]");
+    hCHovAmpl[i]->GetXaxis()->SetTitle("ratio [pC/V]");
 
     sprintf(htitle,"Pulse Charge over Amplitude");
     sprintf(hname,"Run%03d_pool%d_C%d_selected_Charge_ov_Amplitude_%s",runNo,poolNo,i+1,ftype);
@@ -1145,7 +1170,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     sprintf(fname2,"Run%03d_pool%d_C%d_Ampl_vs_Rise_Time_C_%s",runNo,poolNo,i+1,ftype);
     hAmplvsRT[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],25,0.,rtMax[i]);
     hAmplvsRT[i]->GetXaxis()->SetTitle("Pulse amplitude [V]");
-    hAmplvsRT[i]->GetYaxis()->SetTitle("Risetime [#mus]");
+    hAmplvsRT[i]->GetYaxis()->SetTitle("Risetime [ns]");
     hAmplvsRT[i]->SetStats(0);
     
     sprintf(fname2,"Run%03d_pool%d_C%d_Charge_vs_Amplitude_C_%s",runNo,poolNo,i+1,ftype);
@@ -1166,23 +1191,39 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     heCHvsiCH[i]->GetYaxis()->SetTitle("i-Charge [a.u.]");
     heCHvsiCH[i]->SetStats(0);
 
+    sprintf(htitle,"Hit map C%d",i+1);
+    sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_C_%s",runNo,poolNo,i+1,ftype);
+    hXY[i]=new TH2D(fname2,htitle,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    hXY[i]->GetXaxis()->SetTitle("X [mm]");
+    hXY[i]->GetYaxis()->SetTitle("Y [mm]");
+    hXY[i]->SetStats(0);
+
+    sprintf(htitle,"Hit map C%d",i+1);
+    sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_Cuts_C_%s",runNo,poolNo,i+1,ftype);
+    hXYcuts[i]=new TH2D(fname2,htitle,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    hXYcuts[i]->GetXaxis()->SetTitle("X [mm]");
+    hXYcuts[i]->GetYaxis()->SetTitle("Y [mm]");
+    hXYcuts[i]->SetStats(0);
+    
+    
+
     //----------------------------------------------
     //---------doubling histos for peThreshold--------
 
     
-     //sprintf(fname2,"Run%03d_pool%d_C%d_Risetime_GoodPeaks_%s",runNo,poolNo,i+1,ftype);
+     //sprintf(fname2,"Run%03d_pool%d_C%d_Risetime_Cuts_%s",runNo,poolNo,i+1,ftype);
      //sprintf(htitle,"Rise Time (n_{th} = %g mV)",peTh*1000);
-     //hGoodPeaksRT[i]=new TH1D(fname2,htitle,int(rtMax[i]/dt),0.,rtMax[i]);
-     //hGoodPeaksRT[i]->GetXaxis()->SetTitle("Risetime [ns]");
-     //sprintf(fname2,"Run%03d_pool%d_C%d_Pulse_Width_GoodPeaks_%s",runNo,poolNo,i+1,ftype);
+     //hCutsRT[i]=new TH1D(fname2,htitle,int(rtMax[i]/dt),0.,rtMax[i]);
+     //hCutsRT[i]->GetXaxis()->SetTitle("Risetime [ns]");
+     //sprintf(fname2,"Run%03d_pool%d_C%d_Pulse_Width_Cuts_%s",runNo,poolNo,i+1,ftype);
      //sprintf(htitle,"Pulse Width (n_{th} = %g mV)",peTh*1000);
-     //hGoodPeaksPW[i]=new TH1D(fname2,htitle,int(pwMax[i]/dt)/2,0.,pwMax[i]);
-     //hGoodPeaksPW[i]->GetXaxis()->SetTitle("Pulse Duration [ns]");
+     //hCutsPW[i]=new TH1D(fname2,htitle,int(pwMax[i]/dt)/2,0.,pwMax[i]);
+     //hCutsPW[i]->GetXaxis()->SetTitle("Pulse Duration [ns]");
      // 
 //     sprintf(fname2,"Run%03d_pool%d_C%d_TOT_GoodPeaksTh%gmV_%s",runNo,poolNo,i+1,ftype);
 //     sprintf(htitle,"TOT  (n_{th} = %g mV)",peTh*1000);
-//     hGoodPeaksTOT=new TH1D(fname2,htitle,int(totMax/dt)/2,0.,totMax);
-//     hGoodPeaksTOT->GetXaxis()->SetTitle("TOT [ns]");
+//     hCutsTOT=new TH1D(fname2,htitle,int(totMax/dt)/2,0.,totMax);
+//     hCutsTOT->GetXaxis()->SetTitle("TOT [ns]");
 
     //-----------------------------------------------------
   }
@@ -1191,7 +1232,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   int npt = 2;
-  int bkg=0;
   double DT = 0.5;  /// default derivation time in [ns]
   double DTI = 6.0;  /// default integration time in [ns]
   int evpm =1000;
@@ -1214,9 +1254,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  while (1 && eventNo<300)
-// while (eventNo >= 250 && eventNo < nevents)
-	{
+  while (1 && eventNo<10000)
+  {
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
     cout << "Event number: " << eventNo << endl;
@@ -1245,7 +1284,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //       printf("t0 = %8.8lf ,  evtime = %8.8LF\n",t0,evtime);
 
       int ntrigs = 0;
-      int ntrigsGoodPeaks =0;
+      int ntrigsCuts =0;
       int detspark = 0;
       double totcharge = 0.;
 
@@ -1274,7 +1313,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       ntrigs = 0;
       sparArr[ci]->Clear();
-      ntrigsGoodPeaks =0;
+      ntrigsCuts =0;
       detspark = 0;
       totcharge = 0.;
       //cout<< "maxpoints = "<< maxpoints << endl;
@@ -1463,7 +1502,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     }
 //     if (oscsetup->AmplifierNo[ci]==1) nsmooth = 15;
 #ifdef DEBUGMSG
-  	cout<<BLUE<<" Event number =" << evNo <<" Smoothing for analysis here : "<< npt <<" points"<<endlr; //here is 20 points
+  	cout<<BLUE<< "Smooting for analysis here : "<< npt <<" points"<<endlr;
   	cout<<BLUE<<"                           "<<endlr;
   	cout<<BLUE<<" data to Sampl"<<endlr;
   	cout<<YELLOW<<"                           "<<endlr;
@@ -1482,12 +1521,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     int itrig =0;
     ntrigs = 0;
-    ntrigsGoodPeaks=0;
+    ntrigsCuts=0;
     int correlated = 0;
     itrig = itrigger;
     if (itrig>0)
         correlated = 1;
-        //correlated = bkg;
+        //correlated = callibrationRun;
 
 /// Having the following "if (detspark)" here means that an event with a spark, of a "baseline recovery event will not be analysed!!!
     if (detspark)
@@ -1582,10 +1621,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile.close();
       		cout << "Waveform data written to waveform_data.txt" << endl;
       	}
-      	cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
-
 #endif
-      	  ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
+
+#ifdef DEBUGMSG
+      cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
+#endif      
+          ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
       	if (ti < maxpoints-50) {
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
@@ -1634,7 +1675,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  hCHvsAMPL[ci]->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].charge);
 	  hAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].tot[0]);
 // 	  hCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
-	  hCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/spar[ci][ntrigs].ampl);
+	  hCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/(spar[ci][ntrigs].ampl*mV));
 
 	  T10 = spar[ci][ntrigs].t10;
 	  T90 = spar[ci][ntrigs].t90;
@@ -1687,22 +1728,23 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  // //doubling histos for nthreshold
 	  if(1 || ((spar[ci][ntrigs].ampl) > (peTh) && (spar[ci][ntrigs].charge) > (peThCh) && cut1))//(spar[ci][ntrigs].tot>60) && (spar[ci][ntrigs].tot<100)(spar[ci][ntrigs].width>60) && (spar[ci][ntrigs].width<100))
 	  {
-	      hGoodPeaksAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
-	      h2dGoodPeaksAMPL[ci]->Fill(tnow,spar[ci][ntrigs].ampl*mV);
-	      hGoodPeaksCH[ci]->Fill(spar[ci][ntrigs].charge);
-	      //h2dGoodPeaksCH[ci]->Fill(tnow,spar[ci][ntrigs].charge);
-	      //hGoodPeaksRT[ci]->Fill(rstm);
-	      //hGoodPeaksTOT[ci]->Fill(spar[ci][ntrigs].tot[0]);
-	      //hGoodPeaksPW[ci]->Fill(spar[ci][ntrigs].width);
+	      hCutsAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
+	      h2dCutsAMPL[ci]->Fill(tnow,spar[ci][ntrigs].ampl*mV);
+	      hCutsCH[ci]->Fill(spar[ci][ntrigs].charge);
+	      //h2dCutsCH[ci]->Fill(tnow,spar[ci][ntrigs].charge);
+	      //hCutsRT[ci]->Fill(rstm);
+	      //hCutsTOT[ci]->Fill(spar[ci][ntrigs].tot[0]);
+	      //hCutsPW[ci]->Fill(spar[ci][ntrigs].width);
 // 	      hsCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
 	      hsCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/spar[ci][ntrigs].ampl);
-	      if (ntrigsGoodPeaks>0)  /// here we take the dt between concecutive peaks on the same waveform!
+	      if (ntrigsCuts>0)  /// here we take the dt between concecutive peaks on the same waveform!
           {
-            hGoodPeaksDt[ci]->Fill((spar[ci][ntrigsGoodPeaks].t10-spar[ci][ntrigsGoodPeaks-1].t10)*1e-9);
+            hCutsDt[ci]->Fill((spar[ci][ntrigsCuts].t10-spar[ci][ntrigsCuts-1].t10)*1e-9);
           }
+          
 
 
-          ntrigsGoodPeaks++;
+          ntrigsCuts++;
 	    }
 	  //------------------------
 
@@ -1710,74 +1752,91 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	}///end loop ti   ==> scan along one waveform to find multiple peaks
 
       npeaks[ci] = ntrigs;
-      ngoodPeaks[ci] = ntrigsGoodPeaks;
+      ngoodPeaks[ci] = ntrigsCuts;
 #ifdef DEBUGMSG
-      cout<<'C' << ci+1 <<" :   Found "<<ntrigsGoodPeaks<<" goodpeaks"<<endl;
+      cout<<'C' << ci+1 <<" :   Found "<<ntrigsCuts<<" goodpeaks"<<endl;
 #endif
       //       if (ngoodPeaks[ci]>1) cout <<"event "<<eventNo<<" n = "<<ngoodPeaks[ci]<<"  "<< epoch - epochS<< "  "<< evtime - epochS<< endl;
 
+     
       ntrigsTot[ci] += npeaks[ci];
       ngoodTrigsTot[ci] += ngoodPeaks[ci];
       //cout << "npeaks[ci]" << npeaks[ci] << endl;
 
+/// fill in the XY plots. Single good peak is required for the cuts
+      for (int i=0;i<eventTracks;i++)
+      {
+        hXY[ci]->Fill(hitX_C[ci][0],hitY_C[ci][0]);
+      }
+      
+      if (ngoodPeaks[ci]==1)
+      {
+          hXYcuts[ci]->Fill(hitX_C[ci][0],hitY_C[ci][0]);
+      }
 
+/// fill in rate evolution plots      
       double ts = ptime[0];//ns
       double tf = ptime[maxpoints-1];//ns
       double tlive = (tf-ts) * 1e-9;//to make it sec
       double peakspersec = 1.* npeaks[ci] / tlive;
-      double goodpeakspersec = 1.*ntrigsGoodPeaks / tlive;
+      double goodpeakspersec = 1.*ntrigsCuts / tlive;
 ///       double tnow = epoch + nn*1e-9 + spar[npeaks[ci]-1].t10*1e-9;  /// time of last peak in event or of the unique event if short frame//sec
 
       long double depoch = 1.* (long double) epoch;
-      long double tnowgoodpeaks = depoch + nn*1e-9 + spar[ci][ntrigsGoodPeaks-1].t10*1e-9 ;  /// used for dt calculation for goodpeaks
+      long double tnowgoodpeaks = depoch + nn*1e-9 + spar[ci][ntrigsCuts-1].t10*1e-9 ;  /// used for dt calculation for goodpeaks
 
 
       hRateEvolution[ci]->Fill(evtime,npeaks[ci]);
       hRateEvolutionCheck[ci]->Fill(evtime);
 
-      if (bkg)
+      if (callibrationRun)
       {
          //hBkgGoodPeaksRateEvolution[ci]->Fill(evtime,ngoodPeaks[ci]);
          if (ngoodPeaks[ci]>0)
-             hRate[ci]->Fill(ngoodPeaks[ci]);
+         {
+           hRate[ci]->Fill(ngoodPeaks[ci]);
+           hRateEvolutionCuts[ci]->Fill(evtime,ngoodPeaks[ci]);
+         }
       }
       else
       {
 
-        hStructTrigger[ci]->Fill(ttrig/1000.);//t10 is ns, so to pass to us
-        hGoodPeaksRateEvolution[ci]->Fill(evtime,ngoodPeaks[ci]);
+        hSRStriggerStruct[ci]->Fill(ttrig*microsec);//t10 is ns, so to pass to us
+        
+        hRateEvolutionCuts[ci]->Fill(evtime,ngoodPeaks[ci]);
         if (ngoodPeaks[ci]>0 && longpulse)
-        hRate[ci]->Fill(ngoodPeaks[ci]);
+              hRate[ci]->Fill(ngoodPeaks[ci]);
+      }
 
-        if (eventNo>0 && npeaks[ci]>0)  /// here we take the dt between the first peaks of concecutive waveforms
-        {
-            //intantaneous flux ("peak flux")
-            //cout<<"tnow = "<<tnow<<"  nn = "<<nn*1e-9<<endl;
-            dtlast[ci] = tnow - tlast[ci];
+      if (eventNo>0 && npeaks[ci]>0)  /// here we take the dt between the first peaks of concecutive waveforms
+      {
+          //intantaneous flux ("peak flux")
+          //cout<<"tnow = "<<tnow<<"  nn = "<<nn*1e-9<<endl;
+          dtlast[ci] = tnow - tlast[ci];
 //     	    cout<<GREEN<<'C'<<ci+1<<" :   tlast = "<<tlast[ci]<<" + "<< + nn*1e-9+spar[ci][npeaks[ci]-1].t10*1e-9<<"  dtlast = "<<dtlast[ci]<<endlr;
-            if (tlast[ci]>0)
-               hDt[ci]->Fill(dtlast[ci]);
-        }
-        tlast[ci] = tnow ;
+          if (tlast[ci]>0)
+              hDt[ci]->Fill(dtlast[ci]);
+         tlast[ci] = tnow ;
+      }
 
 
-        if (eventNo>0 && ngoodPeaks[ci]>0)
-        {
-            dtlastgoodpeaks[ci] = tnowgoodpeaks - tlastgoodpeaks[ci];
-        // 	  if (dtlastgoodpeaks<0)
-        // 	  {
-        // 	    cout<<"negative DT!!!!\n event ="<<eventNo<<endl;
-        // 	    printf("tnow = %18.8lf,    tlast =  %18.8lf ,     DT =  %18.8lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
+      if (eventNo>0 && ngoodPeaks[ci]>0)
+      {
+          dtlastgoodpeaks[ci] = tnowgoodpeaks - tlastgoodpeaks[ci];
+      // 	  if (dtlastgoodpeaks<0)
+      // 	  {
+      // 	    cout<<"negative DT!!!!\n event ="<<eventNo<<endl;
+      // 	    printf("tnow = %18.8lf,    tlast =  %18.8lf ,     DT =  %18.8lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
 //          	    cout<<CYAN<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks[ci]<<"    DT = "<< dtlastgoodpeaks[ci]<<endlr;
-        // 	  }
-        //  	  printf("tnow = %Lf,    tlast =  %Lf ,     DT =  %Lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
-        // 	  cout<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks<<"    DT = "<< dtlastgoodpeaks<<endl;
-            hGoodPeaksDt[ci]->Fill(dtlastgoodpeaks[ci]);
-            tlastgoodpeaks[ci] = tnowgoodpeaks ;
-        }
+      // 	  }
+      //  	  printf("tnow = %Lf,    tlast =  %Lf ,     DT =  %Lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
+      // 	  cout<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks<<"    DT = "<< dtlastgoodpeaks<<endl;
+          hCutsDt[ci]->Fill(dtlastgoodpeaks[ci]);
+          tlastgoodpeaks[ci] = tnowgoodpeaks ;
+      }
 //      tlastgoodpeaks = tnowgoodpeaks ;
 
-      }
+      
 
  /// 3rd IF DRAW
       //----------------------
@@ -1966,12 +2025,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //         label2->SetLineColor(2);
 //         label2->Draw();
         line2->Draw();
-	       TLine *line3 = new TLine(spar[ci][i].ttrig*dt,Thresholds[ci],spar[ci][i].ttrig*dt+spar[ci][i].tot[0],Thresholds[ci]);
-	  	//TLatex *label3 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
-#ifdef DEBUGMSG
-	  	cout<<"(x1,y1) = "<<spar[ci][i].ttrig<<" , "<<Thresholds[ci] << "  (x2,y2) = "<<spar[ci][i].ttrig+spar[ci][i].tot[0]<<" , "<<Thresholds[ci]<<endl;
-#endif
-	  	line3->SetLineColor(3);
+	      TLine *line3 = new TLine(spar[ci][i].ttrig*dt,Thresholds[ci],spar[ci][i].ttrig*dt+spar[ci][i].tot[0],Thresholds[ci]);
+// 	      TLatex *label3 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
+          cout<<"(x1,y1) = "<<spar[ci][i].ttrig<<" , "<<Thresholds[ci] << "  (x2,y2) = "<<spar[ci][i].ttrig+spar[ci][i].tot[0]<<" , "<<Thresholds[ci]<<endl;
+        line3->SetLineColor(3);
 //         label3->SetLineColor(3);
 //         label3->Draw();
         line3->Draw();
@@ -2087,19 +2144,20 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     if (eventNo % (evpm) == 0)
 	{
 	  cout<<"Found ntrigs ="<<ntrigs<<" pulses for event "<<eventNo<<endl;
-	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsGoodPeaks <<" pulses for event "<<eventNo<<endl;
+	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsCuts <<" pulses for event "<<eventNo<<endl;
 	}
     //  for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
 
     otree->Fill();
   
     eventNo++;
+    if (eventNo > 1250) break;
 
       
   } /// end of the tree while (eventNo < nevents)
 
 	for (int ci = 0; ci < 4; ++ci) {
-		cout<<"Total number of pulses in channel "<<ci+1<<" = "<<ntrigsTot[ci]<<endl;
+		cout<<BLUE<<"Total number of pulses in channel "<<ci+1<<" = "<<ntrigsTot[ci]<<endl;
 	}
   	cout<<endl<<"Succesful Fits = "<<successfulFits_sigmoid<<endl;
   	cout<<"Total Fits = "<<totalFits_sigmoid<<endl;
@@ -2113,7 +2171,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   if (draw) 
   {
-    cout<<endl<<"Entering the 4rth if(draw)______________________________________________"<<endl<<endl;;
+    cout<<endl<<"Entering the 4rth if(draw)______________________________________________"<<endl<<endlr;;
     gSystem->ChangeDirectory(tmpdir);
     return 0;  /// finished the event display, so exit without drawing the histograms (empty)
   }
@@ -2137,30 +2195,35 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       abins = hRateEvolution[ci]->GetNbinsX();
       err0 = new double[abins+1];
       for(int i=0;i<=abins;i++)
-      err0[i]=0;
+          err0[i]=0;
       
       firstactive=false;
     }
     
-    hRateEvolutionCheck[ci]->SetError(err0);
-    cout<<GREEN<<"done"<<endlr;
-
-    cout<<BLUE<<"Normalizing rate evolution for channel "<<MAGENTA<<ci+1<<endlr;
-    DivideH(hRateEvolution[ci],hRateEvolutionCheck[ci]);
-    cout<<BLUE<<"Scaling for timebinwidth = "<<MAGENTA<<timebinwidth<<endlr;
-//     ScaleHistoErr(hSparkEvolution[ci],1.0/timebinwidth);
-    cout<<GREEN<<"done"<<endlr;
-
-
-    /*for (int i = 0; i<hGoodPeaksRateEvolution[ci]->GetNbinsX();i++)
+    if (callibrationRun)
     {
-        double y = hGoodPeaksRateEvolution[ci]->GetBinContent(i);
-      
-        y *= timebinwidth; /// convert it to photons per time periode width
-        hGoodPeaksRate[ci]->Fill(y);
+        hRateEvolutionCheck[ci]->SetError(err0);
+        cout<<GREEN<<"done"<<endlr;
+
+        cout<<BLUE<<"Normalizing callibration rate evolution for channel "<<MAGENTA<<ci+1<<endlr;
+        DivideH(hRateEvolution[ci],hRateEvolutionCheck[ci]);
+        DivideH(hRateEvolutionCuts[ci],hRateEvolutionCheck[ci]);
+//         cout<<BLUE<<"Scaling for timebinwidth = "<<MAGENTA<<timebinwidth<<endlr;
+//         ScaleHistoErr(hSparkEvolution[ci],1.0/timebinwidth);
+        cout<<GREEN<<"done"<<endlr;
     }
 
-    */
+    /// divide with binwidth to make rates per second
+    for (int i = 0; i<hRateEvolutionCuts[ci]->GetNbinsX();i++)
+    {
+        
+        double y = hRateEvolutionCuts[ci]->GetBinContent(i);
+      
+        y *= timebinwidth; /// convert it to events per time periode width
+        hRateCuts[ci]->Fill(y);
+    }
+
+    
     TString channel = TString::Itoa(ci+1,10);
     TString chname = ctypes+"_C"+channel;
 
@@ -2183,18 +2246,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     f2->SetParameter(1,100.);
     f2->SetParLimits(1,0.01,1e7);
 
-    hGoodPeaksAMPL[ci]->GetXaxis()->SetRangeUser(peTh,amplMax[ci]*mV*0.75);
-    double maxampl = hGoodPeaksAMPL[ci]->GetMaximum();
-    int maxabin = hGoodPeaksAMPL[ci]->GetMaximumBin();
-    hGoodPeaksAMPL[ci]->GetXaxis()->UnZoom();
-    double maxax = hGoodPeaksAMPL[ci]->GetBinLowEdge(maxabin);
+    hCutsAMPL[ci]->GetXaxis()->SetRangeUser(peTh,amplMax[ci]*mV*0.75);
+    double maxampl = hCutsAMPL[ci]->GetMaximum();
+    int maxabin = hCutsAMPL[ci]->GetMaximumBin();
+    hCutsAMPL[ci]->GetXaxis()->UnZoom();
+    double maxax = hCutsAMPL[ci]->GetBinLowEdge(maxabin);
     double minax = peTh*mV;
     for (int i=maxabin;i>1;i--)
     {
-        double y = hGoodPeaksAMPL[ci]->GetBinContent(i);
+        double y = hCutsAMPL[ci]->GetBinContent(i);
         if (y<0.5*maxampl)
         {
-            minax = hGoodPeaksAMPL[ci]->GetBinLowEdge(i);
+            minax = hCutsAMPL[ci]->GetBinLowEdge(i);
             break;
         }
     }
@@ -2215,28 +2278,28 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     fpolyaAmpl->SetParameter(2,30); //theta
     fpolyaAmpl->SetParLimits(2,0.001,5000); //theta
 
-    hGoodPeaksAMPL[ci]->Sumw2(); 
-    hGoodPeaksAMPL[ci]->Fit(fpolyaAmpl,"QR0","",minax,amplMax[ci]);
-    hGoodPeaksAMPL[ci]->Fit(fpolyaAmpl,"QR0","",minax,amplMax[ci]);
-    hGoodPeaksAMPL[ci]->Fit(fpolyaAmpl,"QB0","",minax,amplMax[ci]);
-//     hGoodPeaksAMPL->Fit(fpolyaA,"BM+");
+    hCutsAMPL[ci]->Sumw2(); 
+    hCutsAMPL[ci]->Fit(fpolyaAmpl,"QR0","",minax,amplMax[ci]);
+    hCutsAMPL[ci]->Fit(fpolyaAmpl,"QR0","",minax,amplMax[ci]);
+    hCutsAMPL[ci]->Fit(fpolyaAmpl,"QB0","",minax,amplMax[ci]);
+//     hCutsAMPL->Fit(fpolyaA,"BM+");
 
     cout<<"\n\n==> minax = "<<minax<<endl;
 // hAMPL->SetStats(0);
     gStyle->SetOptStat(100);
     gStyle->SetOptFit(111);
     cout<<"Fit "<<channel<<"  "<<1<<endl;
-    hGoodPeaksAMPL[ci]->Fit(fpolyaAmpl,"B0","",minax,amplMax[ci]);
+    hCutsAMPL[ci]->Fit(fpolyaAmpl,"B0","",minax,amplMax[ci]);
     cout<<"Fit "<<channel<<"  "<<2<<endl;
-    hGoodPeaksAMPL[ci]->Fit(fpolyaAmpl,"RM","",minax,amplMax[ci]);
+    hCutsAMPL[ci]->Fit(fpolyaAmpl,"RM","",minax,amplMax[ci]);
 // cout<<"Fit "<<3<<endl;
-// hGoodPeaksAMPL->Fit(f2,"BM+0","",Thresholds[ci]*mV,peTh*1.0*mV);
+// hCutsAMPL->Fit(f2,"BM+0","",Thresholds[ci]*mV,peTh*1.0*mV);
 // cout<<"Fit "<<4<<endl;
-// hGoodPeaksAMPL->Fit(f2,"BM+","",Thresholds[ci]*mV,peTh*1.0*mV);
+// hCutsAMPL->Fit(f2,"BM+","",Thresholds[ci]*mV,peTh*1.0*mV);
 // // hAMPL->Draw();
-    hGoodPeaksAMPL[ci]->SetLineColor(2);
-    hGoodPeaksAMPL[ci]->SetMaximum(hAMPL[ci]->GetMaximum()*2.);
-    hGoodPeaksAMPL[ci]->Draw("");
+    hCutsAMPL[ci]->SetLineColor(2);
+    hCutsAMPL[ci]->SetMaximum(hAMPL[ci]->GetMaximum()*2.);
+    hCutsAMPL[ci]->Draw("");
     hAMPL[ci]->Draw("same");
 
     fpolyaAmpl->SetRange(minax,amplMax[ci]);
@@ -2261,18 +2324,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
  
     TCanvas *cch = new TCanvas("Charge"+chname,"Charge "+chname);
 
-    //hGoodPeaksCH[ci]->GetXaxis()->SetRangeUser(peThCh,chMax[ci]*0.75);
-    //double maxch = hGoodPeaksCH[ci]->GetMaximum();
-    //int maxchbin = hGoodPeaksCH[ci]->GetMaximumBin();
-    //hGoodPeaksCH[ci]->GetXaxis()->UnZoom();
-    //double maxchx = hGoodPeaksCH[ci]->GetBinLowEdge(maxchbin);
+    //hCutsCH[ci]->GetXaxis()->SetRangeUser(peThCh,chMax[ci]*0.75);
+    //double maxch = hCutsCH[ci]->GetMaximum();
+    //int maxchbin = hCutsCH[ci]->GetMaximumBin();
+    //hCutsCH[ci]->GetXaxis()->UnZoom();
+    //double maxchx = hCutsCH[ci]->GetBinLowEdge(maxchbin);
     double minchx = peThCh;
     /*for (int i=maxchbin;i>1;i--)
     {
-        double y = hGoodPeaksCH[ci]->GetBinContent(i);
+        double y = hCutsCH[ci]->GetBinContent(i);
         if (y<0.6*maxch)
         {
-            minchx = hGoodPeaksCH[ci]->GetBinLowEdge(i);
+            minchx = hCutsCH[ci]->GetBinLowEdge(i);
             break;
         }
     }
@@ -2297,27 +2360,27 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     fpolyaCH->SetParameter(2,30); //theta
     fpolyaCH->SetParLimits(2,0.001,5000); //theta
 
-    //hGoodPeaksCH[ci]->Sumw2(); 
+    //hCutsCH[ci]->Sumw2(); 
 //     cout<<"Fit "<<channel<<"  "<<5<<endl;
-//     hGoodPeaksCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
-//     hGoodPeaksCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
-//     hGoodPeaksCH[ci]->Fit(fpolyaCH,"QB0","",minchx,chMax[ci]);
-//     hGoodPeaksCH[ci]->Fit(fpolyaCH,"QBM","",minchx,chMax[ci]);
+//     hCutsCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
+//     hCutsCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
+//     hCutsCH[ci]->Fit(fpolyaCH,"QB0","",minchx,chMax[ci]);
+//     hCutsCH[ci]->Fit(fpolyaCH,"QBM","",minchx,chMax[ci]);
 //   
 //   fpolyaCH->SetParLimits(2,1.e-2,  1000.);
 //   fpolyaCH->SetParLimits(1,1.e-2,  1000.);
 
 
-    //hGoodPeaksCH[ci]->SetStats(1);
+    //hCutsCH[ci]->SetStats(1);
     cout<<"Fit "<<channel<<"  "<<6<<endl;
-    //hGoodPeaksCH[ci]->Fit(fpolyaCH,"B0","",minchx,chMax[ci]);
+    //hCutsCH[ci]->Fit(fpolyaCH,"B0","",minchx,chMax[ci]);
     cout<<"Fit "<<channel<<"  "<<7<<endl;
-    //hGoodPeaksCH[ci]->Fit(fpolyaCH,"BM","",minchx,chMax[ci]);
+    //hCutsCH[ci]->Fit(fpolyaCH,"BM","",minchx,chMax[ci]);
 
-    hGoodPeaksCH[ci]->SetMaximum(2.*hCH[ci]->GetMaximum());
+    hCutsCH[ci]->SetMaximum(2.*hCH[ci]->GetMaximum());
     cch->SetLogy(); 
-    hGoodPeaksCH[ci]->SetLineColor(2);
-    hGoodPeaksCH[ci]->Draw();
+    hCutsCH[ci]->SetLineColor(2);
+    hCutsCH[ci]->Draw();
 //   hCH->Sumw2();
 //   hsCH->Draw("same");
 //  hsCH[ci]->SetLineColor(kMagenta);
@@ -2356,10 +2419,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     gStyle->SetOptStat(1110);
 
 
-    double mean = hGoodPeaksRate[ci]->GetMean();
-    double rms  = hGoodPeaksRate[ci]->GetRMS();
-    double maxrate = hGoodPeaksRate[ci]->GetMaximum();
-    double nentries  = hGoodPeaksRate[ci]->GetEntries();
+    double mean = hRateCuts[ci]->GetMean();
+    double rms  = hRateCuts[ci]->GetRMS();
+    double maxrate = hRateCuts[ci]->GetMaximum();
+    double nentries  = hRateCuts[ci]->GetEntries();
     int fgaus = 0;
     TF1 *frate;
 //   mean=3.3;
@@ -2385,13 +2448,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         frate->SetParameter(1,mean);
     }
     frate->SetNpx(2000);
-    hGoodPeaksRate[ci]->Sumw2();
+    hRateCuts[ci]->Sumw2();
     cout<<"Fit "<<channel<<"  "<<8<<endl;
-    hGoodPeaksRate[ci]->Fit(frate,"WBN+","",mean-3.*rms,mean+5.*rms);
+    hRateCuts[ci]->Fit(frate,"WBN+","",mean-3.*rms,mean+5.*rms);
     cout<<"Fit "<<channel<<"  "<<9<<endl;
-    hGoodPeaksRate[ci]->Fit(frate,"MEB+","",mean-3.*rms,mean+5.*rms);
-    hGoodPeaksRate[ci]->SetLineColor(2);
-    hGoodPeaksRate[ci]->Draw("");
+    hRateCuts[ci]->Fit(frate,"MEB+","",mean-3.*rms,mean+5.*rms);
+    hRateCuts[ci]->SetLineColor(2);
+    hRateCuts[ci]->Draw("");
 //   frate->Draw("same");
 
     
@@ -2449,13 +2512,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     rcanv->cd(2);
     //   gStyle->SetOptStat(0);
     hRateEvolution[ci]->SetStats(0);  
-    //hGoodPeaksRateEvolution[ci]->SetStats(0);  
+    //hRateEvolutionCuts[ci]->SetStats(0);  
     double maxy = hRateEvolution[ci]->GetMaximum()*1.6;
     hRateEvolution[ci]->SetMaximum(200);
       hRateEvolution[ci]->Draw();
-    hGoodPeaksRateEvolution[ci]->SetLineColor(2);
-    hGoodPeaksRateEvolution[ci]->SetLineWidth(2);
-    hGoodPeaksRateEvolution[ci]->Draw("same"); 
+    hRateEvolutionCuts[ci]->SetLineColor(2);
+    hRateEvolutionCuts[ci]->SetLineWidth(2);
+    hRateEvolutionCuts[ci]->Draw("same"); 
   
 
 //     hSparkEvolution[ci]->SetLineColor(4);
@@ -2483,8 +2546,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   //  hAMPL->SetStats(0);
   //  hAMPL->Draw();
     hAMPL[ci]->Draw("");
-    hGoodPeaksAMPL[ci]->SetLineColor(2);
-    hGoodPeaksAMPL[ci]->Draw("same");
+    hCutsAMPL[ci]->SetLineColor(2);
+    hCutsAMPL[ci]->Draw("same");
     
     subpad=(TPad*)rcanv->GetPrimitive(Form("%s_%d",rcanv->GetName(),3));
     subpad->Update();  /// VERY IMPORTANT!!!!! crashes without update!!!
@@ -2503,9 +2566,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   rcanv->Update();
     rcanv->cd(6);
     gPad->SetLogy();
-    //hGoodPeaksCH[ci]->Draw("");
+    //hCutsCH[ci]->Draw("");
     hCH[ci]->Draw("");
-    //hGoodPeaksCH[ci]->SetLineColor(2);
+    //hCutsCH[ci]->SetLineColor(2);
     
     subpad=(TPad*)rcanv->GetPrimitive(Form("%s_%d",rcanv->GetName(),6));
     subpad->Update();  /// VERY IMPORTANT!!!!! crashes without update!!!
@@ -2528,7 +2591,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   //  cout<<"______________________________"<<endl;
   //  subpad->ls(); 
   //  cout<<"______________________________"<<endl;
-  //  hGoodPeaksAMPL->ls();
+  //  hCutsAMPL->ls();
   //  cout<<"______________________________"<<endl;
   //  rcanv->ls();
   //  cout<<"______________________________"<<endl;
@@ -2547,7 +2610,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     f1->SetLineColor(4);
     
     hDt[ci]->Sumw2(1);
-    hGoodPeaksDt[ci]->Sumw2(1);
+    hCutsDt[ci]->Sumw2(1);
 
     
     double tbeam = 5e-6;
@@ -2570,7 +2633,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hDt[ci]->SetMinimum(0.1);
     hDt[ci]->SetMaximum(hDt[ci]->GetMaximum()*2.);
 
-    hGoodPeaksDt[ci]->Draw("same");
+    hCutsDt[ci]->Draw("same");
 
     TF1* f11 = new TF1("f11","[0]*exp(-[1]*x)",0.,tmax*2.);
   //  f11->SetParLimits(1,1e2,1e6);
@@ -2582,7 +2645,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     f1->Draw("same"); 
     //  f11->Draw("same"); 
     
-    hGoodPeaksDt[ci]->SetLineColor(kRed+1);
+    hCutsDt[ci]->SetLineColor(kRed+1);
     TF1* f12 = new TF1("f12","[0]*exp(-[1]*x)",0.,tmax*2);
     f12->SetParLimits(1,1e-6,1e6);
     f12->SetParameter(0,120.);
@@ -2590,7 +2653,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     f12->SetParLimits(0,0.1e-6,1e6);
     f12->SetLineColor(kRed+2);
     cout<<"Fit "<<channel<<"  "<<13<<endl;
-    hGoodPeaksDt[ci]->Fit(f12,"+QB0","",3*tmax/100.,tmax);//crate[4]);
+    hCutsDt[ci]->Fit(f12,"+QB0","",3*tmax/100.,tmax);//crate[4]);
     f12->Draw("same"); 
     
     TPad* pad = (TPad*) gPad;
@@ -2744,10 +2807,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
  
     TCanvas *canvrtev = new TCanvas("RateEvolution_"+chname,"Rate Evolution "+chname);
-//     hGoodPeaksRateEvolution[ci]->Draw(""); 
+//     hRateEvolutionCuts[ci]->Draw(""); 
 //     hSparkEvolution[ci]->Draw("sameE0");
       hRateEvolution[ci]->Draw("E0");
-    hGoodPeaksRateEvolution[ci]->Draw("SAMEE0"); 
+    hRateEvolutionCuts[ci]->Draw("SAMEE0"); 
     canvrtev->BuildLegend();
     canvrtev->Modified();
     canvrtev->Update();
@@ -2798,13 +2861,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     maxy = hRateStructure[ci]->GetMaximum()*1.2;
     hRateStructure[ci]->SetMaximum(maxy);
     hRateStructure[ci]->Draw();
-    //hGoodPeaksRateStructure[ci]->SetLineColor(2);
-    //hGoodPeaksRateStructure[ci]->Draw("same");
-    hStructTrigger[ci]->Draw("same");
+    //hCutsRateStructure[ci]->SetLineColor(2);
+    //hCutsRateStructure[ci]->Draw("same");
+    hSRStriggerStruct[ci]->Draw("same");
 
     TCanvas * canvstruct = new TCanvas("RateStructures_"+chname,"Rate Structures "+chname) ;
     hRateStructure[ci]->Draw();
-    //hGoodPeaksRateStructure[ci]->Draw("same");
+    //hCutsRateStructure[ci]->Draw("same");
     canvstruct->BuildLegend();
     canvstruct->Modified();
     canvstruct->Update();
@@ -2815,47 +2878,47 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     
     sccanv->cd(6);
     gStyle->SetOptStat(1100);
-    //hGoodPeaksRT[ci]->Draw("");
+    //hCutsRT[ci]->Draw("");
     hRT[ci]->Draw("");
-    //hGoodPeaksRT[ci]->SetLineColor(2);
+    //hCutsRT[ci]->SetLineColor(2);
     //TF1* fgrt = new TF1("fgrt","gaus",0.,rtMax[ci]);
     //fgrt->SetNpx(1000);
-    //fgrt->SetParameter(0,hGoodPeaksRT[ci]->GetMaximum());
-    //fgrt->SetParameter(1,hGoodPeaksRT[ci]->GetMean());
-    //hGoodPeaksRT[ci]->Sumw2();
+    //fgrt->SetParameter(0,hCutsRT[ci]->GetMaximum());
+    //fgrt->SetParameter(1,hCutsRT[ci]->GetMean());
+    //hCutsRT[ci]->Sumw2();
     //cout<<"Fit "<<channel<<"  "<<15<<endl;
-    //hGoodPeaksRT[ci]->Fit(fgrt,"mb+","same",hGoodPeaksRT[ci]->GetMean()-3*hGoodPeaksRT[ci]->GetRMS(),hGoodPeaksRT[ci]->GetMean()+3*hGoodPeaksRT[ci]->GetRMS());
-    //  hGoodPeaksRT->Draw("same");
+    //hCutsRT[ci]->Fit(fgrt,"mb+","same",hCutsRT[ci]->GetMean()-3*hCutsRT[ci]->GetRMS(),hCutsRT[ci]->GetMean()+3*hCutsRT[ci]->GetRMS());
+    //  hCutsRT->Draw("same");
     //runpar->risetime=fgrt->GetParameter(1);
     //runpar->srisetime=fgrt->GetParameter(2);
  
     sccanv->cd(4);
-    //hGoodPeaksPW[ci]->SetLineColor(2);
-    //hGoodPeaksPW[ci]->Draw("");
+    //hCutsPW[ci]->SetLineColor(2);
+    //hCutsPW[ci]->Draw("");
     hPW[ci]->Draw("");
     //TF1* fgw = new TF1("fgw","gaus",0.,pwMax[ci]);
     //fgw->SetNpx(1000);
-    //fgw->SetParameter(0,hGoodPeaksPW[ci]->GetMaximum());
-    //runpar->width=hGoodPeaksPW[ci]->GetMean();
+    //fgw->SetParameter(0,hCutsPW[ci]->GetMaximum());
+    //runpar->width=hCutsPW[ci]->GetMean();
     //fgw->SetParameter(1,runpar->width);
-    //hGoodPeaksPW[ci]->Sumw2();
+    //hCutsPW[ci]->Sumw2();
     //cout<<"Fit "<<channel<<"  "<<16<<endl;
-    //hGoodPeaksPW[ci]->Fit(fgw,"mb+","same",runpar->width-3*hGoodPeaksPW[ci]->GetRMS(),runpar->width+3*hGoodPeaksPW[ci]->GetRMS());
+    //hCutsPW[ci]->Fit(fgw,"mb+","same",runpar->width-3*hCutsPW[ci]->GetRMS(),runpar->width+3*hCutsPW[ci]->GetRMS());
     //runpar->width=fgw->GetParameter(1);
     //runpar->swidth=fgw->GetParameter(2);
  
     sccanv->cd(3);
-    //hGoodPeaksTOT[ci]->Draw("");
+    //hCutsTOT[ci]->Draw("");
     hPD[ci]->Draw("");
-    //hGoodPeaksTOT[ci]->SetLineColor(2);
+    //hCutsTOT[ci]->SetLineColor(2);
     //TF1* fgtot = new TF1("fgtot","gaus",0.,rtMax[ci]);
     //fgtot->SetNpx(1000);
-    //fgtot->SetParameter(0,hGoodPeaksTOT[ci]->GetMaximum());
-    //fgtot->SetParameter(1,hGoodPeaksTOT[ci]->GetMean());
-    //hGoodPeaksTOT[ci]->Sumw2();
+    //fgtot->SetParameter(0,hCutsTOT[ci]->GetMaximum());
+    //fgtot->SetParameter(1,hCutsTOT[ci]->GetMean());
+    //hCutsTOT[ci]->Sumw2();
     //cout<<"Fit "<<channel<<"  "<<17<<endl;
-    //hGoodPeaksTOT[ci]->Fit(fgtot,"mb+","same",hGoodPeaksTOT[ci]->GetMean()-3*hGoodPeaksTOT[ci]->GetRMS(),hGoodPeaksTOT[ci]->GetMean()+3*hGoodPeaksTOT[ci]->GetRMS());
-    //  hGoodPeaksRT->Draw("same");
+    //hCutsTOT[ci]->Fit(fgtot,"mb+","same",hCutsTOT[ci]->GetMean()-3*hCutsTOT[ci]->GetRMS(),hCutsTOT[ci]->GetMean()+3*hCutsTOT[ci]->GetRMS());
+    //  hCutsRT->Draw("same");
     //runpar->tot=fgtot->GetParameter(1);
     //runpar->stot=fgtot->GetParameter(2);
  
@@ -2902,13 +2965,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   gStyle->SetOptStat(1110);
 
  
-  hGoodPeaksRate->Draw("");
+  hRateCuts->Draw("");
 ///  fbsl2->Draw("same");  // no point to draw these
 
   pcanv->cd(5);
-  hGoodPeaksRateEvolution[ci]->Draw(""); 
+  hRateEvolutionCuts[ci]->Draw(""); 
   
-  if (bkg)
+  if (callibrationRun)
   {
     hBkgGoodPeaksRateEvolution->Draw("sameE0"); 
   }
@@ -2916,7 +2979,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
   pcanv->cd(2);
-  hGoodPeaksAMPL->Draw();
+  hCutsAMPL->Draw();
   pad = (TPad*) gPad;
   pad->SetLogy();
   hAMPL->Draw("same");
@@ -2924,14 +2987,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   pcanv->Update();
   pcanv->cd(3);
   gPad->SetLogy();
-  hGoodPeaksCH->Draw("Charge");
+  hCutsCH->Draw("Charge");
   hCH->Draw("same");
   
   
 //   pcanv->Update();
   pcanv->cd(4);   
   hDt->Draw("E0");
-  hGoodPeaksDt->Draw("same");
+  hCutsDt->Draw("same");
 
   f1->Draw("same"); 
   f12->Draw("same"); 
@@ -3068,18 +3131,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
  scanv->cd(1);
  gStyle->SetOptStat(1100);
- hGoodPeaksRT->Draw("");
+ hCutsRT->Draw("");
  hRT->Draw("same");
 //  fgrt->SetNpx(1000);
  
  scanv->cd(2);
- hGoodPeaksPW->SetLineColor(2);
- hGoodPeaksPW->Draw("");
+ hCutsPW->SetLineColor(2);
+ hCutsPW->Draw("");
  hPW->Draw("same");
 //  fgw->SetNpx(1000);
  
  scanv->cd(3);
- hGoodPeaksTOT->Draw("");
+ hCutsTOT->Draw("");
  hPD->Draw("same");
 //  fgtot->SetNpx(1000);
  
@@ -3090,11 +3153,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
  scanv->cd(5);
  
- h2dGoodPeaksAMPL->Draw("colz");
+ h2dCutsAMPL->Draw("colz");
 
  scanv->cd(6);
  
- h2dGoodPeaksCH->Draw("colz");
+ h2dCutsCH->Draw("colz");
 
  scanv->Update();
  
