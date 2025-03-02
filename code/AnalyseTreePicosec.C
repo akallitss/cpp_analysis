@@ -780,13 +780,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   for(int i=0;i<4;i++)
   {
 
-    if(strncmp(DetName,"MCP",3)==0)
+    if(strncmp(oscsetup->DetName[i],"MCP",3)==0)
     {
         Thresholds[i] = 5/mV;
         rtMax[i]=1.;
-        pwMax[i]=2.;
-        totMax[i]=2.;
-        chMax[i]=amplMax[i]/mV*12.5;
+        pwMax[i]=20.;
+        totMax[i]=4.;
+        chMax[i]=amplMax[i]/mV;
     }
     if (oscsetup->AmplifierNo[i]==1 || oscsetup->AmplifierNo[i]==4)
     {
@@ -1193,14 +1193,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     sprintf(htitle,"Hit map C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_C_%s",runNo,poolNo,i+1,ftype);
-    hXY[i]=new TH2D(fname2,htitle,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    hXY[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
     hXY[i]->GetXaxis()->SetTitle("X [mm]");
     hXY[i]->GetYaxis()->SetTitle("Y [mm]");
     hXY[i]->SetStats(0);
 
     sprintf(htitle,"Hit map C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_Cuts_C_%s",runNo,poolNo,i+1,ftype);
-    hXYcuts[i]=new TH2D(fname2,htitle,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    hXYcuts[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
     hXYcuts[i]->GetXaxis()->SetTitle("X [mm]");
     hXYcuts[i]->GetYaxis()->SetTitle("Y [mm]");
     hXYcuts[i]->SetStats(0);
@@ -2922,8 +2922,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //runpar->tot=fgtot->GetParameter(1);
     //runpar->stot=fgtot->GetParameter(2);
  
- 
- 
     sccanv->cd(7);
     hAmplvsRT[ci]->Draw("colz");
     sccanv->cd(5);
@@ -2935,8 +2933,39 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     sccanv->Update();
     sccanv->SaveAs(".png");
     sccanv->SaveAs(".pdf");
+ 
     
   }  
+
+//   TString chname = ctypes;
+  TCanvas *xycanv = new TCanvas("XYmaps","XY Maps "+ctypes,1600,1100);
+  xycanv->Divide(actch,2);
+  int ci_shift=0;
+  
+  for (int ci=0; ci<4; ci++)
+  {
+     if (active[ci]==0) continue;
+     
+
+    cout<<BLUE<<"Entering plots directory "<<MAGENTA<< plotdirname <<BLUE<<" for channel "<<MAGENTA<<ci+1<<endlr;
+    gSystem->ChangeDirectory(plotdirname);
+    cout<<GREEN<<"done"<<endlr;
+
+    xycanv->cd(ci_shift+1);
+    hXY[ci]->Draw();
+     xycanv->cd(ci_shift+actch+1);
+     hXYcuts[ci]->Draw();
+     
+     ci_shift++;
+     
+     xycanv->Modified();
+     xycanv->Update();
+     xycanv->SaveAs(".png");
+     xycanv->SaveAs(".pdf");
+     
+  }
+  
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 /// end of ci loop
