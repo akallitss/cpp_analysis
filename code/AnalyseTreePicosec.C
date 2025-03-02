@@ -1670,10 +1670,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  }
 
 	  //cout << "rate structure = " << spar[ci][ntrigs].t10/1000. << endl;
-	  hAmplvsRT[ci]->Fill(spar[ci][ntrigs].ampl,rstm);
+	  hAmplvsRT[ci]->Fill(spar[ci][ntrigs].ampl*mV,rstm);
 // 	  hCHvsAMPL->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch);
-	  hCHvsAMPL[ci]->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].charge);
-	  hAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].tot[0]);
+	  hCHvsAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].charge);
+	  hAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].tot[0]);
 // 	  hCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
 	  hCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/(spar[ci][ntrigs].ampl*mV));
 
