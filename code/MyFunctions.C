@@ -2292,7 +2292,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
             y_d[i] = arr[i+sigstart];
             erx_d[i] = 0;
             ery_d[i] =par->rms; 
-            if (i> sigend-sigstart) ery_d[i]*=10.;
+            if (i> sigend-sigstart) ery_d[i]*=3.3;
             Npointsd++;
             
         }
@@ -2331,23 +2331,18 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_pars[1] = x_mid_right;
       sig_pars[2] = -steepness_left;
       sig_pars[3] = arr[par->maxtime_pos]*0.1;
+      if (sig_pars[3]==0) sig_pars[3]=0.001;
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
 
-      //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<endlr;
-      //set parameter limits for the sig_fitd
 
-
-
-        //Fit implementation with Root Default minimizer
+  //Fit implementation with Root Default minimizer
         TF1 *sig_fit2 =  new TF1("sig_fit2",fermi_dirac,sig_lim_min2,sig_lim_max2, 4);
         sig_fit2->SetParameters(sig_pars);
-        // sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
-        // sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-        sig_fit2->SetParLimits(0, 0.8 * sig_fitd->GetParameter(0), 1.2 * sig_fitd->GetParameter(0));
-        sig_fit2->SetParLimits(3, 0.8 * sig_fitd->GetParameter(3), 1.2 * sig_fitd->GetParameter(3));
-
-
+// //         sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
+//         sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
+        sig_fit2->SetParLimits(0,sig_fitd->GetParameter(0)*0.85,sig_fitd->GetParameter(0)*1.15);
+        sig_fit2->SetParLimits(3,-fabs(sig_fitd->GetParameter(3)*4.1),fabs(sig_fitd->GetParameter(3)*4.1));
         //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
 
         //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
@@ -2361,7 +2356,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         //parameter limits were affecting the fit and producing the error
         sig_fit2->SetParLimits(1, sig_lim_min2, sig_lim_max2); // Assuming positive midpoint
-        sig_fit2->SetParLimits(2, -5, 0);  // Assuming negative steepness
+        sig_fit2->SetParLimits(2, -15, 0);  // Assuming negative steepness
 
 #ifdef DEBUGMSG
    //Debugging the fit parameters
@@ -2392,11 +2387,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           }
 
 #endif
-        // Perform the fit
-        //gErrorIgnoreLevel = kInfo;
+        int oldErrorLevel = gErrorIgnoreLevel;
+        
+        gErrorIgnoreLevel = kError;   // Only error messages will be shown, no warnings or info
+
+        /// Perform the fit
         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
-        //gErrorIgnoreLevel = kError;
-        //Debugging the fit
+        gErrorIgnoreLevel = oldErrorLevel;
+        ///Debugging the fit
         if (r->IsValid())
           {
 #ifdef DEBUGMSG
@@ -2476,10 +2474,10 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
     sig_fittot->SetParError(5, 0.03);
 
   // Set parameter limits
-  sig_fittot->SetParLimits(1, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION); // Assuming positive midpoint
-  sig_fittot->SetParLimits(2, -5, 5);  // Assuming negative steepness
-  sig_fittot->SetParLimits(4, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION); // Assuming positive midpoint
-  sig_fittot->SetParLimits(5, -5, 5);  // Assuming negative steepness
+  sig_fittot->SetParLimits(1, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION*2); // Assuming positive midpoint
+  sig_fittot->SetParLimits(2, -15, 15);  // Assuming negative steepness
+  sig_fittot->SetParLimits(4, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION*2); // Assuming positive midpoint
+  sig_fittot->SetParLimits(5, -15, 15);  // Assuming negative steepness
 
 
 
@@ -2529,10 +2527,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       }
 
       else {
-// #ifdef DEBUGMSG
-        cout << RED << "Enent =  " << evNo << "Fit failed sig_fittot." << endlr;
+        cout << RED << "Fit failed sig_fittot." << endlr;
         //cin.get(); //press enter to continue
-// #endif
 
         // Open a file to write the failed event number
         ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
@@ -2672,7 +2668,7 @@ void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPA
         y_d[i] = arr[i+start];
         erx_d[i] = 0;
         ery_d[i] =par->rms;
-        if (i> end-start) ery_d[i]*=10.;
+        if (i> end-start) ery_d[i]*=3.3;
         Npointsd++;
 
     }
