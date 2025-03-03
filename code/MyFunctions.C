@@ -1884,9 +1884,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
           cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
           cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
-#endif
+
           cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
-         //           return (kFALSE);
+#endif
+          //           return (kFALSE);
         }
 
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -1939,7 +1940,9 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
       // sig_fit->SetParLimits(0, 0.1*sig_fit->GetParameter(0), 10*sig_fit->GetParameter(0));
+      // cout << "Par 1 lim left: " << fit_start_point << " val: " << sig_fit->GetParameter(1) << " right: " << fit_end_point << endl;
       sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
+      // cout << "Par 2 lim left: " << 0.1 << " val: " << sig_fit->GetParameter(2) << " right: " << 10 << endl;
       sig_fit->SetParLimits(2, 0.1, 10);
       // sig_fit->SetParLimits(3, 0.1*sig_fit->GetParameter(0), 10*sig_fit->GetParameter(0));
 
@@ -1950,7 +1953,12 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       }
 #endif
 //Save the fit results and get the success of the fit
+
+  int oldErrorLevel = gErrorIgnoreLevel;
+
+  gErrorIgnoreLevel = kError;
       TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+  gErrorIgnoreLevel = oldErrorLevel;
 #ifdef DEBUGMSG
       cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
       for (int i = 0; i < 4; i++) {
@@ -1970,7 +1978,9 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
 
       if(!SigmoidfitSuccess) {
+#ifdef DEBUGMSG
         cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+#endif
         // Open a file to write the failed event number
         ofstream failedEventsFile("failed_events_sigmoid.txt", ios::app);
         if (failedEventsFile.is_open()) {
@@ -2028,6 +2038,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   // c1->SaveAs("fit_result_single.png");
 #endif
 
+       delete sig_fit;
+       delete sig_waveform;
+       delete minimizer;
+
+
        return SigmoidfitSuccess;
 
 
@@ -2056,8 +2071,9 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
           cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
           cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
           cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
-#endif
+
           cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit MCP has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+#endif
         }
           
 
@@ -2115,7 +2131,11 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         }
 #endif
         //Save the fit results and get the success of the fit
+        int oldErrorLevel = gErrorIgnoreLevel;
+
+        gErrorIgnoreLevel = kError;
         TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+        gErrorIgnoreLevel = oldErrorLevel;
 #ifdef DEBUGMSG
         cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
         for (int i = 0; i < 4; i++) {
@@ -2138,7 +2158,9 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 //cin.get(); //press enter to continue
     bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
     if(!SigmoidfitSuccess) {
+#ifdef DEBUGMSG
       cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+#endif
       // Open a file to write the failed event number
       ofstream failedEventsFile("failed_events_sigmoid_MCP.txt", ios::app);
       if (failedEventsFile.is_open()) {
@@ -2177,6 +2199,12 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
       //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
       par->chi2_sigmoid = sig_fit->GetChisquare();
+
+
+  delete sig_fit;
+  delete sig_waveform;
+  delete minimizer;
+
 
   return SigmoidfitSuccess;
 
@@ -2235,19 +2263,18 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
 }
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
-      // ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
-      // //minimizer->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2
-      // minimizer->SetMaxFunctionCalls(10);
-      // minimizer->SetMaxIterations(10000);  // for GSL
-      // minimizer->SetTolerance(5e-4);
-      // minimizer->SetPrintLevel(0);
-      //
+      ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+      minimizer->SetMaxFunctionCalls(10000); // for Minuit/Minuit2
+      minimizer->SetMaxIterations(10000);  // for GSL
+      minimizer->SetTolerance(1e-6);
+      minimizer->SetPrintLevel(0);
 
-      ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
-      ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
-      ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
-      ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
-      ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
+
+      // ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Migrad");
+      // ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
+      // ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
+      // ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
+      // ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
        int points;
        double x[1000], y[1000], erx[1000], ery[1000];
@@ -2405,7 +2432,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           }
 
         else {
+#ifdef DEBUGMSG
           cout << RED << "Fit failed sig_fit2." << endlr;
+#endif
         }
 
         // Print final parameter values
@@ -2527,8 +2556,10 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       }
 
       else {
+#ifdef DEBUGMSG
         cout << RED << "Fit failed sig_fittot." << endlr;
-        //cin.get(); //press enter to continue
+        cin.get(); //press enter to continue
+#endif
 
         // Open a file to write the failed event number
         ofstream failedEventsFile("failed_events_double_Sigmoid.txt", ios::app);
@@ -2646,6 +2677,13 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
   //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
 
+
+  delete sig_fitd;
+  delete sig_waveformd;
+  delete sig_fit2;
+  delete sig_fittot;
+  delete minimizer;
+
   return doubleSigmoidfitSuccess;
 
 }
@@ -2745,7 +2783,9 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
   cout << "Threshold = " << threshold << endlr;
   cin.get();
+  cout << "tshift = " << tshift << endlr;
 #endif
+
   if (points - tshift < 50) return -1;
 
   
@@ -2771,9 +2811,10 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       ntrig=1;
 //       par->tot[0]=1;
       break;
-    }
-    else
-      tpoint=i;
+      }
+      else {
+        tpoint=i;
+      }
   }
 
 #ifdef DEBUGMSG
@@ -2784,7 +2825,6 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
   if (tpoint>=points-10) return (-1);
-
 
   double miny = data[tpoint];
   double mindy = drv[tpoint];
