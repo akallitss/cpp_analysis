@@ -41,8 +41,8 @@ void testAnalyseLongPulseCiv() {
     const int points = 10002; // Number of points in the waveform
 //    const double dt = 0.1;   // Time step in microseconds
 //    const double threshold = -0.05; // Threshold for the trigger
-    const double threshold = -0.015; // Threshold for the trigger
-    const double sig_shift = 2.0;   // Signal shift for analysis
+    double threshold = -0.015; // Threshold for the trigger Will be overwritten by the file!
+    double sig_shift = 2.0;   // Signal shift for analysis Will be overwritten by the file!
     const int tshift = 0;           // Time shift
     double dt = 0.0;
     double rms = 0.0;
@@ -90,6 +90,22 @@ void testAnalyseLongPulseCiv() {
             std::istringstream iss(line.substr(line.find(":") + 1));
             iss >> bsl;
             std::cout << "BSL: " << bsl << std::endl;
+        } else if (line.find("Threshold: ") != std::string::npos) {
+            // Parse the threshold value
+            std::istringstream iss(line.substr(line.find(":") + 1));
+            iss >> threshold;
+            std::cout << "Threshold: " << threshold << std::endl;
+        } else if (line.find("Sig_tshift: ") != std::string::npos) {
+            // Parse the sig_shift value
+            std::istringstream iss(line.substr(line.find(":") + 1));
+            iss >> sig_shift;
+            std::cout << "Sig_tshift: " << sig_shift << std::endl;
+        } else if (line.find("Event number: ") != std::string::npos) {
+            // Parse the event number
+            int evNo;
+            std::istringstream iss(line.substr(line.find(":") + 1));
+            iss >> evNo;
+            std::cout << "Event number: " << evNo << std::endl;
         } else if (line.find("double data") != std::string::npos) {
             // Parse the data array
             line = line.substr(line.find("{") + 1);
