@@ -86,9 +86,9 @@ int IntegratePulse() {
 //        data[i] = 10 * TMath::Sin(0.1 * time) + 2 * gRandom->Gaus();
 //    }
     // File containing waveform data
-    // string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+     string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
 
-    string filename ="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+    //string filename ="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
     // Variables to hold dt and data values
     double dt = 0.0;
 
@@ -108,7 +108,7 @@ int IntegratePulse() {
     double x_Avg[npoints];
     // Array of tint values
     // double tintValues[] = {1.0,20.0, 50.0, 100.0, 150.0};
-    double tintValues[] = {1.0,20.0, 50.0, 100.0, 150.0};
+    double tintValues[] = {1.0,5.0,20.0, 50.0, 100.0};
     int nTint = sizeof(tintValues) / sizeof(tintValues[0]);
 
     // Colors for the different tint plots
@@ -157,21 +157,35 @@ int IntegratePulse() {
                 cout<<"npoints = "<< npt<<endl;
         IntegratePulse(npoints, data, integral, dt, tint);
 
+
         // Update min and max for integral data
         double localMin = *min_element(integral, integral + npoints);
         double localMax = *max_element(integral, integral + npoints);
         minIntegral = min(minIntegral, localMin);
         maxIntegral = max(maxIntegral, localMax);
+        // cout<<"minIntegral = "<<minIntegral<<endl;
+        // cout<<"minIntegral position "<< min_element(integral, integral + npoints)<<endl;
+        // cout<<"localMin = "<<localMin<<endl;
 
-        // Create a graph for this tint
-		//double xAvg[npoints];
 
-        //ComputeAveragedX(npoints, xValues, xAvg, tint);
-		//TGraph *graphIntegral = new TGraph(npoints, xAvg, integral);
+
+        //find the position of the maximum amplitude
+        double maxAmpl = +1e9;
+        int maxAmplPos = +15;
+        for (int i = 0; i < npoints; i++) {
+            if (integral[i] < maxAmpl && i < 3060) {
+                maxAmpl = integral[i];
+                maxAmplPos = i;
+            }
+        }
+        cout << "Max amplitude = " << maxAmpl << " at position " << maxAmplPos << endl;
+
 
         TGraph *graphIntegral = new TGraph(npoints-npt, &x_values[npt], integral);
         for (int i = 0; i < npoints-npt; i++) {
-            graphIntegral->SetPoint(i, i * dt, integral[i+npt]);
+            // graphIntegral->SetPoint(i, i * dt, integral[i+npt/2]);
+            graphIntegral->SetPoint(i, xValues[i+npt], integral[i+npt]);
+
         }
 
         // Set graph style
@@ -199,6 +213,7 @@ int IntegratePulse() {
         g->GetXaxis()->SetRangeUser(0, npoints * dt);
         g->GetYaxis()->SetRangeUser(minIntegral - 1, maxIntegral + 1);
     }
+
 
     // Draw legend
     legend->Draw();
