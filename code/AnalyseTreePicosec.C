@@ -1246,7 +1246,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   if (oscsetup->AmplifierNo[i]==5) eventNo=2000; ///skip first events because of the time change in the osciloscope.
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
-  //while (eventNo<nevents)
+  //
 
   int successfulFits_sigmoid = 0;
   int totalFits_sigmoid = 0;
@@ -1254,8 +1254,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totalFits_double_sigmoid = 0;
 
 //  while (1 && eventNo<200)
-  while (1 && eventNo<10000)
+  // while (1 && eventNo<10000)
+  while (eventNo<nevents)
   {
+  	//cout << "Event Number: " << eventNo << endl;
+  	// if (eventNo < 1200) { eventNo++; continue; }
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
     cout << "Event number: " << eventNo << endl;
@@ -1600,6 +1603,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile << "dt: " << dt << "\n";
       		outFile << "RMS: " << ppar->rms << "\n";
       		outFile << "BSL: " << ppar->bsl << "\n";
+      		outFile << "Threshold: " << Thresholds[ci] << "\n";
+      		outFile << "Sig_tshift: " << sig_tshift[ci] << "\n";
+      		outFile << "Event number: " << evNo << "\n";
 
       		// Write the sampl array
       		outFile << "double data[" << maxpoints << "] = {";
@@ -1625,6 +1631,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 #ifdef DEBUGMSG
       cout<<RED<<"Threshold "<<Thresholds[ci]<<endlr;
+	  //print smoothing and integration points
+      	// cout<<" Smoothing points = "<<nsmooth<<endl;
+      	// cout<<" Integration points = "<<nint<<endl;
 #endif      
           ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
@@ -2151,7 +2160,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     otree->Fill();
   
     eventNo++;
-    if (eventNo > 1250) break;
+    //if (eventNo > 1250) break;
 
       
   } /// end of the tree while (eventNo < nevents)
