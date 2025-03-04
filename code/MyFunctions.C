@@ -2034,8 +2034,9 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   stats->Draw();
 
   c1->Update();
+  c1->Modified();
   // cin.get();
-  // c1->SaveAs("fit_result_single.png");
+  c1->SaveAs("fit_result_single_MM.png");
 #endif
 
        delete sig_fit;
@@ -2774,6 +2775,147 @@ bool isSigmoidfitSuccessful(TFitResultPtr r) {
   }
 }
 
+pair<vector<double>, vector<double>> IntegratePulse_std(
+    const vector<double>& x, const vector<double>& y, int n) {
+
+  int size = x.size();
+  if (size < n) {
+    return {{}, {}}; // Return empty vectors if n is larger than input size
+  }
+
+  vector<double> x_int(size - n + 1);
+  vector<double> y_int(size - n + 1);
+
+  // Compute moving average for x
+  for (size_t i = 0; i <= size - n; ++i) {
+    x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
+  }
+
+  // Compute convolution for y
+  for (size_t i = 0; i <= size - n; ++i) {
+    y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
+  }
+
+  return {x_int, y_int};
+}
+
+vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, const vector<double>& y_int,
+    double threshold,
+    double ion_tail_width = 100,
+    double end_thresh = -0.01) {
+
+    // Function to find pulse bounds
+    // x_int: x values of the integrated signal
+    // y_int: y values of the integrated signal
+    // threshold: threshold for the signal
+    // ion_tail_width: width of the ion tail in ns
+    // end_thresh: fraction of the ion tail width to integrate to
+    // Returns: vector of pairs of bounds (left, right)
+
+    vector<pair<double, double>> signal_bounds; // Vector to store signal bounds (left,right)
+    bool waveform_finished = false;
+    size_t i_start = 0;
+
+    while (!waveform_finished) {
+        // Get first point below threshold
+        size_t i_trigger = i_start;
+        while (i_trigger < y_int.size() && y_int[i_trigger] >= threshold) {
+            i_trigger++;
+        }
+        cout << "Trigger: " << i_trigger << endl;
+        if (i_trigger >= y_int.size()) {
+            waveform_finished = true;
+            break;
+        }
+
+        // Get min point within ion tail width
+        double x_trigger = x_int[i_trigger];
+        double x_end = x_trigger + ion_tail_width;
+        size_t i_end = i_trigger;
+        while (i_end < x_int.size() && x_int[i_end] <= x_end) {
+            i_end++;
+        }
+        if (i_end >= x_int.size()) {
+            break;
+        }
+        cout << "End: " << i_end << endl;
+
+        size_t i_min = i_trigger;
+        for (size_t i = i_trigger; i < i_end; ++i) {
+            if (y_int[i] < y_int[i_min]) {
+                i_min = i;
+            }
+        }
+        double y_min = y_int[i_min];
+
+        cout << x_trigger << " " << x_end << " " << y_min << " " << end_thresh << endl;
+
+        // Get first point to left of minimum above end fraction of min
+        size_t i_left = i_start;
+        for (size_t i = i_min; i > i_start; --i) {
+            if (y_int[i] > end_thresh) {
+                i_left = i;
+                break;
+            }
+        }
+
+        // Get first point to right of minimum above end fraction of min
+        size_t i_right = i_min;
+        while (i_right < y_int.size() && y_int[i_right] <= end_thresh) {
+            i_right++;
+        }
+        if (i_right >= y_int.size()) break;
+
+        signal_bounds.emplace_back(x_int[i_left], x_int[i_right]);
+        cout << "Bounds: (" << x_int[i_left] << ", " << x_int[i_right] << ")" << endl;
+
+        i_start = i_right;
+    }
+
+    return signal_bounds;
+}
+
+void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, int npt, double dt) {
+    // Function to adjust pulse bounds to include the full pulse
+    // pulse_bounds: vector of pairs of bounds (left, right)
+    // n: number of points in the time window
+    // dt: time step
+    // Returns: void
+
+    for (auto & pulse_bound : pulse_bounds) {
+        pulse_bound.first += static_cast<float>(npt) / 2 * dt;
+        pulse_bound.second -= static_cast<float>(npt) / 2 * dt;
+    }
+}
+
+vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double threshold) {
+    // Function to get trigger windows
+    // dt: time step
+    // threshold: threshold for the signal
+    // Returns: vector of pairs of bounds (left, right)
+
+      // Convert ptime and sampl to std::vector
+      vector<double> t_values = vector<double>(ptime, ptime + maxpoints);
+      vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
+      //Integrate pulse
+      auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, INTEGRATION_TIME_TRIG);
+      //Calculate thresholds ion tail
+      double integration_threshold = threshold * sqrt(INTEGRATION_TIME_TRIG);
+      double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
+      //Get trigger windows
+      vector<pair<double, double>> pulse_bounds = find_pulse_bounds(x_int, y_int, threshold, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold);
+      //adjust pulse bounds to the original time scale
+      //add npoints/2*dt to the left and subtract npoints/2*dt from the right to get the full pulse
+      adjust_pulse_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, dt);
+
+      // Print the pulse bounds
+      cout << "Pulse bounds:" << endl;
+      for (auto [left, right] : pulse_bounds) {
+        cout << "  [" << left << ", " << right << "]" << endl;
+      }
+
+      return pulse_bounds;
+}
 
 int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* drv, PEAKPARAM *par, double threshold, double sig_shift, int tshift)
 {
@@ -2825,7 +2967,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 //    cout<<"tpoint = "<<tpoint*dt<<endl;
   if (tpoint>=points-10) return (-1);
-
+  ////////////////////////////////////////////////////
   double miny = data[tpoint];
   double mindy = drv[tpoint];
   bool secondary_pulse = false;
