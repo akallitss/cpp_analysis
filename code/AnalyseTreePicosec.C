@@ -490,7 +490,6 @@ cout<<"________________++_________________" << endl;
   
   branch = tree->GetBranch("sumpoints");
   branch->SetAddress(&maxpoints);
-  
   branch = tree->GetBranch("eventNo");
   branch->SetAddress(&evNo);
   branch = tree->GetBranch("srsNo");
@@ -775,11 +774,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   double rmax = 20.;
   int dtbins = 800;
   double tmax = 0.002;  //  [ms]
-
+  double single_point_bkg_rejection_probability = pow(total_bkg_rejection_probability, 1.0 / maxpoints );
+#ifdef DEBUGMSG
+	cout <<RED << "single_point_bkg_rejection_probability = " << single_point_bkg_rejection_probability << endlr;
+#endif
 /// vvv This for loop makes threshold +0.02!!!
   for(int i=0;i<4;i++)
   {
-
     if(strncmp(oscsetup->DetName[i],"MCP",3)==0)
     {
         Thresholds[i] = 5/mV;
@@ -828,6 +829,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   }
   /// ^^^ This for loop makes threshold +0.02!!!
+
+ //  for (int i=0; i<4; i++)
+	// Thresholds[i] = rmsC[i] * TMath::NormQuantile(1 - single_point_bkg_rejection_probability); // so that its always negative
 
   for(int i=0;i<4;i++)
   {
@@ -929,7 +933,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   cout<<RED<<"Expected average rate = "<< exprate<<" / sec ,  average DT = "<<1./exprate<<" , implemented DT = "<<tmax/dtbins<<"  Tmax = "<<tmax<<endlr;
   
   
-  
+  ///////// Histogram definitions here /////////////////////////
   
   TH1D *hAMPL[4];
   TH1D *hCH[4];
@@ -1228,7 +1232,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //-----------------------------------------------------
   }
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// END the 4-loop here!
+/// END the 4-loop of histograms here!
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   int npt = 2;
@@ -1243,7 +1247,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totNtrigs=0;
   int totNsparks = 0;
   long double drawdt=0.;
-//   if (oscsetup->AmplifierNo[i]==5) eventNo=2000; ///skip first events because of the time change in the osciloscope.
+//   if (oscsetup->AmplifierNo[i]==5) eventNo=2000; ///skip first events because of the time change in the oscilloscope.
   
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //
@@ -1253,8 +1257,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int successfulFits_double_sigmoid = 0;
   int totalFits_double_sigmoid = 0;
 
-//  while (1 && eventNo<200)
-  // while (1 && eventNo<10000)
+
+//while (1 && eventNo<10000)
   while (eventNo<nevents)
   {
   	//cout << "Event Number: " << eventNo << endl;
@@ -1267,8 +1271,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     if (draw)
 	{
 	  cout<<endl<<"______________________________________________________________________"<<endl<<endl;;
-    cout<<endl<<"Entering 1st draw_____________________________________________________"<<endl<<endl;;
-	  cout<<KRESET<<"Event to draw : ";
+#ifdef DEBUGMSG
+    	cout<<endl<<"Entering 1st draw_____________________________________________________"<<endl<<endl;;
+#endif
+    	cout<<KRESET<<"Event to draw : ";
 	  cin>>eventNo;
 	}
 
@@ -1342,7 +1348,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     if (draw)
     {
-      cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
+#ifdef DEBUGMSG
+        cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
+#endif
 
         cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
@@ -1518,8 +1526,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     DerivateArray(amplC[ci],dsampl,maxpoints,dt,npt,1);
 
     /// derivate smoothed data array
-//     DerivateArray(sampl,dsampl,maxpoints,dt,npt,1);
-   //continue;
+	//DerivateArray(sampl,dsampl,maxpoints,dt,npt,1);
+    //continue;
     //return 11;
 
     int itrig =0;
@@ -1606,7 +1614,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile << "Threshold: " << Thresholds[ci] << "\n";
       		outFile << "Sig_tshift: " << sig_tshift[ci] << "\n";
       		outFile << "Event number: " << evNo << "\n";
-
+      		outFile <<" INTEGRATION_TIME_TRIGGER: " << INTEGRATION_TIME_TRIG << "\n";
+      		outFile << " total_bkg_rejection_probability: " << total_bkg_rejection_probability << "\n";
+      		outFile << " ion_tail_end_point_threshold_fraction: " << ion_tail_end_point_threshold_fraction << "\n";
+			outFile << " CIVIDEC_PULSE_DURATION: " << CIVIDEC_PULSE_DURATION << "\n";
       		// Write the sampl array
       		outFile << "double data[" << maxpoints << "] = {";
       		for (int i = 0; i < maxpoints; ++i) {
@@ -1622,6 +1633,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       			if (i < maxpoints - 1) outFile << ", ";
       		}
       		outFile << "};\n";
+			// Write INTEGRATION_TIME_TRIG
+
 
       		// Close the file
       		outFile.close();
@@ -1634,8 +1647,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  //print smoothing and integration points
       	// cout<<" Smoothing points = "<<nsmooth<<endl;
       	// cout<<" Integration points = "<<nint<<endl;
-#endif      
-          ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
+#endif
+
+      	// Give trigger window to the function
+		// vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci] );
+
+      	// cin.get();
+
+      	//for each trigger window do the analysis
+
+        ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
       	if (ti<0) break;
       	if (ti < maxpoints-50) {
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
