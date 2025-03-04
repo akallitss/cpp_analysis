@@ -1,15 +1,18 @@
 #ifndef MYFUNCTIONS_H
 #define MYFUNCTIONS_H 1
 
-#include <TROOT.h>
+
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <iostream>
-
 #include <fstream>
+#include <iostream>
+#include <vector>
+#include <sstream>
+#include <numeric>
+#include <algorithm>
 #include <cmath>
 
+#include <TROOT.h>
 #include <TFile.h>
 #include <TH1F.h>
 #include "TFitResult.h"
@@ -410,10 +413,17 @@ const int N_INTEGRATION_POINTS = 20;
 
 //const double CIVIDEC_PULSE_DURATION = 75; // [ns]
 const double CIVIDEC_PULSE_DURATION = 120; // [ns]
+// const double ION_TAIL_DURATION = 120; // [ns]
 const double CIVIDEC_PEAK_DURATION = 5; // [ns]
 
-
 const double SIGMOID_EXTENTION = 3; //[ns]
+
+const double INTEGRATION_TIME_TRIG = 5.0; // [ns]
+const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
+                                           // random noise rejection using the 68-95-99.7 rule
+const double ion_tail_end_point_threshold_fraction = 0.2 ; // Set ion tail end point fraction to 20% of threshold
+
+
 /// definitions for the bin2tree.cxx ___________
 #ifndef PATH_NAMES_DATA_CODE
 #define PATH_NAMES_DATA_CODE 1
