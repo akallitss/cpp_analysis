@@ -2803,8 +2803,8 @@ pair<vector<double>, vector<double>> IntegratePulse_std(
 
 vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, const vector<double>& y_int,
     double threshold,
-    double ion_tail_width = 200,
-    double end_thresh = -0.01) {
+    double ion_tail_width,
+    double end_thresh) {
 
     // Function to find pulse bounds
     // x_int: x values of the integrated signal
@@ -2814,6 +2814,8 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
     // end_thresh: fraction of the ion tail width to integrate to
     // Returns: vector of pairs of bounds (left, right)
 
+    double end_thresh_right = 0;
+
     vector<pair<double, double>> signal_bounds; // Vector to store signal bounds (left,right)
     bool waveform_finished = false;
     size_t i_start = 0;
@@ -2821,9 +2823,20 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
     while (!waveform_finished) {
         // Get first point below threshold
         size_t i_trigger = i_start;
+
         while (i_trigger < y_int.size() && y_int[i_trigger] >= threshold) {
             i_trigger++;
+           // cout<<i_trigger<<endl;
+          // cout<<"Threshold: "<<threshold<<" itrigger =" << i_trigger << " y = "<< y_int[i_trigger]<<endl;
+          // cin.get();
         }
+        // TCanvas* c3 = new TCanvas("c3", "c3", 800, 600);
+        // TGraph* gr = new TGraph(x_int.size(), x_int.data(), y_int.data());
+        // gr->Draw("AL");
+        // c3->Update();
+        // c3->Modified();
+        // c3->WaitPrimitive();
+
         cout << "Trigger: " << i_trigger << endl;
         if (i_trigger >= y_int.size()) {
             waveform_finished = true;
@@ -2834,8 +2847,9 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
         double x_trigger = x_int[i_trigger];
         double x_end = x_trigger + ion_tail_width;
         size_t i_end = i_trigger;
-        while (i_end < x_int.size() && x_int[i_end] <= x_end) {
+        while ((i_end < x_int.size() && x_int[i_end] <= x_end) ) {
             i_end++;
+          //cout<<"i_end: "<<i_end<<endl;
         }
         if (i_end >= x_int.size()) {
             break;
@@ -2863,7 +2877,9 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
 
         // Get first point to right of minimum above end fraction of min
         size_t i_right = i_min;
-        while (i_right < y_int.size() && y_int[i_right] <= end_thresh) {
+        while ((i_right < y_int.size() && y_int[i_right] <= end_thresh_right) && x_int[i_right] < x_int[i_min] + ion_tail_width) {
+        // while ((i_right < y_int.size() && y_int[i_right] <= end_thresh)) {
+          //added extra condition in case the end is inside the ion tail to go until the end of the ion tail
             i_right++;
         }
         if (i_right >= y_int.size()) break;
@@ -2891,8 +2907,8 @@ void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, double tint
 
 
     for (auto & pulse_bound : pulse_bounds) {
-      pulse_bound.first -= static_cast<float> (time_shift);  // Extend leftward
-      pulse_bound.second += static_cast<float> (time_shift); // Extend rightward
+      pulse_bound.first += static_cast<float> (time_shift);  // adjust rightward
+      pulse_bound.second -= static_cast<float> (time_shift); // adjust leftward
     }
 }
 
@@ -2902,16 +2918,19 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
     // threshold: threshold for the signal
     // Returns: vector of pairs of bounds (left, right)
 
-
+      //convert integration time to integration points
+      int int_points = INTEGRATION_TIME_TRIG/dt;
       // Convert ptime and sampl to std::vector
       vector<double> t_values = vector<double>(ptime, ptime + maxpoints);
       vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
       //Integrate pulse
-      auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, INTEGRATION_TIME_TRIG);
+      auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, int_points);
       //Calculate thresholds ion tail
-      double integration_threshold = threshold * sqrt(INTEGRATION_TIME_TRIG/dt);
-      // double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
-      double ion_tail_end_point_threshold = integration_threshold * 0.0;
+      double integration_threshold = threshold * sqrt(int_points);
+      cout<<threshold<<"  " <<sqrt(int_points) << endl;
+      cout<<"Integration threshold: "<<integration_threshold<<endl;
+      double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
+      // double ion_tail_end_point_threshold = integration_threshold * 0.0;
       // print the ion_tail point threshold fraction
       // cout<<" Ion tain point threshold integration: "<<integration_threshold<<endl;
       // cin.get();
@@ -2950,8 +2969,10 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
 
   if (t == 0) {
     graphIntegral->Draw("AL"); // First graph with axes
+    //graphCDF_int->Draw("L SAME");
   } else {
     graphIntegral->Draw("L"); // Overlay subsequent graphs
+    //graphCDF_int->Draw("L SAME");
   }
 
   // Add entry to legend
