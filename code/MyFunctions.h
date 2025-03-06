@@ -40,7 +40,7 @@
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-#undef DEBUGMSG
+// #undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
@@ -421,7 +421,7 @@ const double SIGMOID_EXTENTION = 3; //[ns]
 const double INTEGRATION_TIME_TRIG = 5.0; // [ns]
 const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
                                            // random noise rejection using the 68-95-99.7 rule
-const double ion_tail_end_point_threshold_fraction = 0.2 ; // Set ion tail end point fraction to 20% of threshold
+const double ion_tail_end_point_threshold_fraction = 0.05 ; // Set ion tail end point fraction to 20% of threshold
 
 
 /// definitions for the bin2tree.cxx ___________
