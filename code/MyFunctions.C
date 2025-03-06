@@ -2789,11 +2789,13 @@ pair<vector<double>, vector<double>> IntegratePulse_std(
   // Compute moving average for x
   for (size_t i = 0; i <= size - n; ++i) {
     x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
+
   }
 
   // Compute convolution for y
   for (size_t i = 0; i <= size - n; ++i) {
     y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
+    //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
   }
 
   return {x_int, y_int};
@@ -2801,7 +2803,7 @@ pair<vector<double>, vector<double>> IntegratePulse_std(
 
 vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, const vector<double>& y_int,
     double threshold,
-    double ion_tail_width = 100,
+    double ion_tail_width = 200,
     double end_thresh = -0.01) {
 
     // Function to find pulse bounds
@@ -2870,21 +2872,27 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
         cout << "Bounds: (" << x_int[i_left] << ", " << x_int[i_right] << ")" << endl;
 
         i_start = i_right;
+      // cin.get();
     }
 
     return signal_bounds;
 }
 
-void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, int npt, double dt) {
+void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, double tint, double dt) {
     // Function to adjust pulse bounds to include the full pulse
     // pulse_bounds: vector of pairs of bounds (left, right)
     // n: number of points in the time window
     // dt: time step
     // Returns: void
 
+
+    //shift to convert to the real time scale
+    double time_shift = tint/2.0;
+
+
     for (auto & pulse_bound : pulse_bounds) {
-        pulse_bound.first += static_cast<float>(npt) / 2 * dt;
-        pulse_bound.second -= static_cast<float>(npt) / 2 * dt;
+      pulse_bound.first -= static_cast<float> (time_shift);  // Extend leftward
+      pulse_bound.second += static_cast<float> (time_shift); // Extend rightward
     }
 }
 
@@ -2894,16 +2902,21 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
     // threshold: threshold for the signal
     // Returns: vector of pairs of bounds (left, right)
 
+
       // Convert ptime and sampl to std::vector
       vector<double> t_values = vector<double>(ptime, ptime + maxpoints);
       vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
       //Integrate pulse
       auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, INTEGRATION_TIME_TRIG);
       //Calculate thresholds ion tail
-      double integration_threshold = threshold * sqrt(INTEGRATION_TIME_TRIG);
-      double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
-      //Get trigger windows
-      vector<pair<double, double>> pulse_bounds = find_pulse_bounds(x_int, y_int, threshold, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold);
+      double integration_threshold = threshold * sqrt(INTEGRATION_TIME_TRIG/dt);
+      // double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
+      double ion_tail_end_point_threshold = integration_threshold * 0.0;
+      // print the ion_tail point threshold fraction
+      // cout<<" Ion tain point threshold integration: "<<integration_threshold<<endl;
+      // cin.get();
+      //Get trigger windows from the integrated pulse
+      vector<pair<double, double>> pulse_bounds = find_pulse_bounds(x_int, y_int, integration_threshold, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold);
       //adjust pulse bounds to the original time scale
       //add npoints/2*dt to the left and subtract npoints/2*dt from the right to get the full pulse
       adjust_pulse_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, dt);
@@ -2916,6 +2929,55 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
 
       return pulse_bounds;
 }
+
+void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<double>& y_int,
+                            const std::vector<std::pair<double, double>>& pulse_bounds,
+                            double& minIntegral, double& maxIntegral, int t, TCanvas* c1, TLegend* legend,
+                            const std::vector<int>& colors, double tint) {
+
+  double localMin = *std::min_element(y_int.begin(), y_int.end());
+  double localMax = *std::max_element(y_int.begin(), y_int.end());
+  minIntegral = std::min(minIntegral, localMin);
+  maxIntegral = std::max(maxIntegral, localMax);
+
+  // Create graph
+  TGraph* graphIntegral = new TGraph(x_int.size(), x_int.data(), y_int.data());
+  graphIntegral->SetLineColor(colors[t % colors.size()]);
+  graphIntegral->SetLineWidth(2);
+  graphIntegral->SetTitle(";Time [ns];Integral [V*ns]");
+
+  // Draw graph
+
+  if (t == 0) {
+    graphIntegral->Draw("AL"); // First graph with axes
+  } else {
+    graphIntegral->Draw("L"); // Overlay subsequent graphs
+  }
+
+  // Add entry to legend
+  legend->AddEntry(graphIntegral, Form("Tint = %.1f ns", tint), "l");
+
+  // Draw vertical lines for pulse bounds
+  for (const auto& bound : pulse_bounds) {
+    double x_left = bound.first;
+    double x_right = bound.second;
+
+    TLine* line_left = new TLine(x_left, minIntegral, x_left, maxIntegral);
+    TLine* line_right = new TLine(x_right, minIntegral, x_right, maxIntegral);
+
+    //color differently the left and the right line of the bounds
+    line_left->SetLineStyle(2);
+    line_right->SetLineStyle(2);
+    line_left->SetLineColor(colors[t % colors.size()]);
+    line_right->SetLineColor(colors[t+10 % colors.size()]);
+    //line_right->SetLineColor(colors[t % colors.size()]);
+
+
+    line_left->Draw();
+    line_right->Draw();
+  }
+}
+
 
 int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* drv, PEAKPARAM *par, double threshold, double sig_shift, int tshift)
 {
