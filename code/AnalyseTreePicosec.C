@@ -830,8 +830,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   }
   /// ^^^ This for loop makes threshold +0.02!!!
 
- //  for (int i=0; i<4; i++)
-	// Thresholds[i] = rmsC[i] * TMath::NormQuantile(1 - single_point_bkg_rejection_probability); // so that its always negative
+  for (int i=0; i<4; i++)
+	Thresholds[i] = rmsC[i] * TMath::NormQuantile(1 - single_point_bkg_rejection_probability); // so that its always negative
 
   for(int i=0;i<4;i++)
   {
@@ -1614,7 +1614,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile << "Threshold: " << Thresholds[ci] << "\n";
       		outFile << "Sig_tshift: " << sig_tshift[ci] << "\n";
       		outFile << "Event number: " << evNo << "\n";
-      		outFile <<" INTEGRATION_TIME_TRIGGER: " << INTEGRATION_TIME_TRIG << "\n";
+			outFile << "INTEGRATION_TIME_TRIGGER: " << INTEGRATION_TIME_TRIG << "\n";
       		outFile << " total_bkg_rejection_probability: " << total_bkg_rejection_probability << "\n";
       		outFile << " ion_tail_end_point_threshold_fraction: " << ion_tail_end_point_threshold_fraction << "\n";
 			outFile << " CIVIDEC_PULSE_DURATION: " << CIVIDEC_PULSE_DURATION << "\n";
@@ -1625,7 +1625,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       			if (i < maxpoints - 1) outFile << ", ";
       		}
       		outFile << "};\n";
-
+			//Write time array
+      		outFile << "double time[" << maxpoints << "] = {";
+      		for (int i = 0; i < maxpoints; ++i) {
+	  			outFile << fixed << setprecision(6) << ptime[i];
+	  			if (i < maxpoints - 1) outFile << ", ";
+	  		}
+      		outFile << "};\n";
       		// Write the dsampl array
       		outFile << "double drv[" << maxpoints << "] = {";
       		for (int i = 0; i < maxpoints; ++i) {
