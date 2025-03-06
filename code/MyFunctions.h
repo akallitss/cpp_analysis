@@ -411,9 +411,8 @@ const double Threshold = 0.0073;
 //const int N_INTEGRATION_POINTS = 10; default
 const int N_INTEGRATION_POINTS = 20;
 
-//const double CIVIDEC_PULSE_DURATION = 75; // [ns]
-const double CIVIDEC_PULSE_DURATION = 120; // [ns]
-// const double ION_TAIL_DURATION = 120; // [ns]
+// const double CIVIDEC_PULSE_DURATION = 75; // [ns]
+const double CIVIDEC_PULSE_DURATION = 150; // [ns]
 const double CIVIDEC_PEAK_DURATION = 5; // [ns]
 
 const double SIGMOID_EXTENTION = 3; //[ns]
@@ -421,7 +420,7 @@ const double SIGMOID_EXTENTION = 3; //[ns]
 const double INTEGRATION_TIME_TRIG = 5.0; // [ns]
 const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
                                            // random noise rejection using the 68-95-99.7 rule
-const double ion_tail_end_point_threshold_fraction = 0.05 ; // Set ion tail end point fraction to 20% of threshold
+const double ion_tail_end_point_threshold_fraction = 0.5 ; // Set ion tail end point fraction to 20% of threshold
 
 
 /// definitions for the bin2tree.cxx ___________
