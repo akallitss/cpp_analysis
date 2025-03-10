@@ -1618,6 +1618,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile << " total_bkg_rejection_probability: " << total_bkg_rejection_probability << "\n";
       		outFile << " ion_tail_end_point_threshold_fraction: " << ion_tail_end_point_threshold_fraction << "\n";
 			outFile << " CIVIDEC_PULSE_DURATION: " << CIVIDEC_PULSE_DURATION << "\n";
+      		outFile << " CIVIDEC_PEAK_DURATION: " << CIVIDEC_PEAK_DURATION << "\n";
       		// Write the sampl array
       		outFile << "double data[" << maxpoints << "] = {";
       		for (int i = 0; i < maxpoints; ++i) {
