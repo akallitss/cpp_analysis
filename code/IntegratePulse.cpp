@@ -20,7 +20,7 @@ using namespace std;
 bool ReadWaveformData(const string& filename, double& dt, vector<double>& dataValues,vector<double>& timeValues, vector<double>& drvValues,
                       double& threshold, double& bsl, double& rms, double INTEGRATION_TIME_TRIG,
                       double& total_bkg_rejection_probability, double& ion_tail_end_point_threshold_fraction,
-                      double CIVIDEC_PULSE_DURATION) {
+                      double CIVIDEC_PULSE_DURATION, double CIVIDEC_PEAK_DURATION) {
     ifstream infile(filename);
     if (!infile.is_open()) {
         cerr << "Error: Unable to open file " << filename << endl;
@@ -96,6 +96,10 @@ bool ReadWaveformData(const string& filename, double& dt, vector<double>& dataVa
             istringstream iss(line.substr(line.find(":") + 1));
             iss >> CIVIDEC_PULSE_DURATION;
             cout << "CIVIDEC_PULSE_DURATION: " << CIVIDEC_PULSE_DURATION << endl;
+        }else if (line.find("CIVIDEC_PEAK_DURATION:") != string::npos) {
+            istringstream iss(line.substr(line.find(":") + 1));
+            iss >> CIVIDEC_PEAK_DURATION;
+            cout << "CIVIDEC_PEAK_DURATION: " << CIVIDEC_PEAK_DURATION << endl;
         }
     }
 
@@ -108,36 +112,55 @@ int IntegratePulse() {
 
     // File containing waveform data
      string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+     // string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_July_h4/plots/Run057/Pool4/moreplots/waveform_data.txt" ;
     //string filename ="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
 
 
     // Variables to hold dt and data values
-    double dt = 0.0;
-    double threshold = 0.0;
-    double bsl = 0.0;
-    double rms = 0.0;
+    double dt = 0.0, threshold = 0.0, bsl = 0.0, rms = 0.0;
     double epeak_width = 5.0; // Width of the peak in ns
-    //double ion_tail_width = 100.0; // Width of the ion tail in ns
-    // double ion_tail_end_point_threshold = 0.01; // Fraction of the ion tail width to integrate to
+    double ion_tail_width = 150.0; // Width of the ion tail in ns
     double total_bkg_rejection_probability = 0.0; // for the total bkg waveform points to be rejected
     double ion_tail_end_point_threshold_fraction = 0.0; // Set ion tail end point fraction
-    int maxpoints = 10002;
 
 
-    vector<double> dataValues;
-    vector<double> drvValues;
-    vector<double> timeValues;
+    vector<double> dataValues, drvValues, timeValues, cdfValues, cdfValues_smooth150, cdfValues_int;
+
 
     // Read the waveform data
-    if (!ReadWaveformData(filename, dt, dataValues, timeValues, drvValues, threshold, bsl, rms, INTEGRATION_TIME_TRIG, total_bkg_rejection_probability, ion_tail_end_point_threshold_fraction, CIVIDEC_PULSE_DURATION)) {
+    if (!ReadWaveformData(filename, dt, dataValues, timeValues, drvValues, threshold, bsl, rms, INTEGRATION_TIME_TRIG, total_bkg_rejection_probability, ion_tail_end_point_threshold_fraction, CIVIDEC_PULSE_DURATION, CIVIDEC_PEAK_DURATION)) {
         return -1; // Exit if file reading fails
     }
 
     // Convert dataValues vector to array for compatibility with ROOT
     int npoints = dataValues.size();
+
+    //convert from vector to array
     double* data = &dataValues[0];
     double* drv = &drvValues[0];
+    double* xValues = &timeValues[0];     //Replace xCoordinates with timeValues
+    double* cdf;
+    double* cdf_smooth150;
+    double* cdf_int;
 
+    double drvCFD[npoints];
+    double drvsmoothCFD_11_5[npoints];
+    double smoothCFD_11[npoints];
+    double smoothdata[npoints];
+    double smoothdata_150[npoints];
+    double cdf_int_smoothed_173[npoints];
+
+
+    //convert from array to vector
+
+    vector<double> smoothdataVec = vector<double>(smoothdata, smoothdata + npoints);
+    vector<double> smoothdata_150Vec = vector<double>(smoothdata_150, smoothdata_150 + npoints);
+    vector<double> drvCFDVec = vector<double>(drvCFD, drvCFD + npoints);
+    vector<double> drvCFD2Vec = vector<double>(drvsmoothCFD_11_5, drvsmoothCFD_11_5 + npoints);
+    vector<double> smoothCFDVec = vector<double>(smoothCFD_11, smoothCFD_11 + npoints);
+
+
+    // double tintValues[] = {epeak_width, ion_tail_width}; // Width of the peak in ns (5.0)
     double tintValues[] = {epeak_width}; // Width of the peak in ns (5.0)
     int nTint = sizeof(tintValues) / sizeof(tintValues[0]);
 
@@ -153,17 +176,11 @@ int IntegratePulse() {
     double maxDrv = *max_element(drv, drv + npoints);
 
     double globalMin = min(minData, minDrv) - 1;
-    double globalMax = max(maxData, maxDrv) + 1;
 
-
-
-	//Replace xCoordinates with timeValues
-    double* xValues = &timeValues[0];
 
     // Create a canvas with two pads
     TCanvas *c1 = new TCanvas("c1", "Integration and Original Data", 800, 800);
     c1->Divide(1, 2);
-
 
     // Pad 1: Original Data
     c1->cd(1);
@@ -171,12 +188,22 @@ int IntegratePulse() {
     for (int i = 0; i < npoints; i++) {
         graphData->SetPoint(i, i * dt, data[i]);
     }
-    //graphData->SetTitle("Original Data;Time [ns];Time [ns]");
     graphData->SetLineColor(kBlack);
-    graphData->SetLineWidth(3);
-    //graphData->Draw("AL");
-    // graphData->GetXaxis()->SetRangeUser(0, npoints * dt);
-    // graphData->GetYaxis()->SetRangeUser(minData - 1, maxData + 1);
+    graphData->SetLineWidth(2);
+
+    //recalculate the baseline here using the first 80ns of the data
+    auto baseline_region_end = std::find_if(timeValues.begin(), timeValues.end(), [](double t) { return t > 80.0; });
+    size_t baseline_region_end_point = std::distance(timeValues.begin(), baseline_region_end);
+    auto [baseline_rms_test, baseline_level_test] = FindBaselineLevel(data, baseline_region_end_point);
+
+    cout<<"Baseline RMS = "<<baseline_rms_test<<endl;
+    cout<<"Baseline Level = "<<baseline_level_test<<endl;
+    // return 222222;
+
+    // subtract the baseline from the data
+    for (int i = 0; i < npoints; i++) {
+        data[i] -= baseline_level_test;
+    }
 
     //add the derivative of the data in the same graph as the original data
     TGraph *graphDrv = new TGraph(npoints, xValues, drv);
@@ -184,82 +211,59 @@ int IntegratePulse() {
         graphDrv->SetPoint(i, i * dt, drv[i]);
     }
     graphDrv->SetTitle("Derivative Data;Time [ns];Amplitude [V/ns]");
-    graphDrv->SetLineColor(kRed);
+    graphDrv->SetLineColor(kGreen);
     graphDrv->SetLineWidth(2);
-    //graphDrv->Draw("SAME");
-    // graphDrv->GetXaxis()->SetRangeUser(0, npoints * dt);
-
-
-    // graphData->GetYaxis()->SetRangeUser(globalMin, globalMax); // Adjust Y-axis
-    // graphData->Draw("AL");  // Original data
-    // graphDrv->Draw("L SAME");  // Derivative data
 
     //calculate the cumulative distribution of the waveform data
+    cdfValues = CDF(dataValues);
+    SmoothArray(data, smoothdata, npoints,1500, 1);
+    cdfValues_smooth150 = CDF(smoothdataVec);
+    cdf = &cdfValues[0];
+    cdf_smooth150 = &cdfValues_smooth150[0];
 
-    vector<double> cdfValues(npoints, 0.0);
-    cdfValues[0] = dataValues[0];
-
-
-    for (int i = 1; i < npoints; i++) {
-        cdfValues[i] = cdfValues[i - 1] + dataValues[i];
+    SmoothArray(cdf, smoothCFD_11, npoints,11, 1);
+    DerivateArray(smoothCFD_11, drvsmoothCFD_11_5, npoints, dt,5);
+    for (int i=0; i<npoints; i++) {
+        drvsmoothCFD_11_5[i]*=-10;
     }
 
-    // Normalize CDF
-    for (int i = 0; i < npoints; i++) {
-        cdfValues[i] /= -fabs(cdfValues[npoints - 1]);  // Normalize to range [0,1] -- this makes the pulse positive
-    }
-    double* cdf = &cdfValues[0];
+    // SmoothArray(data, smoothdata_50, npoints,50, 1);
+    // SmoothArray(smoothdata_50, smoothdata_150, npoints,150, 1);
+
+    DerivateArray(cdf, drvCFD, npoints, dt,3); //Derivative of the CDF
+    vector<double> drvCDFValues(npoints, 0.0);
+
+    //convert drvCDFValues vector to array
+    double* cdfDrv = &drvCDFValues[0];
 
     // Determine min and max for y-axis range
-    double minCdf = *min_element(cdf, cdf + npoints);
     double maxCdf = *max_element(cdf, cdf + npoints);
 
-    double globalMinCDF = min(minData, minCdf) - 1;
     double globalMaxCDF = max(maxData, maxCdf) + 1;
 
     TGraph *graphCDF = new TGraph(npoints, xValues, &cdfValues[0]);
-    graphCDF->SetTitle("Cumulative Distribution Function;Time [ns];CDF");
+    graphCDF->SetTitle("Data CDF;Time [ns];CDF");
     graphCDF->SetLineColor(kBlue);
-    graphCDF->SetLineWidth(2);
+    graphCDF->SetLineWidth(5);
 
-    //Derivative of the CDF
-    vector<double> drvCDFValues(npoints, 0.0);
-    //convert drvCDFValues vector to array
-
-
-    for (int i = 1; i < npoints; i++) {
-        drvCDFValues[i] = (cdfValues[i] - cdfValues[i - 1]) / dt;
-    }
-    double* drvCDF = &drvCDFValues[0];
-    double drvCFD2[npoints];
-    double smoothCFD[npoints];
-    double smoothdata[npoints];
-    double smoothdata2[npoints];
-
-    SmoothArray(cdf, smoothCFD, npoints,11, 1);
-    // SmoothArray(data, smoothdata, npoints,50, 1);
-    // SmoothArray(smoothdata, smoothdata2, npoints,173, 1);
-    // DerivateArray(cdf, drvCFD2, npoints, dt,3);
-    DerivateArray(smoothCFD, drvCFD2, npoints, dt,5);
-    for (int i=0; i<npoints; i++) {
-        drvCFD2[i]*=-10;
-    }
-    // Determine min and max for y-axis range
-    double mindrvCDF = *min_element(drvCDF, drvCDF + npoints);
-    double maxdrvCDF = *max_element(drvCDF, drvCDF + npoints);
-
-    double globalMindrvCDF  = min(minData, mindrvCDF) - 1;
-    double globalMaxdrvCDF  = max(maxData, maxdrvCDF) + 1;
-
+    TGraph *graphCDF_smooth150 = new TGraph(npoints, xValues, &cdfValues_smooth150[0]);
+    graphCDF_smooth150->SetTitle(" Smooth 150ns Data CDF ;Time [ns];CDF");
+    graphCDF_smooth150->SetLineColor(kMagenta+3);
+    graphCDF_smooth150->SetLineWidth(2);
 
     //plot the derivative of the CDF
-    TGraph *graphDrvCDF = new TGraph(npoints, xValues, drvCDF);
+    TGraph *graphDrvCDF = new TGraph(npoints, xValues, cdfDrv);
     graphDrvCDF->SetTitle("Derivative of the Cumulative Distribution Function;Time [ns];dCDF/dt");
     graphDrvCDF->SetLineColor(kGreen);
     graphDrvCDF->SetLineWidth(2);
 
-    TGraph *graphDrvCDF2 = new TGraph(npoints, xValues, drvCFD2);
-    graphDrvCDF2->SetTitle("Derivative of the Cumulative Distribution Function;Time [ns];dCDF/dt");
+    TGraph *graphSmoothData = new TGraph(npoints, xValues, smoothdata);
+    graphSmoothData->SetTitle("Smooth Data;Time [ns];dCDF/dt");
+    graphSmoothData->SetLineColor(kViolet+1);
+    graphSmoothData->SetLineWidth(2);
+
+    TGraph *graphDrvCDF2 = new TGraph(npoints, xValues, drvsmoothCFD_11_5);
+    graphDrvCDF2->SetTitle("Derivative of the Data CDF Smoothed 11 pts;Time [ns];dCDF/dt");
     graphDrvCDF2->SetLineColor(kMagenta);
     graphDrvCDF2->SetLineWidth(2);
 
@@ -269,27 +273,18 @@ int IntegratePulse() {
     // graphCDF->Draw("AL SAME");  // CDF data
     // graphDrvCDF->Draw("AL SAME"); // Derivative of the CDF data
     // graphDrv->Draw("AL"); // Derivative data
-    // graphCDF->Draw("AL");  // CDF data
+    graphCDF->Draw("L SAME");  // CDF data
     graphDrvCDF2->Draw("L SAME"); // Derivative of the CDF data
-    // graphDrv->Draw("L SAME"); // Derivative data
+    graphDrvCDF->Draw("L SAME"); // Derivative of the CDF data
+    graphCDF_smooth150->Draw("L SAME");  // Smooth of the CDF data
 
+    // graphSmoothData->Draw("L SAME"); // Smooth of the data
+    //graphDrv->Draw("L SAME"); // Derivative data
 
-
-    // Add a legend
-    TLegend *legend1 = new TLegend(0.7, 0.7, 0.9, 0.85);
-    legend1->AddEntry(graphData, "Original Data", "l");
-    legend1->AddEntry(graphDrv, "Derivative Data", "l");
-    legend1->AddEntry(graphCDF, "CDF Data", "l");
-    legend1->AddEntry(graphDrvCDF, "Derivative of CDF Data", "l");
-    legend1->AddEntry(graphDrvCDF2, "Derivative of Smoothed CDF Data", "l");
-    legend1->Draw();
 
     // Pad 2: Integral Curves
     c1->cd(2);
 
-    // Legend for integral plots
-    TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-    legend->SetHeader("Tint Values", "C");
 
     // Track min and max for integral data to adjust axes
     double minIntegral = 1e9, maxIntegral = -1e9;
@@ -297,6 +292,7 @@ int IntegratePulse() {
     for (int t = 0; t < nTint; t++) {
         double tint = tintValues[t];
 		int npt = (int)TMath::FloorNint(tint / dt);
+        int npt_ion_tail = (int)TMath::FloorNint(ion_tail_width / dt);
 
         //double threshold_npt = threshold * sqrt(npt);
         //double ion_tail_end_point_threshold_npt = ion_tail_end_point_threshold * sqrt(npt);
@@ -309,21 +305,18 @@ int IntegratePulse() {
 
         // Extract integral data from GetTriggerWindows
         vector<double> integrated_data_vec(data, data + npoints);
-        //print the integrated data vector values
-        for (int i; i<integrated_data_vec.size(); i++){
-            cout << integrated_data_vec[i] << endl;
-        }
+        vector<double> integrated_data_ion_tail_vec(data, data + npoints);
 
-        // cout << "Size of integrated_data_vec: " << integrated_data_vec.size() << endl;
-        // cin.get();
         auto [x_int, y_int] = IntegratePulse_std(timeValues, integrated_data_vec, npt);
+        auto [x_int_ion_tail, y_int_ion_tail] = IntegratePulse_std(timeValues, integrated_data_ion_tail_vec, npt_ion_tail);
 
+        //extract integration threshold
         //Call function to plot integral with bounds
-        PlotIntegralWithBounds(x_int, y_int, trigger_windows, minIntegral, maxIntegral, t, c1, legend, std::vector<int>(colors, colors + sizeof(colors) / sizeof(colors[0])), tint);
+        PlotIntegralWithBounds(x_int, y_int, trigger_windows, minIntegral, maxIntegral, t, c1, std::vector<int>(colors, colors + sizeof(colors) / sizeof(colors[0])), tint);
 
         //plot trigger windows on the original data
         c1->cd(1);
-        for (size_t i = 0; i < trigger_windows.size(); i++) {
+        for(size_t i = 0; i < trigger_windows.size(); i++) {
             double x_left = trigger_windows[i].first;
             double x_right = trigger_windows[i].second;
             TLine *line_left = new TLine(x_left, minData, x_left, maxData);
@@ -336,8 +329,6 @@ int IntegratePulse() {
             line_right->Draw();
         }
     }
-
-
     // Adjust axis ranges for integral plot
     c1->cd(2);
     gPad->Modified();
@@ -349,51 +340,116 @@ int IntegratePulse() {
     }
 
     vector<double> integrated_data_vec(data, data + npoints);
-    //print the integrated data vector values
-    for (int i; i<integrated_data_vec.size(); i++){
-        cout << integrated_data_vec[i] << endl;
-    }
-    // Calculate CDF of integrated data
+    int npt = (int)TMath::FloorNint(epeak_width/ dt);
 
-    vector<double> cdfValues_int(npoints, 0.0);
-    cdfValues_int[0] = integrated_data_vec[0];
-    for (int i = 1; i < npoints; i++) {
-        cdfValues_int[i] = cdfValues_int[i - 1] + integrated_data_vec[i];
-    }
+    auto [x_int, y_int] = IntegratePulse_std(timeValues, integrated_data_vec, npt);
+    //access the x,y_int vector
 
-    // Normalize CDF of integrated data
-    for (int i = 0; i < npoints; i++) {
-        cdfValues_int[i] /= -fabs(cdfValues_int[npoints - 1]);  // Normalize to range [0,1] -- this makes the pulse positive
-    }
-    double* cdf_int = &cdfValues_int[0];
-    double* cdf_int_smoothed = &cdfValues_int[0];
+    vector<double> integrated_data_ion_tail_vec(data, data + npoints);
+    int npt_ion_tail = (int)TMath::FloorNint(ion_tail_width / dt);
 
-    SmoothArray(cdf_int,cdf_int_smoothed, npoints,173, 1);
+    auto [x_int_ion_tail, y_int_ion_tail] = IntegratePulse_std(timeValues, integrated_data_ion_tail_vec, npt_ion_tail);
+
+
+    int int_secondary_points = static_cast<int>(CIVIDEC_PEAK_DURATION/ dt);
+    //integrate to peak width strictly to get secondary pulses
+    auto [x_int_sec, y_int_sec] = IntegratePulse_std(timeValues, dataValues, int_secondary_points);
+    //derivate the integral to get the derivative
+    auto[x_der_sec, y_der_sec] = DerivatePulse_std(x_int_sec, y_int_sec);
+    //smooth the derivative to remove noise
+    // auto [x_der_sec_smooth, y_der_sec_smooth] = SmoothPulse_std(x_der_sec, y_der_sec, int_secondary_points);
+    auto [x_der_sec_int, y_der_sec_int] = IntegratePulse_std(x_der_sec, y_der_sec, int_secondary_points);
+
+    // Plot original data
+    TGraph *graph_data = new TGraph(npoints, xValues, data);
+    graph_data->SetTitle("Waveform Data;Time [ns];Amplitude [V]");
+    graph_data->SetLineColor(kBlack);
+    graph_data->SetLineWidth(2);
+    graph_data->Draw("L SAME");
+
+    //plot the integral of the data with ion tail integration
+    TGraph *graph_int_ion_tail = new TGraph(x_int_ion_tail.size(), x_int_ion_tail.data(), y_int_ion_tail.data());
+    graph_int_ion_tail->SetTitle("Integral of the Data with Ion Tail;Time [ns];Integral [V]");
+    graph_int_ion_tail->SetLineColor(kViolet);
+    graph_int_ion_tail->SetLineWidth(2);
+    graph_int_ion_tail->Draw("L SAME");
+
+    // Make x_der_sec_int secondary waveform graph and plot it
+    TGraph *graph_int_sec = new TGraph(x_der_sec_int.size(), x_der_sec_int.data(), y_der_sec_int.data());
+    graph_int_sec->SetTitle("Secondary Integral of the Data;Time [ns];Integral [V]");
+    graph_int_sec->SetLineColor(kOrange);
+    graph_int_sec->SetLineWidth(2);
+    // graph_int_sec->Draw("L SAME");
+
+    double secondary_pulse_threshold_fraction = 0.5; // Threshold for secondary pulses
+    // Find the minimum of y_der_sec_int and plot a line at that value times the threshold fraction
+    double secondary_pulse_threshold = *min_element(y_der_sec_int.begin(), y_der_sec_int.end()) * secondary_pulse_threshold_fraction;
+    cout << "Secondary Pulse Threshold: " << secondary_pulse_threshold << endl;
+
+    // cdfValues_int = CDF(integrated_data_vec);
+    cdfValues_int = CDF(y_int);
+    cdf_int = &cdfValues_int[0];
+
+    SmoothArray(cdf_int,cdf_int_smoothed_173, npoints,173, 1);
+    double integration_threshold = threshold * sqrt(epeak_width / dt);
 
     TGraph *graphCDF_int = new TGraph(npoints, xValues, &cdfValues_int[0]);
-    graphCDF_int->SetTitle("Cumulative Distribution Function;Time [ns];CDF");
+    graphCDF_int->SetTitle("CDF of int 5ns ;Time [ns];CDF");
     graphCDF_int->SetLineColor(kRed);
-    graphCDF_int->SetLineWidth(1);
+    graphCDF_int->SetLineWidth(2);
 
-    TGraph *graphCDF_int_smoothed = new TGraph(npoints, xValues, &cdf_int_smoothed[0]);
-    graphCDF_int_smoothed->SetTitle("Cumulative Distribution Function;Time [ns];CDF");
+    TGraph *graphCDF_int_smoothed = new TGraph(npoints, xValues, &cdf_int_smoothed_173[0]);
+    graphCDF_int_smoothed->SetTitle(" Smoothed 173 pts CDF of integral 5ns;Time [ns];CDF");
     graphCDF_int_smoothed->SetLineColor(kOrange);
     graphCDF_int_smoothed->SetLineWidth(2);
 
+    double end_thresh_ion_tail = threshold * sqrt(ion_tail_width/dt)* ion_tail_end_point_threshold_fraction;
 
-    //graphCDF_int->Draw("AL");
-    // Draw legend
-    legend->Draw();
-
-    // Save canvas
+    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
+    graphDrv->Draw("L SAME"); // Derivative data
+    //draw a line for the threshold
+    TLine *y_line_thres = new TLine(0, threshold, npoints * dt, threshold);
+    TLine *y_integration_threshold = new TLine(0, integration_threshold, npoints * dt, integration_threshold);
+    TLine *y_int_ion_tail_threshold = new TLine(0, end_thresh_ion_tail, npoints * dt, end_thresh_ion_tail);
+    TLine *y_line_sec_thres = new TLine(0, secondary_pulse_threshold, npoints * dt, secondary_pulse_threshold);
+    y_line_thres->SetLineColor(kBlue);
+    y_integration_threshold->SetLineColor(kViolet);
+    y_int_ion_tail_threshold->SetLineColor(kGreen);
+    y_line_sec_thres->SetLineColor(kOrange);
+    y_line_thres->SetLineStyle(2);
+    y_integration_threshold->SetLineStyle(2);
+    y_line_sec_thres->SetLineStyle(2);
+    y_line_thres->Draw("SAME");
+    y_integration_threshold->Draw("SAME");
+    y_int_ion_tail_threshold->Draw("SAME");
+    y_line_sec_thres->Draw("SAME");
+// Save canvas
     c1->SaveAs("IntegrationAndOriginalData.pdf");
 
-    TCanvas* c2 = new TCanvas("c2", "mpla mpla", 800, 800);
+    TCanvas* c2 = new TCanvas("c2", "CDFs", 800, 800);
+    c2->Divide(2, 1);
+
+    c2->cd(1);
     graphCDF->Draw("AL");  // CDF data
-    graphCDF_int->Draw("L SAME");  // CDF data
+    graphCDF_int->Draw("L SAME");  // CDF integrated data
     graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed
+    graphCDF_smooth150->Draw("L SAME");  // Smooth of the CDF data
+    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
+
+
+    c2->cd(2);
+    graphCDF->Draw("AL");  // CDF data
+    graphCDF_int->Draw("L SAME");  // CDF integrated data
+    graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed 170pts
+
+    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
+
     c2->Update();
 
+    c1->cd(1);
+    graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed 170pts
+    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
+    c1->Update();
     return 0;
 }
 
