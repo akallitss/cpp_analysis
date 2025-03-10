@@ -1682,24 +1682,24 @@ GLOBALMAXIMUM FindGlobalMaximum(double *arr, int arrpoints, double *arrt)
     return thisMaximum;
 }
 
-double FindBaselineLevel(double *arr, int baseline_region_end)
+pair<double, double> FindBaselineLevel(double *arr, int baseline_region_end)
 {
     double baseline_sum = 0;
     double baseline_sqr_sum = 0;
-    double baseline_rms, baseline_level;
     for(int i = 0; i < baseline_region_end; i++)
     {
         double y = arr[i];
         baseline_sum +=y;
         baseline_sqr_sum+=y*y;
     }
-          
-    baseline_level = baseline_sum/baseline_region_end;
+
+    const double baseline_level = baseline_sum / baseline_region_end;
     double baseline_rms_sqr = baseline_sqr_sum/baseline_region_end - baseline_level*baseline_level;
-    baseline_rms = baseline_rms_sqr > 0 ? TMath::Sqrt(baseline_rms_sqr):0;
+    const double baseline_rms = baseline_rms_sqr > 0 ? TMath::Sqrt(baseline_rms_sqr) : 0;
+
     //cout<<BLUE<<"baseline rms = "<< baseline_rms<<endlr;
 
-    return baseline_rms;
+    return make_pair(baseline_rms, baseline_level);
 }
 
 STARTPOINT FindStartPoint(double *arr, double *arrt, double baseline_rms, int start, int pos, float dt)
@@ -2786,6 +2786,19 @@ pair<vector<double>, vector<double>> IntegratePulse_std(
   vector<double> x_int(size - n + 1);
   vector<double> y_int(size - n + 1);
 
+  // Compute initial window sum
+  double x_sum = 0.0;
+  double y_sum = 0.0;
+  for (int i = 0; i < n; ++i) {
+    x_sum += x[i];
+    y_sum += y[i];
+  }
+
+  // Store first integrated value
+  x_int[0] = x_sum / n;
+  y_int[0] = y_sum;
+
+
   // Compute moving average for x
   for (size_t i = 0; i <= size - n; ++i) {
     x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
@@ -2793,28 +2806,151 @@ pair<vector<double>, vector<double>> IntegratePulse_std(
   }
 
   // Compute convolution for y
-  for (size_t i = 0; i <= size - n; ++i) {
-    y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
-    //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
+  // for (size_t i = 0; i <= size - n; ++i) {
+  //   y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
+  //   //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
+  // }
+
+  for (int i = 1; i <= size - n; ++i) {
+    x_sum += x[i + n - 1] - x[i - 1]; // Add new point, remove old point
+    y_sum += y[i + n - 1] - y[i - 1];
+
+    x_int[i] = x_sum / n;
+    y_int[i] = y_sum;
   }
 
   return {x_int, y_int};
 }
 
-vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, const vector<double>& y_int,
+pair<vector<double>, vector<double>> DerivatePulse_std(const vector<double>&x, const vector<double>&y) {
+  size_t n = x.size();
+  if (n<2)
+    throw std::invalid_argument("Input vectors must have at least two elements.");
+
+  vector<double> dy_dx(n-1);
+  vector<double> x_avg(n-1);
+
+  for (size_t i=0; i<n-1; ++i) {
+    dy_dx[i] = (y[i+1] - y[i]) / (x[i+1] - x[i]);
+    x_avg[i] = (x[i+1] + x[i]) / 2.0;
+  }
+
+return {x_avg, dy_dx};
+
+}
+
+pair<vector<double>, vector<double>> SmoothPulse_std(const vector<double>& x, const vector<double>& y, int npt) {
+
+  size_t n = x.size();
+  if (n<2)
+    throw std::invalid_argument("Input vectors must have at least two elements.");
+
+  if (npt<=0) npt = 1;
+  npt = (npt/2)*2 + 1; // Make sure npt is odd
+  vector<double> y_smooth(n);
+  vector<double> x_smooth(n);
+
+  for (int i=0; i< npt/2 -1; i++) {
+    y_smooth[i] = y[i];
+  }
+
+  double sum =0;
+
+  for (int i = 0; i < npt - 1; i++)
+    sum += y[i];
+
+  y_smooth[npt / 2] = sum / npt;
+  x_smooth[npt / 2] = x[npt / 2];
+
+  for (int i = npt / 2 + 1; i < n - npt / 2; i++) {
+    sum -= y[i - (npt / 2 + 1)];
+    sum += y[i + npt / 2];
+    y_smooth[i] = sum / npt;
+    x_smooth[i] = x[i];
+  }
+
+  for (int i = npt / 2; i >= 0; i--) {
+    y_smooth[i] = y_smooth[i + 1];
+    x_smooth[i] = x[i];
+  }
+
+  for (int i = n - npt / 2; i < n; i++) {
+    y_smooth[i] = y_smooth[i - 1];
+    x_smooth[i] = x[i];
+  }
+
+  return {x_smooth, y_smooth};
+}
+
+
+vector<double> CDF(const vector<double>& data) {
+  // Function to calculate the cumulative distribution function (CDF) of a dataset
+  // data: waveform data
+  // points: number of points in the waveform
+  // Returns: cdf of the data
+
+  int points = data.size();
+  vector<double> cdf(points);
+
+  // vector<double> acc(data.size());
+  partial_sum(data.begin(), data.end(), cdf.begin());
+
+  // Normalize by last point
+  double normFactor = cdf[points - 1];
+  for (int i = 0; i < points; i++) {
+    cdf[i] /= normFactor;
+  }
+
+  //
+  // cdf[0] = data[0];
+  // for (int i = 1; i < points; i++) {
+  //   cdf[i] = cdf[i - 1] + data[i];
+  // }
+
+  //Normalize the CDF
+  // double normFactor = fabs(cdf[points - 1]); // Ensure positive normalization
+  // for (int i = 0; i < points; i++) {
+  //   cdf[i] /= -normFactor;  // Normalize to range [0,1]
+  //
+  // }
+  return cdf;
+
+}
+
+
+vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t_values, const vector<double>& y_values,
     double threshold,
-    double ion_tail_width,
-    double end_thresh) {
+    double integration_time_trig,
+    double epeak_width,
+    double integration_time_ion_tail,
+    double end_thresh_fraction,
+    double dt) {
 
     // Function to find pulse bounds
     // x_int: x values of the integrated signal
     // y_int: y values of the integrated signal
-    // threshold: threshold for the signal
-    // ion_tail_width: width of the ion tail in ns
+    // threshold: threshold for the signal without scaling to moving average
+    // epeak_width: width of the electron peak in ns
     // end_thresh: fraction of the ion tail width to integrate to
     // Returns: vector of pairs of bounds (left, right)
 
-    double end_thresh_right = 0;
+  //convert integration time to integration points
+  int int_points = static_cast<int>(integration_time_trig / dt);
+  int int_points_ion_tail = static_cast<int>(integration_time_ion_tail / dt);
+
+  //Integrate pulse
+  auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, int_points);
+  auto [x_int_ion_tail, y_int_ion_tail] = IntegratePulse_std(t_values, y_values, int_points_ion_tail);
+
+  //Calculate thresholds ion tail
+  double integration_threshold = threshold * sqrt(int_points);
+  double integration_threshold_ion_tail = threshold * sqrt(int_points_ion_tail);
+  cout<< "threshold : " <<threshold<<" sqrt(int_points)  " <<sqrt(int_points) << endl;
+  cout<<"Integration threshold: "<<integration_threshold<<endl;
+  double end_thresh = integration_threshold * end_thresh_fraction;
+  cout<<"End threshold: "<<end_thresh<<endl;
+  double end_thresh_ion_tail = integration_threshold_ion_tail * end_thresh_fraction;
+  cout<<"End threshold ion tail: "<<end_thresh_ion_tail<<endl;
 
     vector<pair<double, double>> signal_bounds; // Vector to store signal bounds (left,right)
     bool waveform_finished = false;
@@ -2824,28 +2960,25 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
         // Get first point below threshold
         size_t i_trigger = i_start;
 
-        while (i_trigger < y_int.size() && y_int[i_trigger] >= threshold) {
+        // Find First Point Below Threshold
+        cout << "I start: " << i_start << endl;
+        while (i_trigger < y_int.size() && y_int[i_trigger] >= integration_threshold) {
             i_trigger++;
            // cout<<i_trigger<<endl;
-          // cout<<"Threshold: "<<threshold<<" itrigger =" << i_trigger << " y = "<< y_int[i_trigger]<<endl;
+          // if (i_trigger<2000)
+          //     cout<<"Threshold: "<<threshold<<" itrigger =" << i_trigger << " y = "<< y_int[i_trigger]<<endl;
           // cin.get();
         }
-        // TCanvas* c3 = new TCanvas("c3", "c3", 800, 600);
-        // TGraph* gr = new TGraph(x_int.size(), x_int.data(), y_int.data());
-        // gr->Draw("AL");
-        // c3->Update();
-        // c3->Modified();
-        // c3->WaitPrimitive();
 
         cout << "Trigger: " << i_trigger << endl;
         if (i_trigger >= y_int.size()) {
             waveform_finished = true;
             break;
         }
-
-        // Get min point within ion tail width
+        //Identify Minimum Signal in Electron Peak Window
+        // Get min point within two electron peak widths
         double x_trigger = x_int[i_trigger];
-        double x_end = x_trigger + ion_tail_width;
+        double x_end = x_trigger + 2 * epeak_width;
         size_t i_end = i_trigger;
         while ((i_end < x_int.size() && x_int[i_end] <= x_end) ) {
             i_end++;
@@ -2866,6 +2999,7 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
 
         cout << x_trigger << " " << x_end << " " << y_min << " " << end_thresh << endl;
 
+        // Find Left Bound (Pulse Start)
         // Get first point to left of minimum above end fraction of min
         size_t i_left = i_start;
         for (size_t i = i_min; i > i_start; --i) {
@@ -2876,17 +3010,63 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
         }
 
         // Get first point to right of minimum above end fraction of min
+        // Find Right Bound (Pulse End)
+        //Now using the ion tail to find the end of the signal
+
         size_t i_right = i_min;
-        while ((i_right < y_int.size() && y_int[i_right] <= end_thresh_right) && x_int[i_right] < x_int[i_min] + ion_tail_width) {
-        // while ((i_right < y_int.size() && y_int[i_right] <= end_thresh)) {
-          //added extra condition in case the end is inside the ion tail to go until the end of the ion tail
-            i_right++;
+        size_t i_right_epeak = i_right;
+
+        // while ((i_right < y_int.size() && y_int[i_right] <= end_thresh) && x_int[i_right] < x_int[i_min] + ion_tail_width) {
+        //added extra condition in case the end is inside the ion tail to go until the end of the ion tail
+        while ((i_right_epeak < y_int.size() && y_int[i_right_epeak] <= end_thresh)) {
+          i_right_epeak++;
         }
-        if (i_right >= y_int.size()) break;
+        if (i_right_epeak >= y_int.size()) break;
+        double x_right_epeak = x_int[i_right_epeak];
 
-        signal_bounds.emplace_back(x_int[i_left], x_int[i_right]);
-        cout << "Bounds: (" << x_int[i_left] << ", " << x_int[i_right] << ")" << endl;
+      double x_right = x_int[i_right];
 
+        // Convert from index in x_int to index in x_int_ion_tail
+        cout << "i_right: " << i_right << " x_right: " << x_right << " y_int: " << y_int[i_right] << " end_thresh: " << end_thresh << endl;
+      auto it_i_right_ion_tail = find_if(x_int_ion_tail.begin(), x_int_ion_tail.end(),
+                                         [x_right](double val) { return val >= x_right; });
+      if (it_i_right_ion_tail == x_int_ion_tail.end()) {
+        break;
+      }
+      size_t i_right_ion_tail = distance(x_int_ion_tail.begin(), it_i_right_ion_tail);
+
+        // while ((i_right < y_int.size() && y_int[i_right] <= end_thresh) && x_int[i_right] < x_int[i_min] + ion_tail_width) {
+        //added extra condition in case the end is inside the ion tail to go until the end of the ion tail
+        while ((i_right_ion_tail < y_int_ion_tail.size() && y_int_ion_tail[i_right_ion_tail] <= end_thresh_ion_tail)) {
+          i_right_ion_tail++;
+        }
+        if (i_right_ion_tail >= y_int_ion_tail.size()) break;
+
+      double x_right_ion = x_int_ion_tail[i_right_ion_tail];
+
+      double x_range_ion = x_right_ion - x_int[i_left];
+      double x_range_epeak = x_right_epeak - x_int[i_left];
+
+      // If width determined by ion tail is more than 50% different from width determined by electron peak, use electron peak width
+      x_right = x_right_ion;
+      if (fabs(x_range_ion - x_range_epeak) / ((x_range_ion + x_range_epeak) / 2) > 0.5) {
+        x_right = x_right_epeak;
+        cout << "Pulse range with ion tail too different from electron peak: " << x_range_ion << " Using electron peak width: " << x_range_epeak << endl;
+      }
+
+        signal_bounds.emplace_back(x_int[i_left], x_right);
+        cout << "Bounds: (" << x_int[i_left] << ", " << x_right << ")" << endl;
+        cout << "x_right: " << x_right_ion << " x_right_epeak: " << x_right_epeak << endl;
+
+      // Convert back from i_right_ion_tail in x_int_ion_tail to i_right in x_int
+        // x_right = x_int_ion_tail[i_right_ion_tail];
+        auto it_i_right = find_if(x_int.begin(), x_int.end(),
+                                  [x_right](double val) { return val >= x_right; });
+        i_right = distance(x_int.begin(), it_i_right);
+
+        cout << "i_right: " << i_right << " y_int_ion_tai: " << y_int_ion_tail[i_right_ion_tail] <<" y_int new: " <<
+          y_int[i_right] <<" end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
+        // i_start = i_right;
         i_start = i_right;
       // cin.get();
     }
@@ -2894,7 +3074,78 @@ vector<pair<double, double>> find_pulse_bounds(const vector<double>& x_int, cons
     return signal_bounds;
 }
 
-void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, double tint, double dt) {
+vector<bool> find_secondary_pulses (const vector<double>& x_der, const vector<double>& y_der, const vector<pair<double, double>>& pulse_bounds, size_t int_secondary_points) {
+    // Function to find secondary pulses
+    // x_der: x values of the derivative of the integrated signal
+    // y_der: y values of the derivative of the integrated signal
+    // pulse_bounds: vector of pairs of bounds (left, right) of the primary pulses
+    // Returns: vector of bools indicating if a secondary pulse is present in the corresponding primary pulse
+
+    vector<bool> secondary_pulses_reject(pulse_bounds.size(), false);
+    double secondary_pulse_threshold_fraction = 0.5; // Threshold for secondary pulses
+
+    for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
+      double x_left = pulse_bounds[bound_i].first;
+      double x_right = pulse_bounds[bound_i].second;
+      cout << "Secondary check to reject Bounds: (" << x_left << ", " << x_right << ")" << endl;
+
+      auto it_left = std::find_if(x_der.begin(), x_der.end(),
+                                       [x_left](double val) { return val > x_left; });
+      auto it_right = std::find_if(x_der.begin(), x_der.end(),
+                                   [x_right](double val) { return val > x_right; });
+
+      if (it_left == x_der.end() || it_right == x_der.end())
+        continue;
+
+      size_t i_left = distance(x_der.begin(), it_left);
+      size_t i_right = distance(x_der.begin(), it_right);
+
+      auto min_it = min_element(y_der.begin() + i_left,
+                                     y_der.begin() + i_right);
+      size_t i_min = distance(y_der.begin(), min_it);
+      double y_min = *min_it;
+
+      double y_thresh = y_min * secondary_pulse_threshold_fraction;
+      cout << "Secondary: " << x_der[i_min] << " " << y_min << " " << y_thresh << endl;
+
+      auto left_begin = y_der.begin() + i_left; // - int_secondary_points; need if the secondary peak is larger we need to
+      auto left_end = y_der.begin() + max(i_min, int_secondary_points) - int_secondary_points;
+      //ensure that does not go to negative , compares i_min, offset to get the max to hve space and subtract offset
+
+      // cout << "Left begin: " << x_der[distance(y_der.begin(), left_begin)] << " Left end: " << x_der[distance(y_der.begin(), left_end)] << endl;
+      if (distance(left_begin, left_end) > 0) {
+        // compare the distance between the left begin and left end if its negative means the left bound has moved too much
+        if (any_of(left_begin, left_end, [y_thresh](double val) { return val < y_thresh; })) {
+          secondary_pulses_reject[bound_i] = true;
+        }
+      }
+
+      auto right_begin = y_der.begin() + i_min + int_secondary_points;
+      auto right_end = y_der.begin() + i_right;
+
+      if (distance(right_begin, right_end) > 0) { //ensure the right begin is on the left of ri
+        if (any_of(right_begin, right_end, [y_thresh](double val) { return val < y_thresh; })) {
+          secondary_pulses_reject[bound_i] = true;
+        }
+      }
+    }
+
+     cout << "Signal Bounds: ";
+      for (const auto& bound : pulse_bounds) {
+        cout << "(" << bound.first << ", " << bound.second << ") ";
+      }
+    cout << endl;
+
+     cout << "Secondary Reject: ";
+      for (bool reject : secondary_pulses_reject) {
+        cout << reject << " ";
+      }
+      cout << endl;
+  return secondary_pulses_reject;
+}
+
+
+void find_start_bounds(vector<pair<double, double>>& pulse_bounds, double tint, vector<double>& x, vector<double>& y) {
     // Function to adjust pulse bounds to include the full pulse
     // pulse_bounds: vector of pairs of bounds (left, right)
     // n: number of points in the time window
@@ -2905,11 +3156,118 @@ void adjust_pulse_bounds(vector<pair<double, double>>& pulse_bounds, double tint
     //shift to convert to the real time scale
     double time_shift = tint/2.0;
 
-
     for (auto & pulse_bound : pulse_bounds) {
       pulse_bound.first += static_cast<float> (time_shift);  // adjust rightward
-      pulse_bound.second -= static_cast<float> (time_shift); // adjust leftward
+
+      // Get minimum within bounds
+      auto it_left = std::find_if(x.begin(), x.end(),
+                                  [pulse_bound](double val) { return val > pulse_bound.first; });
+      auto it_right = std::find_if(x.begin(), x.end(),
+                                  [pulse_bound](double val) { return val > pulse_bound.second; });
+      double it_min = *min_element(it_left, it_right);
+      auto it_min_index = distance(x.begin(), find(x.begin(), x.end(), it_min));
+
+      // Get first point to the left of the minimum above 0.2 of the minimum
+      size_t i_left = it_min_index;
+      for (size_t i = it_min_index; i > 0; --i) {
+        if (y[i] > 0.2 * y[it_min_index]) {
+          i_left = i;
+          break;
+        }
+      }
+      double x_left = x[i_left];
+
+      if (x_left < pulse_bound.first) {
+        pulse_bound.first = x_left;
+        cout << "Used data to the left of the minimum to adjust start bound" << endl;
+        // cout << "Start bound changed from  " << pulse_bound.first - time_shift << " to " << pulse_bound.first << endl;
+      }
+
+      cout << "Start bound changed from  " << pulse_bound.first - time_shift << " to " << pulse_bound.first << endl;
     }
+}
+
+
+void find_end_bounds(vector<pair<double, double>>& pulse_bounds, const vector<double>& x, const vector<double>& cdf) {
+    // Function to adjust pulse bounds to include the full pulse
+    // pulse_bounds: vector of pairs of bounds (left, right)
+    // x: x values of the waveform
+    // cdf: cumulative distribution function(ish) of the waveform
+    // Returns: void
+
+  double max_width_change = 0.5; // Maximum width change allowed
+
+    for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
+      double x_left = pulse_bounds[bound_i].first;
+      double x_right_original = pulse_bounds[bound_i].second;
+      double x_range_original = x_right_original - x_left;
+      cout << "Start bound: " << x_left << endl;
+
+      //finds the x value that is greater than x_left
+      auto it_left = std::find_if(x.begin(), x.end(),
+                                  [x_left](double val) { return val > x_left; });
+
+      //converts from x to i values
+      size_t i_left = distance(x.begin(), it_left);
+      cout << "Start index: " << i_left << endl;
+
+      double x_right  = 0.0;
+      cout << "Bound_i: " << bound_i << " pulse bounds size: " << pulse_bounds.size() << endl;
+      if (bound_i + 1 >= pulse_bounds.size()) {
+        x_right = x.back();
+      } else {
+        x_right = pulse_bounds[bound_i + 1].first;
+      }
+      double x_right_lim = 2 * x_range_original + x_left;
+      if (x_right > x_right_lim) {
+        x_right = x_right_lim;
+      }
+      cout << "End bound: " << x_right << endl;
+
+      auto it_right = std::find_if(x.begin(), x.end(),
+                                  [x_right](double val) { return val > x_right; });
+
+      size_t i_right = distance(x.begin(), it_right);
+
+      //find the maximum of the cdf between intex_left and index_next_left
+      auto max_it = max_element(cdf.begin() + i_left, cdf.begin() + i_right);
+      //find the index of the maximum
+      size_t i_max = distance(cdf.begin(), max_it);
+      //find the x value of the maximum
+      double x_max = x[i_max];
+
+      double original_width = x_right_original - x_left;
+      double new_width = x_max - x_left;
+
+      if (new_width > original_width * (1 + max_width_change)) {
+        cout << "New end bound of " << x_max << " too large, keeping original" << endl;
+      } else {
+        pulse_bounds[bound_i].second = x_max;
+        cout << "End bound changed from  " << x_right_original << " to " << x_max<< endl;
+      }
+  }
+}
+
+
+vector<bool> reject_thin_pulses(const vector<pair<double, double>>& pulse_bounds, double min_width) {
+    // Function to reject thin pulses
+    // pulse_bounds: vector of pairs of bounds (left, right)
+    // min_width: minimum width of the pulse
+    // Returns: vector of bools indicating if a pulse is too thin
+
+    vector<bool> thin_pulses_reject(pulse_bounds.size(), false);
+
+    for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
+      double x_left = pulse_bounds[bound_i].first;
+      double x_right = pulse_bounds[bound_i].second;
+
+      double width = x_right - x_left;
+      if (width < min_width) {
+        thin_pulses_reject[bound_i] = true;
+      }
+    }
+
+    return thin_pulses_reject;
 }
 
 vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double threshold) {
@@ -2919,39 +3277,75 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
     // Returns: vector of pairs of bounds (left, right)
 
       //convert integration time to integration points
-      int int_points = INTEGRATION_TIME_TRIG/dt;
+      // int int_points = static_cast<int>(INTEGRATION_TIME_TRIG / dt);
+      // int int_secondary_points = static_cast<int>(CIVIDEC_PEAK_DURATION / dt);
       // Convert ptime and sampl to std::vector
       vector<double> t_values = vector<double>(ptime, ptime + maxpoints);
       vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
+
       //Integrate pulse
-      auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, int_points);
-      //Calculate thresholds ion tail
-      double integration_threshold = threshold * sqrt(int_points);
-      cout<<threshold<<"  " <<sqrt(int_points) << endl;
-      cout<<"Integration threshold: "<<integration_threshold<<endl;
-      double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
+      // auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, int_points);
+
+  //Calculate thresholds ion tail
+      // double integration_threshold = threshold * sqrt(int_points);
+      // cout<<threshold<<"  " <<sqrt(int_points) << endl;
+      // cout<<"Integration threshold: "<<integration_threshold<<endl;
+      // double ion_tail_end_point_threshold = integration_threshold * ion_tail_end_point_threshold_fraction;
       // double ion_tail_end_point_threshold = integration_threshold * 0.0;
       // print the ion_tail point threshold fraction
       // cout<<" Ion tain point threshold integration: "<<integration_threshold<<endl;
       // cin.get();
       //Get trigger windows from the integrated pulse
-      vector<pair<double, double>> pulse_bounds = find_pulse_bounds(x_int, y_int, integration_threshold, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold);
+      vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds(t_values, y_values, threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold_fraction, dt);
+
+    // Reject secondaries within windows
+      int int_secondary_points = static_cast<int>(CIVIDEC_PEAK_DURATION / dt);
+      //integrate to peak width strictly to get secondary pulses
+      auto [x_int_sec, y_int_sec] = IntegratePulse_std(t_values, y_values, int_secondary_points);
+      //derivate the integral to get the derivative
+      auto[x_der_sec, y_der_sec] = DerivatePulse_std(x_int_sec, y_int_sec);
+      //smooth the derivative to remove noise
+      // auto [x_der_sec_smooth, y_der_sec_smooth] = SmoothPulse_std(x_der_sec, y_der_sec, int_secondary_points);
+      auto [x_der_sec_int, y_der_sec_int] = IntegratePulse_std(x_der_sec, y_der_sec, int_secondary_points);
+      vector<bool> secondary_rejects = find_secondary_pulses(x_der_sec_int, y_der_sec_int, pulse_bounds, int_secondary_points);
+
       //adjust pulse bounds to the original time scale
       //add npoints/2*dt to the left and subtract npoints/2*dt from the right to get the full pulse
-      adjust_pulse_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, dt);
+      cout << "Find start bounds" << endl;
+      find_start_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, t_values, y_values);
 
-      // Print the pulse bounds
+      auto cdf = CDF(y_values);
+      cout << "Find end bounds" << endl;
+      find_end_bounds(pulse_bounds, t_values, cdf);
+
+      cout << "Reject thin pulses" << endl;
+      vector<bool> thin_rejects = reject_thin_pulses(pulse_bounds, 0.8 * CIVIDEC_PEAK_DURATION);
+
+      // Print the pulse bounds and info
       cout << "Pulse bounds:" << endl;
-      for (auto [left, right] : pulse_bounds) {
-        cout << "  [" << left << ", " << right << "]" << endl;
+      for (size_t i=0; i<pulse_bounds.size(); i++) {
+        cout << "  [" << pulse_bounds[i].first << ", " << pulse_bounds[i].second << "]  secondary: " << secondary_rejects[i] << "  too thin: " << thin_rejects[i] << endl;
       }
 
-      return pulse_bounds;
+  // Remove secondary and thin pulses
+      vector<pair<double, double>> pulse_bounds_filtered;
+      for (size_t i = 0; i < pulse_bounds.size(); ++i) {
+        if (!secondary_rejects[i] && !thin_rejects[i]) {
+          pulse_bounds_filtered.push_back(pulse_bounds[i]);
+        }
+      }
+
+      // cout << "Secondary rejects:" << endl;
+      // for (bool reject : secondary_rejects) {
+      //   cout << "  " << reject << endl;
+      // }
+
+      return pulse_bounds_filtered;
 }
 
 void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<double>& y_int,
                             const std::vector<std::pair<double, double>>& pulse_bounds,
-                            double& minIntegral, double& maxIntegral, int t, TCanvas* c1, TLegend* legend,
+                            double& minIntegral, double& maxIntegral, int t, TCanvas* c1,
                             const std::vector<int>& colors, double tint) {
 
   double localMin = *std::min_element(y_int.begin(), y_int.end());
@@ -2970,14 +3364,13 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
   if (t == 0) {
     graphIntegral->Draw("AL"); // First graph with axes
     //graphCDF_int->Draw("L SAME");
+
   } else {
     graphIntegral->Draw("L"); // Overlay subsequent graphs
     //graphCDF_int->Draw("L SAME");
   }
 
-  // Add entry to legend
-  legend->AddEntry(graphIntegral, Form("Tint = %.1f ns", tint), "l");
-
+  gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
   // Draw vertical lines for pulse bounds
   for (const auto& bound : pulse_bounds) {
     double x_left = bound.first;
@@ -2998,6 +3391,37 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
     line_right->Draw();
   }
 }
+
+// vector<double> CDF(const vector<double>& data) {
+//   // Function to calculate the cumulative distribution function (CDF) of a dataset
+//   // data: waveform data
+//   // points: number of points in the waveform
+//   // Returns: cdf of the data
+//
+//   int points = data.size();
+//   vector<double> cdf(points);
+//
+//   cdf[0] = data[0];
+//   for (int i = 1; i < points; i++) {
+//     cdf[i] = cdf[i - 1] + data[i];
+//   }
+//
+//   //Normalize the CDF
+//   double normFactor = fabs(cdf[points - 1]); // Ensure positive normalization
+//   for (int i = 0; i < points; i++) {
+//     cdf[i] /= -normFactor;  // Normalize to range [0,1]
+//
+//   }
+//   return cdf;
+//
+// }
+
+
+// vector<double> Accumulate(const vector<double>& data) {
+//   vector<double> acc(data.size());
+//   partial_sum(data.begin(), data.end(), acc.begin());
+//   return acc;
+// }
 
 
 int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* drv, PEAKPARAM *par, double threshold, double sig_shift, int tshift)
