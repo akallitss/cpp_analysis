@@ -390,6 +390,17 @@ const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/da
 const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
 // //
 
+// const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
+// const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4";
+// const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/wdir";
+// const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/plots";
+// const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/dataTrees";
+// const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/tracking";
+// const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTrees";
+// const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTrees/ParameterTrees";
+
+
+
 
 // const char *CODEDIR="/home/dylan/CLionProjects/picosec_cpp_analysis/code";
 // const char *BASEDIRNAME="/home/dylan/Desktop/picosec/data/2022_October_h4";
@@ -413,14 +424,19 @@ const int N_INTEGRATION_POINTS = 20;
 
 // const double CIVIDEC_PULSE_DURATION = 75; // [ns]
 const double CIVIDEC_PULSE_DURATION = 150; // [ns]
-const double CIVIDEC_PEAK_DURATION = 5; // [ns]
+const double CIVIDEC_PEAK_DURATION = 5.0; // [ns]
 
 const double SIGMOID_EXTENTION = 3; //[ns]
 
 const double INTEGRATION_TIME_TRIG = 5.0; // [ns]
-const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
-                                           // random noise rejection using the 68-95-99.7 rule
-const double ion_tail_end_point_threshold_fraction = 0.5 ; // Set ion tail end point fraction to 20% of threshold
+// const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
+//                                            // random noise rejection using the 68-95-99.7 rule
+
+// Baseline currently not calculated well. Early waveform is being pushed down in waveforms with large signals which
+// overshoot after the pulses. Compensate with a higher threshold for now.
+const double total_bkg_rejection_probability = 0.99999999; // for the total bkg waveform points to be rejected
+                                                            // random noise rejection using the 68-95-99.7 rule
+const double ion_tail_end_point_threshold_fraction = 0.4 ; // Set ion tail end point fraction to 40% of threshold
 
 
 /// definitions for the bin2tree.cxx ___________
@@ -550,7 +566,7 @@ int GetOsciloscopeSetup(int , int , const char* , OSCSETUP*);
 double IntegrateA(int , double* , double* ,double );
 
 //void FindGlobalMaximum(double, int, float);
-double FindBaselineLevel(double*, int);
+pair<double, double> FindBaselineLevel(double*, int);
 double fermi_dirac_general(double*, double* );
 double fermi_dirac(double*, double *);
 double fermi_dirac_generalsub(double *, double *);
