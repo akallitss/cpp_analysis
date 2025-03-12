@@ -245,18 +245,18 @@ int IntegratePulse() {
     double globalMaxCDF = max(maxData, maxCdf) + 1;
 
     TGraph *graphCDF = new TGraph(npoints, xValues, &cdfValues[0]);
-    graphCDF->SetTitle("Data CDF;Time [ns];CDF");
+    graphCDF->SetTitle("Data Cummulative Sum;Time [ns];Cummulative Sum");
     graphCDF->SetLineColor(kBlue);
     graphCDF->SetLineWidth(5);
 
     TGraph *graphCDF_smooth150 = new TGraph(npoints, xValues, &cdfValues_smooth150[0]);
-    graphCDF_smooth150->SetTitle(" Smooth 150ns Data CDF ;Time [ns];CDF");
+    graphCDF_smooth150->SetTitle(" Smooth 150ns Data Cummulative Sum ;Time [ns];Cummulative Sum");
     graphCDF_smooth150->SetLineColor(kMagenta+3);
     graphCDF_smooth150->SetLineWidth(2);
 
     //plot the derivative of the CDF
     TGraph *graphDrvCDF = new TGraph(npoints, xValues, cdfDrv);
-    graphDrvCDF->SetTitle("Derivative of the Cumulative Distribution Function;Time [ns];dCDF/dt");
+    graphDrvCDF->SetTitle("Derivative of the Cumulative Sum;Time [ns];dCDF/dt");
     graphDrvCDF->SetLineColor(kGreen);
     graphDrvCDF->SetLineWidth(2);
 
@@ -368,7 +368,7 @@ int IntegratePulse() {
     graph_data->SetTitle("Waveform Data;Time [ns];Amplitude [V]");
     graph_data->SetLineColor(kBlack);
     graph_data->SetLineWidth(2);
-    //graph_data->Draw("L SAME");
+    graph_data->Draw("AL");
 
     //plot the integral of the data with ion tail integration
     TGraph *graph_int_ion_tail = new TGraph(x_int_ion_tail.size(), x_int_ion_tail.data(), y_int_ion_tail.data());
@@ -399,12 +399,12 @@ int IntegratePulse() {
     double integration_threshold = threshold * sqrt(epeak_width / dt);
 
     TGraph *graphCDF_int = new TGraph(npoints, xValues, &cdfValues_int[0]);
-    graphCDF_int->SetTitle("CDF of int 5ns ;Time [ns];CDF");
+    graphCDF_int->SetTitle("CDF of int 5ns ;Time [ns];Cummulative Sum");
     graphCDF_int->SetLineColor(kRed);
     graphCDF_int->SetLineWidth(2);
 
     TGraph *graphCDF_int_smoothed = new TGraph(npoints, xValues, &cdf_int_smoothed_173[0]);
-    graphCDF_int_smoothed->SetTitle(" Smoothed 173 pts CDF of integral 5ns;Time [ns];CDF");
+    graphCDF_int_smoothed->SetTitle(" Smoothed 173 pts Cummulative Sum of integral 5ns;Time [ns];Cumulative Sum");
     graphCDF_int_smoothed->SetLineColor(kOrange);
     graphCDF_int_smoothed->SetLineWidth(2);
 
@@ -440,9 +440,9 @@ int IntegratePulse() {
 
     c2->cd(1);
     graphCDF->Draw("AL");  // CDF data
-    graphCDF_int->Draw("L SAME");  // CDF integrated data
-    graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed
-    graphCDF_smooth150->Draw("L SAME");  // Smooth of the CDF data
+    // graphCDF_int->Draw("L SAME");  // CDF integrated data
+    // graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed
+    // graphCDF_smooth150->Draw("L SAME");  // Smooth of the CDF data
     gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
 
 
