@@ -1662,15 +1662,30 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       	// cin.get();
 
       	//for each trigger window do the analysis
+      	adjust_baseline(maxpoints, ptime, sampl);
+      	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, threshold);
+      	// range based for loop for the trigger windows
+      	for (auto trigger_window : trigger_windows) {
+      		int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
+      		int i_end = convert_x_to_index(ptime, maxpoints, trigger_window.second);
+      		if (i_end < maxpoints - 50) {
+      			AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
+      			successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+      			totalFits_sigmoid++;
+      			successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+      			totalFits_double_sigmoid++;
+      		}
+      	}
 
-        ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-      	if (ti<0) break;
-      	if (ti < maxpoints-50) {
-      		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-      		totalFits_sigmoid++;
-      		successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
-      		totalFits_double_sigmoid++;
-	  	}
+        // ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
+    //     ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
+    //   	if (ti<0) break;
+    //   	if (ti < maxpoints-50) {
+    //   		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+    //   		totalFits_sigmoid++;
+    //   		successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+    //   		totalFits_double_sigmoid++;
+	  	// }
       }
       else
       { //cout<< CYAN<<"Channel "<<ci+1<<" does not use the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
