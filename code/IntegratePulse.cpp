@@ -182,6 +182,8 @@ int IntegratePulse() {
     TCanvas *c1 = new TCanvas("c1", "Integration and Original Data", 800, 800);
     c1->Divide(1, 2);
 
+    TCanvas *c3 = new TCanvas("c3", "Integral with Bounds", 800, 800);
+
     // Pad 1: Original Data
     c1->cd(1);
     TGraph *graphData = new TGraph(npoints, xValues, data);
@@ -215,7 +217,8 @@ int IntegratePulse() {
     graphDrv->SetLineWidth(2);
 
     //calculate the cumulative distribution of the waveform data
-    cdfValues = CDF(dataValues);
+    // cdfValues = CDF(dataValues);
+    cdfValues = CumulativeSum(dataValues);
     SmoothArray(data, smoothdata, npoints,1500, 1);
     cdfValues_smooth150 = CDF(smoothdataVec);
     cdf = &cdfValues[0];
@@ -313,7 +316,8 @@ int IntegratePulse() {
         //extract integration threshold
         //Call function to plot integral with bounds
         PlotIntegralWithBounds(x_int, y_int, trigger_windows, minIntegral, maxIntegral, t, c1, std::vector<int>(colors, colors + sizeof(colors) / sizeof(colors[0])), tint);
-
+        PlotIntegralWithBounds(x_int, y_int, trigger_windows, minIntegral, maxIntegral, t, c3, std::vector<int>(colors, colors + sizeof(colors) / sizeof(colors[0])), tint);
+        c3->Update();
         //plot trigger windows on the original data
         c1->cd(1);
         for(size_t i = 0; i < trigger_windows.size(); i++) {
@@ -357,7 +361,6 @@ int IntegratePulse() {
     //derivate the integral to get the derivative
     auto[x_der_sec, y_der_sec] = DerivatePulse_std(x_int_sec, y_int_sec);
     //smooth the derivative to remove noise
-    // auto [x_der_sec_smooth, y_der_sec_smooth] = SmoothPulse_std(x_der_sec, y_der_sec, int_secondary_points);
     auto [x_der_sec_int, y_der_sec_int] = IntegratePulse_std(x_der_sec, y_der_sec, int_secondary_points);
 
     // Plot original data
@@ -365,14 +368,14 @@ int IntegratePulse() {
     graph_data->SetTitle("Waveform Data;Time [ns];Amplitude [V]");
     graph_data->SetLineColor(kBlack);
     graph_data->SetLineWidth(2);
-    graph_data->Draw("L SAME");
+    //graph_data->Draw("L SAME");
 
     //plot the integral of the data with ion tail integration
     TGraph *graph_int_ion_tail = new TGraph(x_int_ion_tail.size(), x_int_ion_tail.data(), y_int_ion_tail.data());
     graph_int_ion_tail->SetTitle("Integral of the Data with Ion Tail;Time [ns];Integral [V]");
     graph_int_ion_tail->SetLineColor(kViolet);
     graph_int_ion_tail->SetLineWidth(2);
-    graph_int_ion_tail->Draw("L SAME");
+    // graph_int_ion_tail->Draw("L SAME");
 
     // Make x_der_sec_int secondary waveform graph and plot it
     TGraph *graph_int_sec = new TGraph(x_der_sec_int.size(), x_der_sec_int.data(), y_der_sec_int.data());
@@ -387,7 +390,9 @@ int IntegratePulse() {
     cout << "Secondary Pulse Threshold: " << secondary_pulse_threshold << endl;
 
     // cdfValues_int = CDF(integrated_data_vec);
-    cdfValues_int = CDF(y_int);
+    // cdfValues_int = CDF(y_int);
+    // cdfValues_int = CumulativeSum(y_int);
+    cdfValues_int = CumulativeSum(dataValues);
     cdf_int = &cdfValues_int[0];
 
     SmoothArray(cdf_int,cdf_int_smoothed_173, npoints,173, 1);
@@ -405,8 +410,8 @@ int IntegratePulse() {
 
     double end_thresh_ion_tail = threshold * sqrt(ion_tail_width/dt)* ion_tail_end_point_threshold_fraction;
 
-    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
-    graphDrv->Draw("L SAME"); // Derivative data
+
+    // graphDrv->Draw("L SAME"); // Derivative data
     //draw a line for the threshold
     TLine *y_line_thres = new TLine(0, threshold, npoints * dt, threshold);
     TLine *y_integration_threshold = new TLine(0, integration_threshold, npoints * dt, integration_threshold);
@@ -417,13 +422,17 @@ int IntegratePulse() {
     y_int_ion_tail_threshold->SetLineColor(kGreen);
     y_line_sec_thres->SetLineColor(kOrange);
     y_line_thres->SetLineStyle(2);
+    y_line_thres->SetLineWidth(3);
     y_integration_threshold->SetLineStyle(2);
+    y_integration_threshold->SetLineWidth(3);
     y_line_sec_thres->SetLineStyle(2);
+    y_line_sec_thres->SetLineWidth(3);
     y_line_thres->Draw("SAME");
     y_integration_threshold->Draw("SAME");
-    y_int_ion_tail_threshold->Draw("SAME");
+    // y_int_ion_tail_threshold->Draw("SAME");
     y_line_sec_thres->Draw("SAME");
-// Save canvas
+    gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
+    // Save canvas
     c1->SaveAs("IntegrationAndOriginalData.pdf");
 
     TCanvas* c2 = new TCanvas("c2", "CDFs", 800, 800);
@@ -443,13 +452,14 @@ int IntegratePulse() {
     graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed 170pts
 
     gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
-
     c2->Update();
 
     c1->cd(1);
     graphCDF_int_smoothed->Draw("L SAME");  // CDF int data smoothed 170pts
     gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
     c1->Update();
+
+
     return 0;
 }
 
