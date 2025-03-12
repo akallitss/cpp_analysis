@@ -3382,11 +3382,11 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
   // Draw graph
 
   if (t == 0) {
-    graphIntegral->Draw("AL"); // First graph with axes
+    // graphIntegral->Draw("AL"); // First graph with axes
     //graphCDF_int->Draw("L SAME");
 
   } else {
-    graphIntegral->Draw("L"); // Overlay subsequent graphs
+    // graphIntegral->Draw("L"); // Overlay subsequent graphs
     //graphCDF_int->Draw("L SAME");
   }
 
