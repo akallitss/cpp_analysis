@@ -2696,8 +2696,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(0.5*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
   par->tb50 = fit_double_sigmoid_falling_edge_50;
 
-  double fit_double_sigmoid_falling_edge_90 = sig_fittot->GetX(0.9*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
-  par->tb90 = fit_double_sigmoid_falling_edge_90;
+  // double fit_double_sigmoid_falling_edge_90 = sig_fittot->GetX(0.9*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
+  // par->tb90 = fit_double_sigmoid_falling_edge_90;
 
 
   double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
