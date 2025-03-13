@@ -1663,7 +1663,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       	//for each trigger window do the analysis
       	adjust_baseline(maxpoints, ptime, sampl);
-      	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, threshold);
+      	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci]);
       	// range based for loop for the trigger windows
       	for (auto trigger_window : trigger_windows) {
       		int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
