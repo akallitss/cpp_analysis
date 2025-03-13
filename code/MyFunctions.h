@@ -40,7 +40,7 @@
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-// #undef DEBUGMSG
+#undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
@@ -51,34 +51,35 @@ class PEAKPARAM : public TObject {
 public:
    int maxtime_pos;
    int stime_pos;
-   int ftime_pos;
-   int e_peak_end_pos;
-   int sig_start_pos;
-   int sig_end_pos;
-   int tot_sig_end_pos;
+   int ftime_pos;       /// position of the end of the pulse as calculated with the CDF
+   int e_peak_end_pos;  /// 10% of the max amplitude at the falling edge of the e-peak, from the double-sigmoid fit, substracting the baseline.
+   int sig_start_pos;   /// single sigmoid for timing start point for the fit
+   int sig_end_pos;     /// single sigmoid for timing end point for the fit
+   int tot_sig_end_pos; /// double sigmoid for ampl/charge end point for the fit
    
-   double maxtime;
-   double ampl;
+   double maxtime;      /// maxtime from double sigmoid
+   double ampl;         
    double e_peak_end_ampl;
-   double sampl;
-   double fampl;
+   double sampl;        /// data[stime_pos]
+   double fampl;        /// data[ftime_pos]
    //double t20;
    //double st20;
-   double tfit20;
-   double tnaive20;
-   double te_peak_end;
+   double tfit20;       /// timing @ 20% of amplitude of the single sigmoid fit
+   double tnaive20;     /// timing @ 20% of data[maxtime_pos] by linear interpolation
+   double te_peak_end;  /// e_peak_end_pos*dt this will be done in the end
 
    //double sechargefixed;
    //double secharge;
-   double echargefixed;
-   double echarge;
-   double echargefit;
-   double ioncharge;
-   double totchargefixed;
-   double risetime;  ///10% - 90%
-   double risecharge;
-   double width;
-   double tot[10]; ///
+   double echargefixed; /// CDF[CIVIDEC_PEAK_DURATION] - CDF[stime_pos]  (* dt)
+   double echarge;      /// CDF[e_peak_end_pos] - CDF[stime_pos]   (* dt)
+   double echargefit;   /// integral of the double sigmoid    
+   double ioncharge;    /// CDF[e_peak_end_pos] - CDF[stime_pos]    (* dt)
+   double totcharge;    /// CDF[ftime_pos] - CDF[stime_pos]   (* dt)
+   double totchargefixed; /// CDF[CIVIDEC_PULSE_DURATION] - CDF[stime_pos]   (* dt)
+   double risetime;  /// 10% - 90% of the single sigmoid
+   double risecharge; /// integral of the sigmoid during risetime
+   double width;   /// FWHM of the electron peak (double sigmoid) 50% - 50%
+   double tot[10]; /// 0: TOT of double sigmoid  - for future use for different electronics  with multiple thressholds
    double sigmoidR[4];
    double sigmoidF[4];
    double sigmoidtot[6];
@@ -92,12 +93,14 @@ public:
 
    double charge;
    double scharge;
-   double t10;
-   double tb10;
-   double t90;
+   double t10;  ///single sigmoid
+   double tb10; ///double sigmoid
+   double t90;  ///single sigmoid
+   double t50;  ///double sigmoid
+   double tb50; ///double sigmoid
 
    double ttrig;
-   double bslch;
+   double bslch;  /// integral from baseline over/under shoot. to be used to correct the CDF oin the future
    double rms;
    double bsl;
  
@@ -107,12 +110,12 @@ public:
     void Reset() {
       maxtime_pos = stime_pos = ftime_pos = e_peak_end_pos = sig_start_pos = sig_end_pos = tot_sig_end_pos = -111;
       maxtime = ampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
-      echarge = echargefixed = echargefit = totchargefixed = ioncharge = risetime = risecharge = width = -9999.;
+      echarge = echargefixed = echargefit = totchargefixed = totcharge = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
         for (int i=0; i<10; i++) tot[i] = -999.;
         for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
         for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
-        charge = scharge = t10 = tb10 = t90 = ttrig = bslch = rms = bsl = -999.;
+        charge = scharge = t10 = tb10 = t90 = t50 = tb50 = ttrig = bslch = rms = bsl = -999.;
         doubleSigmoidfitSuccess = SigmoidfitSuccess = false;
 
 
@@ -368,6 +371,7 @@ const int MAX_N_FILES=11000;
 
 //
 // const char *CODEDIR="/diskb/picosec/2024/code/code";
+
 // const char *CODEDIR="/diskb/picosec/2025/code";
 // const char *BASEDIRNAME="/diskb/picosec/2024/2022_October_h4";
 // const char *WORKDIR="/diskb/picosec/2024/2022_October_h4/wdir";
@@ -388,7 +392,7 @@ const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/d
 const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/tracking";
 const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees";
 const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/ParameterTrees";
-// //
+//
 
 // const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
 // const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4";
@@ -556,6 +560,9 @@ inline int WhichAmplifier(const char* amplifier)
       amplifierNo=1234;
   return (amplifierNo);
 }
+
+size_t convert_x_to_index(double *x, int npoints, double x_value);
+void adjust_baseline(int npoints, double* ptime, double* sampl);
 
 int FilterHisto(TH1* , double );
 
