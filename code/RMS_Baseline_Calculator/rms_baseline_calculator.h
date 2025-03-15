@@ -1,0 +1,8 @@
+//
+// Created by Dylan on 3/15/2025.
+//
+
+#ifndef RMS_BASELINE_CALCULATOR_H
+#define RMS_BASELINE_CALCULATOR_H
+
+#endif //RMS_BASELINE_CALCULATOR_H
