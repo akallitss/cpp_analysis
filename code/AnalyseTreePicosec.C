@@ -38,6 +38,7 @@
 #include<TMultiGraph.h>
 #include<TClonesArray.h>
 #include "MyFunctions.C"
+#include "RMS_Baseline_Calculator/RMSBaselineCalculator.cpp"
 #include <iomanip>
 #include <iostream>
 
@@ -213,9 +214,10 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   
   replaceEOL(fname);
   cout<<BLUE<<"Input filename =>"<<fname<<"<="<<endlr;
-  
-  
-  TFile *ifile = new TFile(fname);
+
+	TFile *ifile = new TFile(fname);
+
+	// Calculate rms/baselines
   
   if (!ifile->IsOpen())
   {
@@ -572,9 +574,27 @@ cout<<"________________++_________________" << endl;
   //branch->SetAddress(amplSum);
   cout<<RED<<"ACTIVE CHANNELS " <<actch<<endlr;
   for(int i=0; i<4; i++) cout<<(active[i]==1?GREEN:RED)<<"Channel "<<i<<" is " << active[i]<<endlr;
+
+	map<int, RMSBaselineCalculator> rmsBaselineCalculators; //calculators per channel
+	for (int ci=0;ci<4;ci++)
+	{
+		if (!active[ci]) continue;
+		RMSBaselineCalculator calc_ci(fname, "RawDataTree", ci, 80, 2, 20, INTEGRATION_TIME_TRIG);
+		calc_ci.Process();
+		rmsBaselineCalculators[ci] = calc_ci;
+	}
+
   
   int nevents = tree->GetEntries();
 
+	// for (int event_i=0; event_i < nevents; event_i++){
+	// 	tree->GetEntry(event_i);
+	// 	cout << "Epoch: " << epoch << endl;
+	// 	for (int ci=0; ci < 4; ci++) {
+	// 		cout << "Channel " << ci + 1 << " get_epoch_rms: " << rmsBaselineCalculators[ci].get_epoch_rms(epoch)<<endl;
+	// 	}
+	// }
+	// return 11;
 //   if (runNo==224) nevents-=100;
   cout <<"Found "<<nevents<<" events for the tree "<<endl;  
 
@@ -600,6 +620,7 @@ cout<<"________________++_________________" << endl;
   ///  prepare time array 
   ptime[0]=0;
   tree->GetEntry(1);
+
   for (int i=1;i<ARRAYSIZE;i++)
   {
     ptime[i]=ptime[i-1]+dt;//dt in ns--> ptime in ns...
@@ -775,6 +796,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int dtbins = 800;
   double tmax = 0.002;  //  [ms]
   double single_point_bkg_rejection_probability = pow(total_bkg_rejection_probability, 1.0 / maxpoints );
+  double single_point_bkg_rejection_sigmas = TMath::NormQuantile(1 - single_point_bkg_rejection_probability);
 #ifdef DEBUGMSG
 	cout <<RED << "single_point_bkg_rejection_probability = " << single_point_bkg_rejection_probability << endlr;
 #endif
@@ -831,7 +853,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   /// ^^^ This for loop makes threshold +0.02!!!
 
   for (int i=0; i<4; i++)
-	Thresholds[i] = rmsC[i] * TMath::NormQuantile(1 - single_point_bkg_rejection_probability); // so that its always negative
+	Thresholds[i] = rmsC[i] * single_point_bkg_rejection_sigmas; // so that its always negative
 
   for(int i=0;i<4;i++)
   {
@@ -853,7 +875,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   long double epochS = 1.*epoch;
   double framesize = maxpoints * dt * microsec;  //microsec
   tree->GetEntry(nevents-1);
-  tree->GetEntry(nevents-1);
+  // tree->GetEntry(nevents-1);
   long double epochF = (1.*epoch + nn*1e-9)+0.004;
   cout<< "Epoch S = "<< epochS<<endl;
   cout<< "Epoch F = "<< epochF<<endl;
@@ -1282,7 +1304,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       ///    if (eventNo<25 || eventNo>=150) {eventNo++; continue;}
 
       tree->GetEntry(eventNo);
-
+  	  //Here we are setting new rms and bsl calculation from the RMSBaselineCalculator class
+  	  for (int ci=0; ci<4; ci++) {
+  	  	if (!active[ci]) continue;
+	  	  rmsC[ci] = rmsBaselineCalculators[ci].get_epoch_rms(epoch);
+  	  	  bslC[ci] = rmsBaselineCalculators[ci].get_epoch_baseline(epoch);
+  	  }
 
       double maxc[]={0.,0.,0.,0.};
       double minc[]={0.,0.,0.,0.};
@@ -1351,7 +1378,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 #ifdef DEBUGMSG
         cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
 #endif
-
+		cout<<GREEN<<"Baseline rms per channel "<<ci+1<<" = "<<rmsC[ci]<<endl;
+    	cin.get();
         cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
         long double epochX = (1.*epoch + nn*1e-9);
@@ -1455,7 +1483,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       //double DTI2 = 2.;  ///default
       double DTI2 = 2.; //time integration for 2ns
       nint = TMath::FloorNint(DTI2/dt)+1;
-      cout<<"Integration points = "<<nint<<endl;
+      // cout<<"Integration points = "<<nint<<endl;
       double intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
      // continue;
       maxd[ci]=TMath::MaxElement(maxpoints,iampl);
@@ -1548,6 +1576,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
        continue;
     }
 
+  	vector<pair<double, double>> trigger_windows;
+  	if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0) {
+		adjust_baseline(maxpoints, ptime, sampl);
+  		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
+		trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
+  	  	// cout << "Event number: " << eventNo << " Channel number: " << ci << endl;
+  		// cin.get();
+	}
+  	auto trigger_windows_iterator = trigger_windows.begin();
+
     int ti = 0;
     while (ti < maxpoints-50 && ntrigs<MAXTRIG)
 	{
@@ -1575,31 +1613,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     	}
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
-      { //cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
+      {
+      	// break;
+      	//cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
 #ifdef DEBUGMSG
-      	// cout all sampl and dsampl
-
-  //     	cout << "Event data:" << endl;
-  //     	cout << "const int points = " << maxpoints << ";" << endl;
-  //     	cout << "dt: " << dt << endl;
-		// cout << "double data[" << maxpoints << "] = {";
-  //     	for (int i = 0; i < maxpoints; ++i) {
-  //     		cout << fixed << setprecision(6) << sampl[i];
-  //     		if (i < maxpoints - 1) cout << ", ";
-  //     	}
-  //     	cout << "};" << endl;
-	 //
-  //     	cout << "double drv[" << maxpoints << "] = {";
-  //     	for (int i = 0; i < maxpoints; ++i) {
-  //     		cout << fixed << setprecision(6) << dsampl[i];
-  //     		if (i < maxpoints - 1) cout << ", ";
-  //     	}
-  //     	cout << "};" << endl;
-
       	// Open a file to write the data
-      	if(ci == 1) {
-      		ofstream outFile("waveform_data.txt");
+      	if(ci == 1 || ci == 3) {
+      		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
+      		string filename = "waveform_data_" + to_string(ci) + ".txt";
+      		ofstream outFile(filename);
       		if (!outFile) {
       			cerr << "Error: Could not open file for writing!" << endl;
       			return 1;
@@ -1612,6 +1635,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       		outFile << "RMS: " << ppar->rms << "\n";
       		outFile << "BSL: " << ppar->bsl << "\n";
       		outFile << "Threshold: " << Thresholds[ci] << "\n";
+      		outFile<< "trigger_threshold: " << trigger_threshold << "\n";
       		outFile << "Sig_tshift: " << sig_tshift[ci] << "\n";
       		outFile << "Event number: " << evNo << "\n";
 			outFile << "INTEGRATION_TIME_TRIGGER: " << INTEGRATION_TIME_TRIG << "\n";
@@ -1640,12 +1664,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       			if (i < maxpoints - 1) outFile << ", ";
       		}
       		outFile << "};\n";
-			// Write INTEGRATION_TIME_TRIG
-
-
-      		// Close the file
       		outFile.close();
-      		cout << "Waveform data written to waveform_data.txt" << endl;
+      		cout << "Waveform data written to " << filename << endl;
       	}
 #endif
 
@@ -1657,25 +1677,57 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 #endif
 
       	// Give trigger window to the function
-		// vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci] );
-
-      	// cin.get();
-
-      	//for each trigger window do the analysis
-      	adjust_baseline(maxpoints, ptime, sampl);
-      	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci]);
-      	// range based for loop for the trigger windows
-      	for (auto trigger_window : trigger_windows) {
-      		int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
-      		int i_end = convert_x_to_index(ptime, maxpoints, trigger_window.second);
-      		if (i_end < maxpoints - 50) {
-      			AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
-      			successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-      			totalFits_sigmoid++;
-      			successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
-      			totalFits_double_sigmoid++;
-      		}
+      	if (trigger_windows_iterator == trigger_windows.end()) {
+      		break;
       	}
+
+      	pair<double, double> trigger_window = *trigger_windows_iterator;
+      	// cout << "Trigger window: (" << trigger_window.first << ", " << trigger_window.second << ")" << endl;
+      	int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
+      	// cout << "i_start: " << i_start << endl;
+      	int i_end = convert_x_to_index(ptime, maxpoints, trigger_window.second);
+      	// cout << "i_end: " << i_end << endl;
+
+      	if (i_end < maxpoints - 50) {
+      		// cout << "Analyzing trigger window..." << endl;
+      		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
+      		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+      		totalFits_sigmoid++;
+      		successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+      		totalFits_double_sigmoid++;
+      	}
+
+      	++trigger_windows_iterator;
+
+   //    	int last_ti = ti;
+   //    	//for each trigger window do the analysis
+   //    	adjust_baseline(maxpoints, ptime, sampl);
+   //    	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci]);
+   //    	// cin.get();
+   //    	cout << "Current ti: " << ti << ", Last ti: " << last_ti << endl;
+   //    	// range based for loop for the trigger windows
+   //    	cout << "Number of trigger windows: " << trigger_windows.size() << endl;
+   //    	for (auto trigger_window : trigger_windows) {
+   //    		cout << "Trigger window: (" << trigger_window.first << ", " << trigger_window.second << ")" << endl;
+   //    		int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
+   //    		cout << "i_start: " << i_start << endl;
+   //    		int i_end = convert_x_to_index(ptime, maxpoints, trigger_window.second);
+   //    		cout << "i_end: " << i_end << endl;
+   //    		cout << "Analyzing trigger window..." << endl;
+   //    		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
+	  //
+   //    		if (i_end < maxpoints - 50) {
+   //    			successfulFits_sigmoid += ppar->SigmoidfitSuccess;
+   //    			totalFits_sigmoid++;
+   //    			successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
+   //    			totalFits_double_sigmoid++;
+   //    		}
+			// last_ti = i_end;
+   //    		cout << "Last ti: " << last_ti << endl;
+   //    	}
+	  //
+   //    	ti = last_ti;
+			//   	cout << "ti: " << ti << endl;
 
         // ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
     //     ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
@@ -2122,19 +2174,24 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         evdcanv[ci]->Update();
 
         /// Sigmoid Fit Draw
+	  	// cout<<RED<<"Entering Sigmoid if"<<endlr;
+	  	// cout<<YELLOW<<ci<<endlr;
+	  	// cout<<"npeaks = "<<npeaks[ci]<<endl;
 
        if (SIGMOIDFIT[ci])
        {
-         //cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
+         // cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
          fitcanv[ci]->cd(1);
-         //cout<<RED<<"TWRA "<<spar[ci][i].tot_sig_end_pos<<endlr;
+         // cout<<RED<<"spar[channel][trig] "<<spar[ci][i].tot_sig_end_pos<<endlr;
          TimeSigmoidDraw(maxpoints, amplC[ci], ptime, &spar[ci][i], evNo, fitcanv[ci]);
+       	// cout<<RED<<"Exiting TimeSigmoid DRaw()"<<endlr;
          gStyle->SetOptFit(1111);
          fitcanv[ci]->Modified();
          fitcanv[ci]->BuildLegend(0.75,0.8,0.99,0.99);
          fitcanv[ci]->Update();
 
          fitcanv[ci]->cd(2);
+       	// cout<<RED<<"Entering FullSigmoidDraw()"<<endlr;
          FullSigmoidDraw(maxpoints, amplC[ci], ptime, dt, &spar[ci][i], evNo, fitcanv[ci]);
          gStyle->SetOptFit(1111);
          fitcanv[ci]->Modified();
@@ -2142,6 +2199,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
          fitcanv[ci]->Update();
 
        }
+	  	// cout<<RED<<"Entering Doublesigmoid if"<<endlr;
+
 	  	if (DOUBLESIGMOIDFIT[ci]==false)
 	  	{
 	  		//cout<<RED<<"Sigmoidfit flag executted for channel "<<ci+1<<endlr;
@@ -2154,6 +2213,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  	}
 
     }
+    	// cout<<RED<<"npeaks = "<<npeaks[ci]<<endlr;
+
 	  evdcanv[ci]->Modified();
 	  evdcanv[ci]->Update();
 
@@ -2183,7 +2244,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  cout<<ntrigs<<" pulses in event "<< eventNo <<" channel "<<ci+1 << endl;
 	  return (ntrigs);
 	}
-
 
   }
        /////////////////////////////////////////////////////////////////
