@@ -40,7 +40,7 @@
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-#undef DEBUGMSG
+// #undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
@@ -94,7 +94,7 @@ public:
    double charge;
    double scharge;
    double t10;  ///single sigmoid
-   double tb10; ///double sigmoid
+   double tb10; ///double sigmoid end point, but should be the same as te_peak_end
    double t90;  ///single sigmoid
    double t50;  ///double sigmoid
    double tb50; ///double sigmoid
@@ -438,7 +438,7 @@ const double INTEGRATION_TIME_TRIG = 5.0; // [ns]
 
 // Baseline currently not calculated well. Early waveform is being pushed down in waveforms with large signals which
 // overshoot after the pulses. Compensate with a higher threshold for now.
-const double total_bkg_rejection_probability = 0.99999999; // for the total bkg waveform points to be rejected
+const double total_bkg_rejection_probability = 0.99999; // for the total bkg waveform points to be rejected
                                                             // random noise rejection using the 68-95-99.7 rule
 const double ion_tail_end_point_threshold_fraction = 0.4 ; // Set ion tail end point fraction to 40% of threshold
 
