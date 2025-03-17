@@ -1220,7 +1220,7 @@ double IntegrateA(int npoints, double* data, double* integral,double dt)
     integral[i] = integral[i-4] + 2*(data[i-3]+data[i-1])*dt;
     sum+=integral[i];
   }
-  return (sum);
+  return (sum); //The sum variable is an accumulation of the integral array values.
 }
     
 double IntegratePulse(int npoints, const double* data, double* integral,double dt, double tint)
@@ -1850,13 +1850,12 @@ double slope_at_x(double *arr, double dt, PEAKPARAM *par)
 }
 
 double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par)
-{   
+{
     double slope = slope_at_x(arr, dt, par ) ;
     double x1 = par->stime_pos*dt;
     double y1 = arr[par->stime_pos];
-
     double x = (0.2*par->ampl-y1)/slope + x1;
-    //return fabs(x);  
+  //return fabs(x);
     return x;  
 }
 
@@ -1872,7 +1871,7 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         //dt=arrt[1]-arrt[0];
         par->sig_start_pos = (int) (par->stime_pos - 1./dt ); // minus 1 ns
-        while(par->sig_start_pos<tshift) par->sig_start_pos+=1;  // I think this puts sig_start back to trigger point. Probably remove
+        // while(par->sig_start_pos<tshift) par->sig_start_pos+=1;  // I think this puts sig_start back to trigger point. Probably remove
    
         // par->sig_end_pos = (int) (par->maxtime_pos + sig_shift/dt ); // add 2 ns (this was adding too much!!)
         par->sig_end_pos = par->maxtime_pos;
@@ -1891,13 +1890,18 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           //           return (kFALSE);
         }
 
-       double x[1000], y[1000], erx[1000], ery[1000];
-       int points =0;
+       // double x[1000], y[1000], erx[1000], ery[1000];
+        double* x = new double[Npoints];
+        double* y = new double[Npoints];
+        double* erx = new double[Npoints];
+        double* ery = new double[Npoints];
+
+        int points =0;
 #ifdef DEBUGMSG
   cout << "par->rms: " << par->rms << endl;
 #endif
 
-       for (int i = 0; i <= par->sig_end_pos - par->sig_start_pos; i++)
+       for (int i = 0; i < Npoints; i++)
         {
             y[i] = arr[par->sig_start_pos + i];
             //x[i] = arrt[i+sig_start_pos];
@@ -1906,14 +1910,12 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
             ery[i] = par->rms;
             points++;
         }
-        //cout<<GREEN<<"points for the fit = "<<points<<endlr;
-       
 
         TGraphErrors* sig_waveform = new TGraphErrors(points, x, y, erx, ery);
 
         double fit_start_point = x[0];
         double fit_end_point = x[par->sig_end_pos - par->sig_start_pos];
-        
+
         TF1 *sig_fit =  new TF1("sig_fit",fermi_dirac,fit_start_point,fit_end_point, 4);
         
         double sig_pars[4];
@@ -1925,7 +1927,6 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         // double steepness_left = 5.0/(x[par->sig_end_pos - par->sig_start_pos] - x[1]);
         double steepness_left = 5.0/(fit_end_point - x[1]);
-
         sig_pars[0] = arr[par->maxtime_pos]; // - arr[sig_start_pos];
         sig_pars[1] = x_mid_left; 
         sig_pars[2] = steepness_left;
@@ -1933,6 +1934,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         sig_fit->SetParameters(sig_pars[0],sig_pars[1],sig_pars[2],sig_pars[3]);
 
+       //  cout << "sig_fit initial params: A=" << sig_fit->GetParameter(0)
+       // << ", x0=" << sig_fit->GetParameter(1)
+       // << ", k=" << sig_fit->GetParameter(2)
+       // << ", B=" << sig_fit->GetParameter(3) << endl;
       //        double range = par->maxtime_pos-(int)(0.05/dt);
       double range = (0.5/dt);
       sig_fit->SetParError(0, 0.01*abs(sig_fit->GetParameter(0)));
@@ -1940,12 +1945,8 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(2, 0.05);
       sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
-      // sig_fit->SetParLimits(0, 0.1*sig_fit->GetParameter(0), 10*sig_fit->GetParameter(0));
-      // cout << "Par 1 lim left: " << fit_start_point << " val: " << sig_fit->GetParameter(1) << " right: " << fit_end_point << endl;
       sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
-      // cout << "Par 2 lim left: " << 0.1 << " val: " << sig_fit->GetParameter(2) << " right: " << 10 << endl;
       sig_fit->SetParLimits(2, 0.1, 10);
-      // sig_fit->SetParLimits(3, 0.1*sig_fit->GetParameter(0), 10*sig_fit->GetParameter(0));
 
 #ifdef DEBUGMSG
       for (int i = 0; i < 4; i++) {
@@ -1977,7 +1978,6 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
       bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
-
       if(!SigmoidfitSuccess) {
 #ifdef DEBUGMSG
         cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
@@ -1993,7 +1993,6 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       }
 
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
-      //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
       par->chi2_sigmoid = sig_fit->GetChisquare();
       //Calculate the rise time using the 10% and 90% points of the sigmoid fit
       par->t10 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.1*par->ampl-sig_pars[3])-1.)));
@@ -2010,6 +2009,9 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   sig_waveform->SetMarkerStyle(20); // Use a specific marker style
   TCanvas *c1 = new TCanvas("c-timesigmoid", "Fit Result Time Sigmoid", 2000, 1400);
   // sig_waveformd->SetMarkerColor(kRed); // Optional: Set a marker color
+  //set title on the axis
+  sig_waveform->GetXaxis()->SetTitle("Time (ns)");
+  sig_waveform->GetYaxis()->SetTitle("Amplitude (V)");
   sig_waveform->Draw("AP");
   sig_fit->Draw("same");
 
@@ -2051,6 +2053,8 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
        delete minimizer;
 
 
+      // cout<<GREEN<<SigmoidfitSuccess<<endlr;
+
        return SigmoidfitSuccess;
 
 
@@ -2084,11 +2088,14 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 #endif
         }
           
+        double* x = new double[Npoints];
+        double* y = new double[Npoints];
+        double* erx = new double[Npoints];
+        double* ery = new double[Npoints];
 
-       double x[1000], y[1000], erx[1000], ery[1000];
        int points =0;
    
-       for (int i = 0; i <= par->sig_end_pos - par->sig_start_pos; i++)
+       for (int i = 0; i < Npoints; i++)
         {
             y[i] = arr[par->sig_start_pos + i];
             //x[i] = arrt[i+sig_start_pos];
@@ -2158,12 +2165,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 
         for (int i=0;i<4;i++)
         {
-          //par->sigmoidR[i]=sig_pars[i];
           par->sigmoidR[i] = sig_fit->GetParameter(i);
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
-//debugging the fit results
-//cin.get(); //press enter to continue
+
     bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
     if(!SigmoidfitSuccess) {
 #ifdef DEBUGMSG
@@ -2179,8 +2184,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
       }
     }
 #ifdef DEBUGMSG
-      TCanvas *c1 = new TCanvas("c1-a", "Fit Result MCP", 1000, 800);
+      TCanvas *c1 = new TCanvas("c1-a", "Fit Result MCP", 2000, 1000);
       // sig_waveformd->SetMarkerColor(kRed); // Optional: Set a marker color
+      sig_waveform->GetXaxis()->SetTitle("Time (ns)");
+      sig_waveform->GetYaxis()->SetTitle("Amplitude (V)");
       sig_waveform->Draw("AP");
       sig_fit->Draw("same");
 
@@ -2202,6 +2209,8 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 
       c1->Update();
       c1->SaveAs("fit_result_single_mcp.png");
+      c1->SaveAs("fit_result_single_mcp.eps");
+
 
 #endif
       par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
@@ -2220,11 +2229,15 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 } 
 void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, int evNo, TCanvas *sig_canvas)
 {
-   
-    double x[1000], y[1000], erx[1000], ery[1000];
-    int points =0;
+  int Npoints = par->sig_end_pos - par->sig_start_pos +1;
+  double* x = new double[Npoints];
+  double* y = new double[Npoints];
+  double* erx = new double[Npoints];
+  double* ery = new double[Npoints];
 
-    for (int i = 0; i <= par->sig_end_pos - par->sig_start_pos; i++)
+  int points =0;
+
+    for (int i = 0; i < Npoints; i++)
     {       
         y[i] = arr[par->sig_start_pos + i];
         //x[i] = arrt[i+sig_start_pos];
@@ -2234,7 +2247,6 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
         points++;
 
     }
-    //cout<<BLUE<<"draw points for the fit = "<<points<<endlr;
 
     TGraphErrors* sig_waveform = new TGraphErrors(points, x, y, erx, ery);
 
@@ -2252,9 +2264,6 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
     sig_waveform->Draw("AP");
     sigmoidFit->Draw("L SAME");
 
-
-
-    
     if(sig_waveform!=0)
     {
         TH1F *h1 = (TH1F*) sig_waveform->GetHistogram();
@@ -2264,8 +2273,6 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
     }
     // Save the canvas to an image file
     //sig_canvas->SaveAs("sigmoid_fit_visualization.png");
-    
-    //cout<<"Sigmoid rise has been drawn for event "<<evNo<<endlr;
 
 
 }
@@ -2284,7 +2291,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       // ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
       // ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
 
-       int points;
+       int points = 0;
        double x[1000], y[1000], erx[1000], ery[1000];
         //cout<<" loop boundaries "<<par->sig_end_pos - par->sig_start_pos<<endl;
         for (int i = 0; i <= par->sig_end_pos - par->sig_start_pos; i++)
@@ -2320,7 +2327,6 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         int Npointsd = 0;
         int extention =  (int) (SIGMOID_EXTENTION / dt);
-        //cout<<"loooooooop boundaries II "<< sigend+extention-sigstart<<endl; 
         for (int i = 0; i < sigend+extention-sigstart &&i<1000; ++i)
         {
             x_d[i] = (i+sigstart)*dt;
@@ -2346,6 +2352,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
 
       sig_fitd->SetParameters(sig_pars_d);
+
 
       double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
 
@@ -2478,20 +2485,6 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       //
 #endif
 
-      //cout<<RED<<"HERE IS THE ERROR SIFIT2!" << endlr;
-
-
-  // TF1 *sig_fit1 =  new TF1("sig_fit1",fermi_dirac_sym_1,sig_lim_min,sig_lim_max2+10., 3);
-  //     sig_fit1->SetParameter(1,sig_fit2->GetParameter(1));
-  //     sig_fit1->SetParameter(2,sig_fit2->GetParameter(2));
-  //
-  // // Print final parameter values
-  // cout << BLUE << "Final parameters for sig_fit1:" << endlr;
-  // for (int i = 0; i < 4; i++) {
-  //   cout << "Parameter " << i << ": " << sig_fit1->GetParameter(i)
-  //        << " (error: " << sig_fit1->GetParError(i) << ")" << endlr;
-  // }
-
   TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
       for (int i=0;i<4;i++)
         sig_fittot->SetParameter(i,sig_fitd->GetParameter(i));
@@ -2500,6 +2493,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fittot->SetParameter(3+2,sig_fit2->GetParameter(2));
 
 #ifdef DEBUGMSG
+  cout<<RED<<"Initial parameters sig_fittot = "<< sig_fitd->GetParameter(0) <<" "<< sig_fitd->GetParameter(3)<<endlr;
+  cout<<RED<<"Initial parameters sig_fittot = "<< sig_fitd->GetParameter(1) <<" "<< sig_fitd->GetParameter(2)<<endlr;
+  cout<<RED<<"Initial parameters sig_fittot = "<< sig_fit2->GetParameter(1) <<" "<< sig_fit2->GetParameter(2)<<endlr;
   cout<<" sig_lim_min = "<<sig_lim_min<<" sig_lim_max2 = "<<" Sigmoid extension "<<SIGMOID_EXTENTION<<endl;
 #endif
     double range = sig_lim_max2 + SIGMOID_EXTENTION - sig_lim_min;
@@ -2586,9 +2582,17 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   sig_waveformd->SetMarkerSize(1.0); // Adjust the size to your preference
   sig_waveformd->SetMarkerStyle(20); // Use a specific marker style
 
-  TCanvas *c1 = new TCanvas("c1-a", "Fit Result", 1000, 800);
+  TCanvas *c1 = new TCanvas("c1-a", "Fit Result", 1000, 600);
   // sig_waveformd->SetMarkerColor(kRed); // Optional: Set a marker color
+  c1->SetLeftMargin(0.15); // Ensures y-axis is not cut off
+  c1->SetBottomMargin(0.15);
   sig_waveformd->Draw("AP");
+  //set axis titles
+  sig_waveformd->GetXaxis()->SetTitle("Time [ns]");
+  sig_waveformd->GetYaxis()->SetTitle("Amplitude [V]");
+  sig_waveformd->SetMarkerSize(1.0); // Adjust the size to your preference
+  sig_waveformd->SetMarkerStyle(20); // Use a specific marker style
+
   sig_fit2->Draw("same");
 
   // Create a TPaveText to manually display the fit parameters
@@ -2611,7 +2615,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   c1->SaveAs("fit_result_single.png");
   c1->SaveAs("fit_result_single.eps");
 
-  TCanvas *c2 = new TCanvas("c2-a", "Fit Result", 1000, 800);
+  TCanvas *c2 = new TCanvas("c2-a", "Fit Result", 1000, 600);
   sig_waveformd->Draw("AP");
   sig_fitd->Draw("same");
 
@@ -2633,7 +2637,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   c2->SaveAs("fit_result_single_left.png");
   c2->SaveAs("fit_result_single_left.eps");
 
-  TCanvas *c3 = new TCanvas("c3-a", "Fit Result", 1000, 800);
+  TCanvas *c3 = new TCanvas("c3-a", "Fit Result", 1000, 600);
   sig_waveformd->Draw("AP");
   sig_fittot->Draw("same");
 
@@ -2667,10 +2671,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
   //find the time of the maximum of the sig_fittot
-  par->maxtime = sig_fittot->GetMaximumX(sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION);
+  // par->maxtime = sig_fittot->GetMaximumX(fit_double_start_point, fit_double_end_point);
+  par->maxtime = sig_fittot->GetMinimumX(fit_double_start_point, fit_double_end_point);
+  // cout<<BLUE<<"Maxtime = "<<par->maxtime<<endlr;
   //find the maximum amplitude of the sig_fittot
-  par->ampl = sig_fittot->GetMaximum(sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION);
-
+  par->ampl = sig_fittot->GetMinimum(fit_double_start_point, fit_double_end_point);
+  // cout<<BLUE<<"Amplitude = "<<par->ampl<<endlr;
+  // cout<<MAGENTA<<"Amplitude of maximum of the fit "<< par->sigmoidtot[0]<<endlr;
+  // cin.get();
   #ifdef DEBUGMSG
   if(doubleSigmoidfitSuccess) {
     cout<<GREEN<<"Fit successful!"<<endlr;
@@ -2679,37 +2687,40 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
     cout<<RED<<"Fit failed sig_fittotal (second check)."<<endlr;
   }
 #endif
-  //find the end point of the double sigmoid
-  double fit_double_sigmoid_end_point = sig_fittot->GetX(0.5*par->ampl, sig_lim_min, sig_lim_max2+SIGMOID_EXTENTION);
-  par->e_peak_end_pos = fit_double_sigmoid_end_point;
 
-  //find the amplitude of the end point of the double sigmoid
-  par->e_peak_end_ampl = sig_fittot->Eval(fit_double_sigmoid_end_point);
+  // Ensure the target y-value is reasonable
+  double target_y_50= 0.5 * par->ampl;
 
-  double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(0.5*par->ampl, sig_lim_min, par->maxtime);
+
+  par->e_peak_end_pos = (sig_fittot->GetXmax())/dt; //extend the end of the fit to the baseline
+  par->tb10 = sig_fittot->GetXmax();
+  par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
+  gErrorIgnoreLevel = kFatal;
+  double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
   par->t50 = fit_double_sigmoid_rising_edge_50;
+  // cout<<RED<<"t50 = "<<par->t50<<endlr;
+  // cin.get();
 
   //find the 10% point of the double sigmoid on the falling edge
-  double fit_double_sigmoid_falling_edge = sig_fittot->GetX(0.1*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
-  par->tb10 = fit_double_sigmoid_falling_edge;
+  // double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point);
+  // par->tb10 = fit_double_sigmoid_falling_edge;
+  // cout<<BLUE<<"tb10 = "<<par->tb10<<endlr;
 
-  double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(0.5*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
+  double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point);
   par->tb50 = fit_double_sigmoid_falling_edge_50;
+  // cout<<RED<<"tb50 = "<<par->tb50<<endlr;
+  // cin.get();
 
   // double fit_double_sigmoid_falling_edge_90 = sig_fittot->GetX(0.9*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
   // par->tb90 = fit_double_sigmoid_falling_edge_90;
 
 
-  double fit_integral = sig_fittot->Integral(sig_lim_min, (sig_lim_max2+SIGMOID_EXTENTION));
+  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
+  // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
 
   par->width = par->tb50 - par->t50;
-
-  //cout<<YELLOW<<"Double Sigmoid Processed"<<endlr;
-  //cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
-  //cout<<YELLOW<<"Total charge = "<< par->totchargefixed<<endl;
-
 
   delete sig_fitd;
   delete sig_waveformd;
@@ -2807,51 +2818,88 @@ bool isSigmoidfitSuccessful(TFitResultPtr r) {
   }
 }
 
-pair<vector<double>, vector<double>> IntegratePulse_std(
-    const vector<double>& x, const vector<double>& y, int n) {
+// pair<vector<double>, vector<double>> IntegratePulse_std(
+//     const vector<double>& x, const vector<double>& y, int n) {
+//
+//   int size = x.size();
+//   if (size < n) {
+//     return {{}, {}}; // Return empty vectors if n is larger than input size
+//   }
+//
+//   vector<double> x_int(size - n + 1);
+//   vector<double> y_int(size - n + 1);
+//
+//   // Compute initial window sum
+//   double x_sum = 0.0;
+//   double y_sum = 0.0;
+//   for (int i = 0; i < n; ++i) {
+//     x_sum += x[i];
+//     y_sum += y[i];
+//   }
+//
+//   // Store first integrated value
+//   x_int[0] = x_sum / n;
+//   y_int[0] = y_sum;
+//
+//
+//   // Compute moving average for x
+//   for (size_t i = 0; i <= size - n; ++i) {
+//     x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
+//
+//   }
+//
+//   // Compute convolution for y
+//   // for (size_t i = 0; i <= size - n; ++i) {
+//   //   y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
+//   //   //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
+//   // }
+//
+//   for (int i = 1; i <= size - n; ++i) {
+//     x_sum += x[i + n - 1] - x[i - 1]; // Add new point, remove old point
+//     y_sum += y[i + n - 1] - y[i - 1];
+//
+//     x_int[i] = x_sum / n;
+//     y_int[i] = y_sum;
+//   }
+//
+//   return {x_int, y_int};
+// }
 
+// Function to compute the moving integral (cumulative sum) for y and moving average for x
+pair<vector<double>, vector<double>> IntegratePulse_std(const vector<double>& x, const vector<double>& y, int n) {
   int size = x.size();
+
+  // Ensure that the result vector size is valid (size should be at least n)
   if (size < n) {
-    return {{}, {}}; // Return empty vectors if n is larger than input size
+    return {{}, {}};  // Return empty vectors if the input size is smaller than n
   }
 
-  vector<double> x_int(size - n + 1);
-  vector<double> y_int(size - n + 1);
+  vector<double> x_avg(size - n + 1, 0.0);  // Moving average of x (smaller size)
+  vector<double> y_int(size - n + 1, 0.0);  // Integral of y (smaller size)
 
-  // Compute initial window sum
-  double x_sum = 0.0;
-  double y_sum = 0.0;
+  double x_sum = 0.0, y_sum = 0.0;
+
+  // Compute the sum for the initial window (first n elements)
   for (int i = 0; i < n; ++i) {
     x_sum += x[i];
     y_sum += y[i];
   }
 
-  // Store first integrated value
-  x_int[0] = x_sum / n;
-  y_int[0] = y_sum;
+  // Store the initial average for x and the initial sum for y in the result vectors
+  x_avg[0] = x_sum / n;  // x_int is the moving average
+  y_int[0] = y_sum;      // y_int is the moving integral (sum)
 
+  // Slide the window across the rest of the elements
+  for (int i = n; i < size; ++i) {
+    x_sum += x[i] - x[i - n];  // Add the new element, subtract the old element for x
+    y_sum += y[i] - y[i - n];  // Same for y
 
-  // Compute moving average for x
-  for (size_t i = 0; i <= size - n; ++i) {
-    x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
-
+    // Store the moving average for x and the moving sum for y
+    x_avg[i - n + 1] = x_sum / n;  // x_int is the moving average
+    y_int[i - n + 1] = y_sum;      // y_int is the moving integral (sum)
   }
 
-  // Compute convolution for y
-  // for (size_t i = 0; i <= size - n; ++i) {
-  //   y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
-  //   //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
-  // }
-
-  for (int i = 1; i <= size - n; ++i) {
-    x_sum += x[i + n - 1] - x[i - 1]; // Add new point, remove old point
-    y_sum += y[i + n - 1] - y[i - 1];
-
-    x_int[i] = x_sum / n;
-    y_int[i] = y_sum;
-  }
-
-  return {x_int, y_int};
+  return {x_avg, y_int};
 }
 
 pair<vector<double>, vector<double>> DerivatePulse_std(const vector<double>&x, const vector<double>&y) {
@@ -2961,6 +3009,8 @@ vector<double> CumulativeSum(const vector<double>& data) {
   // points: number of points in the waveform
   // Returns: cdf of the data
 
+  // cout<<YELLOW<<"Calculating cumulative sum"<<endlr;
+
   int points = data.size();
   vector<double> csum(points);
 
@@ -2972,37 +3022,39 @@ vector<double> CumulativeSum(const vector<double>& data) {
 }
 
 size_t get_minimum_index_in_window(vector<double>& x_int, vector<double>& y_int, double x_start, double x_end) {
-
   if (x_start > x_end) {
     throw std::invalid_argument("Start value must be less than end value.");
   }
 
-  size_t i_start = 0;
-  while ((i_start < x_int.size() && x_int[i_start] <= x_start) ) {
-      i_start++;
-  }
+  size_t i_start = convert_x_to_index(x_int.data(), x_int.size(), x_start);
+  // size_t i_start = 0;
+  // while ((i_start < x_int.size() && x_int[i_start] <= x_start) ) {
+      // i_start++;
+  // }
 
-  size_t i_end = i_start;
-  while ((i_end < x_int.size() && x_int[i_end] <= x_end) ) {
-      i_end++;
-  }
-  cout << "End of max finding window: " << i_end << endl;
+  size_t i_end = convert_x_to_index(x_int.data(), x_int.size(), x_end);
+  // size_t i_end = i_start;
+  // while ((i_end < x_int.size()
+  // && x_int[i_end] <= x_end) ) {
+      // i_end++;
+  // }
 
     // Find minimum in window
-    size_t i_min = i_start;
-  for (size_t i = i_start; i < i_end; ++i) {
-    if (y_int[i] < y_int[i_min]) {
-      i_min = i;
-    }
-  }
-
+  auto min_iter = std::min_element(y_int.begin() + i_start, y_int.begin() + i_end);
+  size_t i_min = std::distance(y_int.begin(), min_iter);
+  //   size_t i_min = i_start;
+  // for (size_t i = i_start; i < i_end; ++i) {
+  //   if (y_int[i] < y_int[i_min]) {
+  //     i_min = i;
+  //   }
+  // }
   return i_min;
 }
 
 
 size_t find_first_point_index_below_threshold(const vector<double>& y, double threshold, int start_index=0, int step=1, int pulse_polarity=-1) {
   int i = start_index;
-  while (i < y.size() && i >= 0 && pulse_polarity * y[i] >= pulse_polarity * threshold) {
+  while (i < y.size() - 1 && i > 0 && pulse_polarity * y[i] >= pulse_polarity * threshold) {
     i+=step;
   }
   return i;
@@ -3018,6 +3070,7 @@ size_t convert_x_to_index(double *x, int npoints, double x_value) {
 
   // Find the index of the x value
   //convert from x to i values
+  // cout<<MAGENTA<<"Converting x to index"<<endlr;
   auto it = std::lower_bound(x, x + npoints, x_value);
   size_t index = std::distance(x, it);
   if (index == npoints) {
@@ -3037,9 +3090,9 @@ void adjust_baseline(int npoints, double *ptime, double *sampl) {
   size_t baseline_region_end_point = std::distance(timeValues.begin(), baseline_region_end);
   auto [baseline_rms_test, baseline_level_test] = FindBaselineLevel(sampl, baseline_region_end_point);
 
-  cout<<"Baseline RMS = "<<baseline_rms_test<<endl;
-  cout<<"Baseline Level = "<<baseline_level_test<<endl;
-  // return 222222;
+  // cout<<"Baseline RMS = "<<baseline_rms_test<<endl;
+  // cout<<"Baseline Level = "<<baseline_level_test<<endl;
+
 
   // subtract the baseline from the data
   for (int i = 0; i < npoints; i++) {
@@ -3071,10 +3124,10 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
 
   //Calculate thresholds ion tail
   double integration_threshold = threshold * sqrt(int_points);
-  cout<< "threshold : " << threshold<<" sqrt(int_points)  " <<sqrt(int_points) << endl;
-  cout<<"Integration threshold: "<<integration_threshold<<endl;
+  // cout<< "threshold : " << threshold<<" sqrt(int_points)  " <<sqrt(int_points) << endl;
+  // cout<<"Integration threshold: "<<integration_threshold<<endl;
   double end_thresh = integration_threshold * end_thresh_fraction;
-  cout<<"End threshold: "<<end_thresh<<endl;
+  // cout<<"End threshold: "<<end_thresh<<endl;
 
     vector<pair<double, double>> signal_bounds; // Vector to store signal bounds (left,right)
     bool waveform_finished = false;
@@ -3085,17 +3138,16 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
         size_t i_trigger = i_start;
 
         // Find First Point Below Threshold
-        cout << "I start: " << i_start << endl;
+        // cout << "I start: " << i_start << endl;
         while (i_trigger < y_int.size() && y_int[i_trigger] >= integration_threshold) {
             i_trigger++;
         }
-        cout << "Trigger: " << i_trigger << endl;
-
 
         if (i_trigger >= y_int.size()) {
             waveform_finished = true;
             break;
         }
+        // cout << "Trigger: " << i_trigger << endl;
 
         //Identify Minimum Signal in Electron Peak Window within two electron peak widths
         double x_trigger = x_int[i_trigger];
@@ -3104,32 +3156,44 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
         size_t i_min = get_minimum_index_in_window(x_int, y_int, x_trigger, x_end);
         double y_min = y_int[i_min];  // We don't use this variable, but it's useful for debugging
 
-        cout << x_trigger << " " << x_end << " " << end_thresh << " " << y_min << endl;
-
         // Find Left Bound (Pulse Start)
         // Get first point to left of minimum above end fraction of min
 
         size_t i_left = find_first_point_index_below_threshold(y_int, end_thresh, i_min, -1, -1);
-        cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
+        // cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
 
         // Get first point to right of minimum above end fraction of min
         // Find Right Bound (Pulse End) with epeak intergration
         size_t i_right = find_first_point_index_below_threshold(y_int, end_thresh, i_min, +1, -1);
         double x_right_epeak = x_int[i_right];
+#ifdef DEBUGMSG
+      cout << "x_trigger: " << x_trigger << " ";
+      cout << "x_end: " << x_end << " ";
+      cout << "end_thresh: " << end_thresh << " ";
+      cout << "integration_threshold: " << integration_threshold << " ";
+      cout << "y_min: " << y_min << " ";
+      cout << "i_left: " << i_left << " ";
+      cout << "i_right: " << i_right << " ";
+      cout << "i_min: " << i_min << " ";
+      cout << "i_start: " << i_start << " ";
+      cout << "i_trigger: " << i_trigger << " ";
+      cout << "y_int.size(): " << y_int.size() << endl;
+#endif
+       // Put in protections against going out of bounds
 
 
         signal_bounds.emplace_back(x_int[i_left], x_right_epeak);
-        cout << "Bounds: (" << x_int[i_left] << ", " << x_right_epeak << ")" << endl;
-        cout << "i_right: " << i_right << " y_int new: " << y_int[i_right] << endl;
-        i_start = i_right;
+        // cout << "Bounds: (" << x_int[i_left] << ", " << x_right_epeak << ")" << endl;
+        // cout << "i_right: " << i_right << " y_int new: " << y_int[i_right] << endl;
+        i_start = i_right + 1;
     }
 
     return signal_bounds;
 }
 
 //In case you want to use the iontail to find the end of the pulse you can use this function
-/*vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t_values, const vector<double>& y_values,
-    double threshold,
+vector<pair<double, double>> find_initial_trigger_bounds_with_ion_integral(const vector<double>& t_values, const vector<double>& y_values,
+    double trigger_threshold,
     double integration_time_trig,
     double epeak_width,
     double integration_time_ion_tail,
@@ -3150,17 +3214,17 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
 
   //Integrate pulse
   auto [x_int, y_int] = IntegratePulse_std(t_values, y_values, int_points);
-  // auto [x_int_ion_tail, y_int_ion_tail] = IntegratePulse_std(t_values, y_values, int_points_ion_tail);
+  auto [x_int_ion_tail, y_int_ion_tail] = IntegratePulse_std(t_values, y_values, int_points_ion_tail);
 
   //Calculate thresholds ion tail
-  double integration_threshold = threshold * sqrt(int_points);
-  double integration_threshold_ion_tail = threshold * sqrt(int_points_ion_tail);
-  cout<< "threshold : " <<threshold<<" sqrt(int_points)  " <<sqrt(int_points) << endl;
-  cout<<"Integration threshold: "<<integration_threshold<<endl;
+  double integration_threshold = trigger_threshold;
+  double integration_threshold_ion_tail = trigger_threshold * sqrt(int_points_ion_tail / int_points);  // Ballpark
+  // cout<< "threshold : " <<trigger_threshold<<" sqrt(int_points)  " <<sqrt(int_points) << endl;
+  // cout<<"Integration threshold: "<<integration_threshold<<endl;
   double end_thresh = integration_threshold * end_thresh_fraction;
-  cout<<"End threshold: "<<end_thresh<<endl;
+  // cout<<"End threshold: "<<end_thresh<<endl;
   double end_thresh_ion_tail = integration_threshold_ion_tail * end_thresh_fraction;
-  cout<<"End threshold ion tail: "<<end_thresh_ion_tail<<endl;
+  // cout<<"End threshold ion tail: "<<end_thresh_ion_tail<<endl;
 
     vector<pair<double, double>> signal_bounds; // Vector to store signal bounds (left,right)
     bool waveform_finished = false;
@@ -3171,11 +3235,11 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
         size_t i_trigger = i_start;
 
         // Find First Point Below Threshold
-        cout << "I start: " << i_start << endl;
+        // cout << "I start: " << i_start << endl;
         while (i_trigger < y_int.size() && y_int[i_trigger] >= integration_threshold) {
             i_trigger++;
         }
-        cout << "Trigger: " << i_trigger << endl;
+        // cout << "Trigger: " << i_trigger << endl;
 
 
         if (i_trigger >= y_int.size()) {
@@ -3188,15 +3252,16 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
         double x_end = x_trigger + 2 * epeak_width;
 
         size_t i_min = get_minimum_index_in_window(x_int, y_int, x_trigger, x_end);
+        double x_min = x_int[i_min];
         double y_min = y_int[i_min];  // We don't use this variable, but it's useful for debugging
 
-        cout << x_trigger << " " << x_end << " " << end_thresh << " " << y_min << endl;
+        // cout << x_trigger << " " << x_end << " " << end_thresh << " " << y_min << endl;
 
         // Find Left Bound (Pulse Start)
         // Get first point to left of minimum above end fraction of min
 
         size_t i_left = find_first_point_index_below_threshold(y_int, end_thresh, i_min, -1, -1);
-        cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
+        // cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
 
         // Get first point to right of minimum above end fraction of min
         // Find Right Bound (Pulse End) with epeak intergration
@@ -3204,50 +3269,60 @@ vector<pair<double, double>> find_initial_trigger_bounds(const vector<double>& t
         // cout << "i_right_epeak: " << i_right_epeak << " y_int: " << y_int[i_right_epeak] << " end_thresh: " << end_thresh << endl;
         double x_right_epeak = x_int[i_right];
 
-        // Find Right Bound (Pulse End) with ion tail integration
-        // double x_right = x_int[i_right];
-        // Convert from index in x_int to index in x_int_ion_tail
-        // cout << "i_right: " << i_right << " x_right: " << x_right << " y_int: " << y_int[i_right] << " end_thresh: " << end_thresh << endl;
-        // auto it_i_right_ion_tail = find_if(x_int_ion_tail.begin(), x_int_ion_tail.end(),
-                                         // [x_right](double val) { return val >= x_right; });
-        // if (it_i_right_ion_tail == x_int_ion_tail.end()) {
-          // cout<<"End of ion tail reached"<<endl;
-          // break;
-        // }
-        // size_t i_right_ion_tail = distance(x_int_ion_tail.begin(), it_i_right_ion_tail);
-        // i_right_ion_tail = find_first_point_index_below_threshold(y_int_ion_tail, end_thresh_ion_tail, i_right_ion_tail, +1, -1);
-        // double x_right_ion = x_int_ion_tail[i_right_ion_tail];
+         // Find Right Bound (Pulse End) with ion tail integration
+        double x_right = x_int[i_right];
+        size_t i_min_ion_tail = convert_x_to_index(x_int_ion_tail.data(), x_int_ion_tail.size(), x_min);
+         // // Convert from index in x_int to index in x_int_ion_tail
+         // cout << "i_right: " << i_right << " x_right: " << x_right << " y_int: " << y_int[i_right] << " end_thresh: " << end_thresh << endl;
+         // auto it_i_right_ion_tail = find_if(x_int_ion_tail.begin(), x_int_ion_tail.end(),
+         //                                  [x_right](double val) { return val >= x_right; });
+         // if (it_i_right_ion_tail == x_int_ion_tail.end()) {
+         //   cout<<"End of ion tail reached"<<endl;
+         //   break;
+         // }
+         // size_t i_right_ion_tail = distance(x_int_ion_tail.begin(), it_i_right_ion_tail);
+         size_t i_right_ion_tail = find_first_point_index_below_threshold(y_int_ion_tail, end_thresh_ion_tail, i_min_ion_tail, +1, -1);
+         double x_right_ion = x_int_ion_tail[i_right_ion_tail];
 
-        //Compare endpoint found with epeak and ion tail integrations
+        // Compare endpoint found with epeak and ion tail integrations
         // double x_range_ion = x_right_ion - x_int[i_left];
         // double x_range_epeak = x_right_epeak - x_int[i_left];
+        double x_right_lim = x_int[i_left] + 2 * CIVIDEC_PULSE_DURATION;
 
-        //If width determined by ion tail is more than 50% different from width determined by electron peak, use electron peak width
-        // x_right = x_right_ion;
-        // if (fabs(x_range_ion - x_range_epeak) / ((x_range_ion + x_range_epeak) / 2) > 0.5) {
-          // x_right = x_right_epeak;
-          // cout << "Pulse range with ion tail too different from electron peak: " << x_range_ion << " Using electron peak width: " << x_range_epeak << endl;
-        // }
+        // If width determined by ion tail is more than 50% different from width determined by electron peak, use electron peak width
+         x_right = max({x_right_ion, x_right_epeak});
+         x_right = min({x_right, x_right_lim});
+         // cout<< x_range_ion << " " << x_range_epeak << endl;
+         // cout<< fabs(x_range_ion - x_range_epeak) / ((x_range_ion + x_range_epeak) / 2) << endl;
+         // cout<<x_range_ion - x_range_epeak << endl;
+         // if (x_range_ion - x_range_epeak < CIVIDEC_PULSE_DURATION) {
+           // x_right = x_right_ion;
+          // cout << "the ion tail will be used for right bound" << x_right << endl;
+         // }
+         // else if (fabs(x_range_ion - x_range_epeak) / ((x_range_ion + x_range_epeak) / 2) > 1.5) {
+         //   // x_right = x_right_epeak;
+         //   cout << "Pulse range with ion tail too different from electron peak: " << x_range_ion << " Using electron peak width: " << x_range_epeak << endl;
+         // }
 
-        signal_bounds.emplace_back(x_int[i_left], x_right_epeak);
-        cout << "Bounds: (" << x_int[i_left] << ", " << x_right_epeak << ")" << endl;
-        // cout << "x_right: " << x_right_ion << " x_right_epeak: " << x_right_epeak << endl;
-        cout << "x_right: " << x_right_epeak << " x_right_epeak: " << x_right_epeak << endl;
+        signal_bounds.emplace_back(x_int[i_left], x_right);
+        // cout << "Bounds: (" << x_int[i_left] << ", " << x_right << ")" << endl;
+        // cout << "x_right_ion: " << x_right_ion << " x_right_epeak: " << x_right_epeak << endl;
 
         //Convert x_right to i_right in x_int to find next pulse
+        i_right = convert_x_to_index(x_int.data(), x_int.size(), x_right);
         // auto it_i_right = find_if(x_int.begin(), x_int.end(),
-        //                           [x_right_epeak](double val) { return val >= x_right_epeak; });
+        // [x_right_epeak](double val) { return val >= x_right_epeak; });
         // i_right = distance(x_int.begin(), it_i_right);
 
         // cout << "i_right: " << i_right << " y_int_ion_tai: " << y_int_ion_tail[i_right_ion_tail] <<" y_int new: " <<
         // y_int[i_right] <<" end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
-        cout << "i_right: " << i_right << " y_int new: " << y_int[i_right] <<" end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
-        i_start = i_right;
+        // cout << "i_right: " << i_right << " y_int new: " << y_int[i_right] <<" end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
+        i_start = i_right + 1;
     }
 
     return signal_bounds;
 }
-*/
+
 vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector<double>& y_values, const vector<pair<double, double>>& pulse_bounds, size_t int_secondary_points) {
     // Function to find secondary pulses
     // t_values: time values of the original waveform
@@ -3269,19 +3344,21 @@ vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector
     for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
       double x_left = pulse_bounds[bound_i].first;
       double x_right = pulse_bounds[bound_i].second;
-      cout << "Secondary check to reject Bounds: (" << x_left << ", " << x_right << ")" << endl;
+      // cout << "Secondary check to reject Bounds: (" << x_left << ", " << x_right << ")" << endl;
 
       // Find the indices of the bounds in the derivative
-      auto it_left = std::find_if(x_der.begin(), x_der.end(),
-                                       [x_left](double val) { return val > x_left; });
-      auto it_right = std::find_if(x_der.begin(), x_der.end(),
-                                   [x_right](double val) { return val > x_right; });
-
-      if (it_left == x_der.end() || it_right == x_der.end())
-        continue;
-
-      size_t i_left = distance(x_der.begin(), it_left);
-      size_t i_right = distance(x_der.begin(), it_right);
+      size_t i_left = convert_x_to_index(x_der.data(), x_der.size(), x_left);
+      size_t i_right = convert_x_to_index(x_der.data(), x_der.size(), x_right);
+      // auto it_left = std::find_if(x_der.begin(), x_der.end(),
+      //                                  [x_left](double val) { return val > x_left; });
+      // auto it_right = std::find_if(x_der.begin(), x_der.end(),
+      //                              [x_right](double val) { return val > x_right; });
+      //
+      // if (it_left == x_der.end() || it_right == x_der.end())
+      //   continue;
+      //
+      // size_t i_left = distance(x_der.begin(), it_left);
+      // size_t i_right = distance(x_der.begin(), it_right);
 
       //Find the minimum in the derivative
       auto min_it = min_element(y_der.begin() + i_left,
@@ -3291,7 +3368,7 @@ vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector
 
       //Set the threshold for the secondary pulse
       double y_thresh = y_min * secondary_pulse_threshold_fraction;
-      cout << "Secondary: " << x_der[i_min] << " " << y_min << " " << y_thresh << endl;
+      // cout << "Secondary: " << x_der[i_min] << " " << y_min << " " << y_thresh << endl;
 
       // Set region to the left of the peak to check for secondary pulses
       auto left_begin = y_der.begin() + i_left;
@@ -3318,17 +3395,17 @@ vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector
       }
     }
 
-     cout << "Signal Bounds: ";
+     // cout << "Signal Bounds: ";
       for (const auto& bound : pulse_bounds) {
-        cout << "(" << bound.first << ", " << bound.second << ") ";
+        // cout << "(" << bound.first << ", " << bound.second << ") ";
       }
-    cout << endl;
+    // cout << endl;
 
-     cout << "Secondary Reject: ";
+     // cout << "Secondary Reject: ";
       for (bool reject : secondary_pulses_reject) {
-        cout << reject << " ";
+        // cout << reject << " ";
       }
-      cout << endl;
+      // cout << endl;
   return secondary_pulses_reject;
 }
 
@@ -3346,18 +3423,40 @@ void find_start_bounds(vector<pair<double, double>>& pulse_bounds, double tint, 
     double percent_of_peak_target = 0.2; // Target percentage of peak for start bound
 
     for (auto & pulse_bound : pulse_bounds) {
-      pulse_bound.first += static_cast<float> (time_shift);  // adjust rightward
+      // pulse_bound.first += static_cast<float> (time_shift);  // adjust rightward
 
       // Get minimum within bounds -- peak position in the window
-      auto it_left = std::find_if(x.begin(), x.end(),
-                                  [pulse_bound](double val) { return val > pulse_bound.first; });
-      auto it_right = std::find_if(x.begin(), x.end(),
-                                  [pulse_bound](double val) { return val > pulse_bound.second; });
-      double it_min = *min_element(it_left, it_right);
-      auto it_min_index = distance(x.begin(), find(x.begin(), x.end(), it_min));
+      // auto it_left = std::find_if(x.begin(), x.end(),
+      //                             [&pulse_bound](double val) { return val > pulse_bound.first; });
+      // auto it_right = std::find_if(x.begin(), x.end(),
+      //                             [&pulse_bound](double val) { return val > pulse_bound.second; });
+      // // Print info about it_left, it_right, and pulse_bound.first
+      // cout << "it_left: " << *it_left << " it_right: " << *it_right << " pulse_bound.first: " << pulse_bound.first << endl;
+      // cout << "it_left_index: " <<  distance(x.begin(), it_left) << " it_right_index: " << distance(x.begin(), it_right) << endl;
+
+      size_t i_left = convert_x_to_index(x.data(), x.size(), pulse_bound.first);
+      size_t i_right = convert_x_to_index(x.data(), x.size(), pulse_bound.second);
+
+      if (i_left > i_right) {
+        cout << "Warning: i_left > i_right" << endl;
+        continue;
+      }
+
+      auto it_min = min_element(y.begin() + i_left, y.begin() + i_right);
+      //find ymin in the window
+      if (it_min == y.end()) {
+        cout << "Warning: find_start_bounds could not find minimum in window" << endl;
+        continue;
+      }
+
+      auto it_min_index = distance(y.begin(), it_min);
+      // double it_min = *min_element(it_left, it_right);
+      // auto it_min_index = distance(x.begin(), find(x.begin(), x.end(), it_min));
 
       // Get first point to the left of the minimum above 0.2 of the minimum
-      size_t i_left = it_min_index;
+      // cout << "Going into loop to find left bound" << endl;
+      // cout << "it_min_index: " << it_min_index << " y[it_min_index]: " << y[it_min_index] << " percent_of_peak_target: " << percent_of_peak_target << endl;
+      // i_left = it_min_index;
       for (size_t i = it_min_index; i > 0; --i) {
         if (y[i] > percent_of_peak_target * y[it_min_index]) {
           i_left = i;
@@ -3366,18 +3465,23 @@ void find_start_bounds(vector<pair<double, double>>& pulse_bounds, double tint, 
       }
       double x_left = x[i_left];
 
-      if (x_left < pulse_bound.first) {
-        pulse_bound.first = x_left;
-        cout << "Used data to the left of the minimum to adjust start bound" << endl;
-        // cout << "Start bound changed from  " << pulse_bound.first - time_shift << " to " << pulse_bound.first << endl;
-      }
+      // pulse_bound.first += static_cast<float> (time_shift);  // adjust rightward
+      //
+      // cout << "Start bound: " << pulse_bound.first << " x_left: " << x_left << endl;
+      // if (x_left < pulse_bound.first) {
+      //   pulse_bound.first = x_left;
+      //   cout << "Used data to the left of the minimum to adjust start bound" << endl;
+      //   // cout << "Start bound changed from  " << pulse_bound.first - time_shift << " to " << pulse_bound.first << endl;
+      // }
+      pulse_bound.first = x_left;
 
-      cout << "Start bound changed from  " << pulse_bound.first - time_shift << " to " << pulse_bound.first << endl;
+
+      // cout << "Start bound changed to " << pulse_bound.first << " (conversion from integral times to waveform times) " << endl;
     }
 }
 
 
-void find_end_bounds(vector<pair<double, double>>& pulse_bounds, const vector<double>& x, const vector<double>& y) {
+void find_end_bounds(vector<pair<double, double>>& pulse_bounds, vector<double>& x, vector<double>& y) {
     // Function to adjust pulse bounds to include the full pulse
     // pulse_bounds: vector of pairs of bounds (left, right)
     // x: x values of the waveform
@@ -3391,21 +3495,24 @@ void find_end_bounds(vector<pair<double, double>>& pulse_bounds, const vector<do
     for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
       double x_left = pulse_bounds[bound_i].first;
       double x_right_original = pulse_bounds[bound_i].second;
-      cout << "Start bound: " << x_left << endl;
-
+      // cout << "Start bound: " << x_left << endl;
+      // cout<<"x_right_original: "<<x_right_original<<endl;
       //convert from x to i values
-      auto it_left = std::find_if(x.begin(), x.end(),
-                                  [x_left](double val) { return val > x_left; });
-      size_t i_left = distance(x.begin(), it_left);
-      cout << "Start index -- left bound: " << i_left << endl;
+      size_t i_left = convert_x_to_index(x.data(), x.size(), x_left);
+      // auto it_left = std::find_if(x.begin(), x.end(),
+                                  // [x_left](double val) { return val > x_left; });
+      // size_t i_left = distance(x.begin(), it_left);
+      // cout << "Start index -- left bound: " << i_left << endl;
 
 
       double x_right  = 0.0;
-      cout << "Bound_i: " << bound_i << " pulse bounds size: " << pulse_bounds.size() << endl;
+      // cout << "Bound_i: " << bound_i << " pulse bounds size: " << pulse_bounds.size() << endl;
       if (bound_i + 1 >= pulse_bounds.size()) {
         x_right = x.back();
+        // cout<<"End bound if its the last pulse: "<<x_right<<endl;
       } else {
         x_right = pulse_bounds[bound_i + 1].first;
+        // cout<<"End bound if its not the last pulse: "<<x_right<<endl;
       }
 
       // double x_right_lim = 2 * x_range_original + x_left;
@@ -3413,17 +3520,19 @@ void find_end_bounds(vector<pair<double, double>>& pulse_bounds, const vector<do
       if (x_right > x_right_lim) {
         x_right = x_right_lim;
       }
-      cout << "End bound: " << x_right << endl;
+      // cout << "End bound: " << x_right << endl;
 
       //convert from x to i values
-      auto it_right = std::find_if(x.begin(), x.end(),
-                                  [x_right](double val) { return val > x_right; });
-      size_t i_right = distance(x.begin(), it_right);
-      cout << "End index: " << i_right << endl;
+      size_t i_right = convert_x_to_index(x.data(), x.size(), x_right);
+      // auto it_right = std::find_if(x.begin(), x.end(),
+                                  // [x_right](double val) { return val > x_right; });
+      // size_t i_right = distance(x.begin(), it_right);
+      // cout << "End index: " << i_right << endl;
 
+      // cout << "find end bounds i_left: " << i_left << " i_right: " << i_right << endl;
       //find the maximum of the cdf between intex_left and index_right
       auto min_it = min_element(csum.begin() + i_left, csum.begin() + i_right);
-      cout<< "Min_it: "<<*min_it<<endl;
+      // cout<< "Min_it: "<<*min_it<<endl;
       //find the index of the maximum
       size_t i_min = distance(csum.begin(), min_it);
 
@@ -3436,7 +3545,7 @@ void find_end_bounds(vector<pair<double, double>>& pulse_bounds, const vector<do
       double x_min = x[i_min];
 
       pulse_bounds[bound_i].second = x_min;
-      cout << "End bound changed from  " << x_right_original << " to " << x_min<< endl;
+      // cout << "End bound changed from  " << x_right_original << " to " << x_min<< endl;
   }
 }
 
@@ -3462,7 +3571,7 @@ vector<bool> reject_thin_pulses(const vector<pair<double, double>>& pulse_bounds
     return thin_pulses_reject;
 }
 
-vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double threshold) {
+vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double trigger_threshold) {
     // Function to get trigger windows
     // dt: time step
     // threshold: threshold for the signal
@@ -3474,42 +3583,48 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
       vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
 
       //Get trigger windows from the integrated pulse
-      // vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds(t_values, y_values, threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold_fraction, dt);
-      vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds(t_values, y_values, threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, ion_tail_end_point_threshold_fraction, dt);
+      // cout<<RED<< "Find initial trigger bounds" << endlr;
+      vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds_with_ion_integral(t_values, y_values, trigger_threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold_fraction, dt);
+      // vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds(t_values, y_values, threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, ion_tail_end_point_threshold_fraction, dt);
 
       // Reject secondaries within windows
       int int_secondary_points = static_cast<int>(CIVIDEC_PEAK_DURATION / dt);
+
+      // cout<<RED<< "Find secondary pulses" << endlr;
       vector<bool> secondary_rejects = find_secondary_pulses(t_values, y_values, pulse_bounds, int_secondary_points);
 
       //adjust pulse bounds to the original time-scale
-      cout << "Find start bounds" << endl;
+      // cout<<RED<< "Find start bounds" << endlr;
       find_start_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, t_values, y_values);
 
-      cout << "Find end bounds" << endl;
+      // cout <<RED<<"Find end bounds" << endlr;
       find_end_bounds(pulse_bounds, t_values, y_values);
 
-      cout << "Reject thin pulses" << endl;
+      // cout<< RED << "Reject thin pulses" << endlr;
       // vector<bool> thin_rejects = reject_thin_pulses(pulse_bounds, 0.8 * CIVIDEC_PEAK_DURATION);
       vector<bool> thin_rejects = reject_thin_pulses(pulse_bounds, 0.2 * CIVIDEC_PULSE_DURATION);
 
       // Print the pulse bounds and info
-      cout << "Pulse bounds:" << endl;
+      // cout<< GREEN << "Pulse bounds:" << endlr;
       for (size_t i=0; i<pulse_bounds.size(); i++) {
-        cout << "  [" << pulse_bounds[i].first << ", " << pulse_bounds[i].second << "]  secondary: " << secondary_rejects[i] << "  too thin: " << thin_rejects[i] << endl;
+        // cout << "  [" << pulse_bounds[i].first << ", " << pulse_bounds[i].second << "]  secondary: " << secondary_rejects[i] << "  too thin: " << thin_rejects[i] << endl;
       }
 
       // Remove secondary and thin pulses
       vector<pair<double, double>> pulse_bounds_filtered;
       for (size_t i = 0; i < pulse_bounds.size(); ++i) {
-        if (!secondary_rejects[i] && !thin_rejects[i]) {
-          pulse_bounds_filtered.push_back(pulse_bounds[i]);
-        }
-      }
+        if (secondary_rejects[i]) {
+          //count secondary pulses
 
-      // cout << "Secondary rejects:" << endl;
-      // for (bool reject : secondary_rejects) {
-      //   cout << "  " << reject << endl;
-      // }
+        }
+        if (thin_rejects[i]) {
+          //count thin pulses
+
+        }
+         if (!secondary_rejects[i] && !thin_rejects[i]) {
+           pulse_bounds_filtered.push_back(pulse_bounds[i]);
+         }
+       }
 
       return pulse_bounds_filtered;
 }
@@ -3535,11 +3650,11 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
   // Draw graph
 
   if (t == 0) {
-    // graphIntegral->Draw("AL"); // First graph with axes
+    graphIntegral->Draw("AL"); // First graph with axes
     //graphCDF_int->Draw("L SAME");
 
   } else {
-    // graphIntegral->Draw("L"); // Overlay subsequent graphs
+    graphIntegral->Draw("L"); // Overlay subsequent graphs
     //graphCDF_int->Draw("L SAME");
   }
 
@@ -3555,8 +3670,8 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
     //color differently the left and the right line of the bounds
     line_left->SetLineStyle(2);
     line_right->SetLineStyle(2);
-    line_left->SetLineWidth(3);
-    line_right->SetLineWidth(3);
+    line_left->SetLineWidth(4);
+    line_right->SetLineWidth(4);
     line_left->SetLineColor(colors[t % colors.size()]);
     line_right->SetLineColor(colors[t+10 % colors.size()]);
     //line_right->SetLineColor(colors[t % colors.size()]);
@@ -3939,7 +4054,7 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
   /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold)
   ///pulses are considered negative!!!
 #ifdef DEBUGMSG
-  cout<<MAGENTA<<"Starting Analysis for cividec at start point " << t_start <<endlr;
+  cout<<MAGENTA<<"Starting Analysis for cividec at start point " << i_start <<endl;
   // cout << "Threshold = " << threshold << endlr;
   // cin.get();
   // cout << "tshift = " << tshift << endlr;
@@ -3950,29 +4065,32 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
   par->tot[0]=0;
 
 #ifdef DEBUGMSG
-  cout << RED << "Trigger point = " << tpoint << endlr;
-  cout << RED << "value = "<<data[tpoint]<<endlr;
+  cout << RED << "Trigger point = " << i_start << endlr;
+  cout << RED << "value = "<<data[i_start]<<endlr;
 #endif
 
   if (i_start>=points-10) return;
   ////////////////////////////////////////////////////
-  double miny = data[i_start];
+  if (i_start >= points || i_end > points) {
+  cerr << "Error: i_start or i_end out of bounds! i_start = " << i_start << ", i_end = " << i_end << ", points = " <<
+      points << endl;
+  return;
+}
+double miny = data[i_start];
   par->charge=0.;
   par->maxtime_pos=i_start;
   par->ampl=data[i_start];
   par->ftime_pos=i_end;
 
-  for (int i=i_start; i<i_end; i++)
-  {
+    for (int i = i_start; i < min(i_end, points); i++)  {
     // cout << "i = " << i << " data[i] = " << data[i] << " miny = " << miny << endlr;
-    if (data[i]<miny)
-    {
-      par->ampl=data[i];
-      par->maxtime_pos=i;
-      miny=data[i];
+      if (data[i]<miny)
+      {
+        par->ampl=data[i];
+        par->maxtime_pos=i;
+        miny=data[i];
+      }
     }
-
-  }
 #ifdef DEBUGMSG
   cout << BLUE << "Maxtime position = " << par->maxtime_pos << endlr;
   cout << BLUE << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
@@ -3991,16 +4109,21 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
 #ifdef DEBUGMSG
   cout<<RED<<"Starting Sigmoid fit "<<endlr;
 #endif
+  // cout << "Sigmoid Fit: Calling TimeSigmoid() with i_start = " << i_start << ", i_end = " << i_end << endl;
   bool SigmoidfitSuccess = TimeSigmoid(points, data, dt, par, evNo, 0, i_start);
+  // cout<<RED<<"Sigmoid Fit: "<<SigmoidfitSuccess<<endlr;
   par->SigmoidfitSuccess = SigmoidfitSuccess;
 #ifdef DEBUGMSG
   cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
 #endif
+  // cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
+
   par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
 #ifdef DEBUGMSG
   cout<<BLUE<<"Starting Double Sigmoid "<<endlr;
   cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
 #endif
+  // cout << "Double Sigmoid: Calling FullSigmoid() with i_start = " << i_start << ", i_end = " << i_end << endl;
   // Double Sigmoid fit and Fit Success check
   bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, 0, i_start);
   par->doubleSigmoidfitSuccess = doubleSigmoidfitSuccess;
@@ -4016,6 +4139,14 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
   vector<double> data_vec(data, data + points);
   vector<double> csum = CumulativeSum(data_vec);
 
+  if (par->e_peak_end_pos >= csum.size() || par->stime_pos >= csum.size()) {
+    cerr << "ERROR: Index out of bounds! e_peak_end_pos = " << par->e_peak_end_pos
+         << ", stime_pos = " << par->stime_pos
+         << ", csum size = " << csum.size() << endl;
+  } else {
+    par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
+  }
+
   par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
   par->ioncharge =  csum[par->e_peak_end_pos] - csum[par->ftime_pos];
   par->totcharge = csum[par->ftime_pos] - csum[par->stime_pos];
@@ -4030,23 +4161,16 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
     par->totchargefixed = csum[i_pulse_duration_from_start] - csum[par->stime_pos];
   }
   #ifdef DEBUGMSG
-   cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_point ="<< par->e_peak_end_pos*dt<<endlr;
+   // cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_time_point ="<< par->e_peak_end_pos*dt<<endlr;
    cin.get();
  //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
      cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
      cout<<"CIVIDEC epeak pulse duration in points = "<<CIVIDEC_PEAK_DURATION/dt<<" or in ns = "<<CIVIDEC_PEAK_DURATION<<endl;
      cout<<"trigger point "<<par->stime_pos<<endl;
      cin.get();
-#endif
-
-      // cout<<RED<< "Total Charge FIXED on 120ns window: " << par->totchargefixed << endlr;
-      // cout<<BLUE<<"Total Charge between start-end position: "<<par->charge<<endlr;
-      // cin.get();
-
-      #ifdef DEBUGMSG
-       cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_point ="<< par->e_peak_end_pos/dt<<endlr;
-       cin.get();
-       #endif
+     cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_time_point ="<< par->e_peak_end_pos*dt<<endlr;
+     cin.get();
+ #endif
       // cout<<RED<< "Epeak Charge FIXED on 6ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Epeak Charge fit: "<<par->echargefit<<endlr;
       // cin.get();
@@ -4054,7 +4178,7 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
       par->te_peak_end = par->e_peak_end_pos * dt;
       par->risecharge *= dt;
       par->tot[0] *= dt;
-      par->maxtime = par->maxtime_pos*dt;
+      // par->maxtime = par->maxtime_pos*dt;
       par->t90 *= dt;
       par->t10 *= dt;
       par->tb10 *= dt;
@@ -4062,15 +4186,17 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
       par->sampl = data[par->stime_pos];
       par->fampl = data[par->ftime_pos];
       par->bslch = -0.5 * (data[par->stime_pos] + data[par->ftime_pos])*(par->ftime_pos - par->stime_pos +1.)*dt;
-      par->width = (par->ftime_pos-par->stime_pos)*dt;
+      // par->width = (par->ftime_pos-par->stime_pos)*dt;
       par->ampl*=-1.;
       par->charge*=-1.*dt;   ///charge is calculated in V * ns.
       par->totchargefixed*=-1.*dt; ///charge is calculated in V * ns.
       par->ioncharge*=-1.*dt; ///charge is calculated in V * ns.
       par->risecharge*=-1.*dt;
-      par->risetime = (par->t90-par->t10)*dt;
+      // par->risetime = (par->t90-par->t10)*dt;
       par->echargefit *= -1.*dt;  ///calculated from the integral of the fit V * ns.
       par->echargefixed *= -1.*dt; ///charge is calculated in V * ns.
+
+  // cout << "Finished AnalysePicosecBounds" << endl;
 
 }
 
@@ -4356,18 +4482,19 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    //spar->sechargefixed=ipar->sechargefixed;
    //spar->secharge=ipar->secharge;
    //spar->echarge=ipar->echarge;
-   spar->scharge=ipar->scharge;
-   spar->charge=ipar->charge;
-   spar->echargefixed=ipar->echargefixed;
-   spar->echargefit=ipar->echargefit;
-   spar->totchargefixed=ipar->totchargefixed;
-   
-   spar->risetime=ipar->risetime; ///10% - 90%
-   spar->risecharge=ipar->risecharge;
-   
-   spar->width=ipar->width;
-   
-   spar->tot[0]=ipar->tot[0]; //the tot[0], charge, and risecharge values in the spar object are modified 
+  spar->echargefixed=ipar->echargefixed;
+  spar->echarge = ipar->echarge;
+  spar->echargefit=ipar->echargefit;
+  spar->ioncharge=ipar->ioncharge;
+  spar->totcharge=ipar->totcharge;
+  spar->totchargefixed=ipar->totchargefixed;
+  spar->risetime=ipar->risetime; ///10% - 90%
+  spar->risecharge=ipar->risecharge;
+  spar->width=ipar->width;
+
+  spar->scharge=ipar->scharge;
+  spar->charge=ipar->charge;
+  spar->tot[0]=ipar->tot[0]; //the tot[0], charge, and risecharge values in the spar object are modified
    
     for (int i=0;i<4;i++)
    {
@@ -4381,6 +4508,8 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    spar->t10=ipar->t10;
    spar->tb10=ipar->tb10;
    spar->t90=ipar->t90;
+   spar->t50=ipar->t50;
+   spar->tb50=ipar->tb50;
    spar->ttrig=ipar->ttrig;
    
    spar->bslch=ipar->bslch; 
@@ -4388,7 +4517,10 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    spar->rms=ipar->rms;
 
   spar->SigmoidfitSuccess = ipar->SigmoidfitSuccess;
-   spar->doubleSigmoidfitSuccess = ipar->doubleSigmoidfitSuccess;
+  spar->doubleSigmoidfitSuccess = ipar->doubleSigmoidfitSuccess;
+
+  spar->chi2_sigmoid = ipar->chi2_sigmoid;
+  spar->chi2_doubleSigmoid = ipar->chi2_doubleSigmoid;
    //copy the values of bsl, rms, stime_pos, ftime_pos, and maxtime_pos 
    //from the ipar object to the corresponding variables in the spar object.
    
