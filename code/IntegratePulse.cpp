@@ -13,12 +13,14 @@
 #include <algorithm>
 #include <cmath>
 #include "MyFunctions.C"
+#include "RMS_Baseline_Calculator/RMSBaselineCalculator.cpp"
+
 
 using namespace std;
 
 // Function to read data from the text file
 bool ReadWaveformData(const string& filename, double& dt, vector<double>& dataValues,vector<double>& timeValues, vector<double>& drvValues,
-                      double& threshold, double& bsl, double& rms, double INTEGRATION_TIME_TRIG,
+                      double& threshold, double& trigger_threshold, double& bsl, double& rms, double INTEGRATION_TIME_TRIG,
                       double& total_bkg_rejection_probability, double& ion_tail_end_point_threshold_fraction,
                       double CIVIDEC_PULSE_DURATION, double CIVIDEC_PEAK_DURATION) {
     ifstream infile(filename);
@@ -71,7 +73,11 @@ bool ReadWaveformData(const string& filename, double& dt, vector<double>& dataVa
         }else if (line.find("Threshold:") != string::npos) {
             istringstream iss(line.substr(line.find(":") + 1));
             iss >> threshold;
-            cout << "Threshold: " << threshold << endl;
+            // cout << "Threshold: " << threshold << endl;
+        } else if (line.find("trigger_threshold:") != string::npos) {
+            istringstream iss(line.substr(line.find(":") + 1));
+            iss >> trigger_threshold;
+            cout << "Trigger Threshold: " << trigger_threshold << endl;
         } else if (line.find("RMS:") != string::npos) {
             istringstream iss(line.substr(line.find(":") + 1));
             iss >> rms;
@@ -111,13 +117,14 @@ int IntegratePulse() {
     gROOT->LoadMacro("MyFunctions.C");
 
     // File containing waveform data
-     string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+     // string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
+     string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data_1.txt" ;
      // string filename ="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_July_h4/plots/Run057/Pool4/moreplots/waveform_data.txt" ;
     //string filename ="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/plots/Run224/Pool2/moreplots/waveform_data.txt" ;
 
 
     // Variables to hold dt and data values
-    double dt = 0.0, threshold = 0.0, bsl = 0.0, rms = 0.0;
+    double dt = 0.0, threshold = 0.0, trigger_threshold = 0.0, bsl = 0.0, rms = 0.0;
     double epeak_width = 5.0; // Width of the peak in ns
     double ion_tail_width = 150.0; // Width of the ion tail in ns
     double total_bkg_rejection_probability = 0.0; // for the total bkg waveform points to be rejected
@@ -128,7 +135,7 @@ int IntegratePulse() {
 
 
     // Read the waveform data
-    if (!ReadWaveformData(filename, dt, dataValues, timeValues, drvValues, threshold, bsl, rms, INTEGRATION_TIME_TRIG, total_bkg_rejection_probability, ion_tail_end_point_threshold_fraction, CIVIDEC_PULSE_DURATION, CIVIDEC_PEAK_DURATION)) {
+    if (!ReadWaveformData(filename, dt, dataValues, timeValues, drvValues, threshold, trigger_threshold, bsl, rms, INTEGRATION_TIME_TRIG, total_bkg_rejection_probability, ion_tail_end_point_threshold_fraction, CIVIDEC_PULSE_DURATION, CIVIDEC_PEAK_DURATION)) {
         return -1; // Exit if file reading fails
     }
 
@@ -206,6 +213,8 @@ int IntegratePulse() {
     for (int i = 0; i < npoints; i++) {
         data[i] -= baseline_level_test;
     }
+
+    // adjust_baseline(npoints, timeValues.data(), data);
 
     //add the derivative of the data in the same graph as the original data
     TGraph *graphDrv = new TGraph(npoints, xValues, drv);
@@ -303,8 +312,10 @@ int IntegratePulse() {
         cout<<"Integration npoints = "<< npt<<endl;
 
 
+        // vector<pair<double, double>> trigger_windows = GetTriggerWindows(xValues, npoints, data, dt,
+            // threshold);
         vector<pair<double, double>> trigger_windows = GetTriggerWindows(xValues, npoints, data, dt,
-            threshold);
+            trigger_threshold);
 
         // Extract integral data from GetTriggerWindows
         vector<double> integrated_data_vec(data, data + npoints);
@@ -396,7 +407,8 @@ int IntegratePulse() {
     cdf_int = &cdfValues_int[0];
 
     SmoothArray(cdf_int,cdf_int_smoothed_173, npoints,173, 1);
-    double integration_threshold = threshold * sqrt(epeak_width / dt);
+    // double integration_threshold = threshold * sqrt(epeak_width / dt);
+    double integration_threshold = trigger_threshold;
 
     TGraph *graphCDF_int = new TGraph(npoints, xValues, &cdfValues_int[0]);
     graphCDF_int->SetTitle("CDF of int 5ns ;Time [ns];Cummulative Sum");
@@ -427,9 +439,26 @@ int IntegratePulse() {
     y_integration_threshold->SetLineWidth(3);
     y_line_sec_thres->SetLineStyle(2);
     y_line_sec_thres->SetLineWidth(3);
-    y_line_thres->Draw("SAME");
-    y_integration_threshold->Draw("SAME");
+    // y_line_thres->Draw("SAME");
+    // y_integration_threshold->Draw("SAME");
     // y_int_ion_tail_threshold->Draw("SAME");
+
+    vector<pair<double, double>> trigger_windows = GetTriggerWindows(xValues, npoints, data, dt,
+            trigger_threshold);
+    for(size_t i = 0; i < trigger_windows.size(); i++) {
+        double x_left = trigger_windows[i].first;
+        double x_right = trigger_windows[i].second;
+        TLine *line_left = new TLine(x_left, minData, x_left, maxData);
+        TLine *line_right = new TLine(x_right, minData, x_right, maxData);
+        line_left->SetLineStyle(2);
+        line_right->SetLineStyle(2);
+        line_left->SetLineWidth(4);
+        line_right->SetLineWidth(4);
+        line_left->SetLineColor(kRed);
+        line_right->SetLineColor(kRed);
+        line_left->Draw();
+        line_right->Draw();
+    }
     y_line_sec_thres->Draw("SAME");
     gPad->BuildLegend(0.7, 0.7, 0.9, 0.9);
     // Save canvas
