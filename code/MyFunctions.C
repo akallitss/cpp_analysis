@@ -3571,7 +3571,13 @@ vector<bool> reject_thin_pulses(const vector<pair<double, double>>& pulse_bounds
     return thin_pulses_reject;
 }
 
-vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double trigger_threshold) {
+struct TriggerResult {
+  vector<pair<double, double>> pulse_bounds_filtered;
+  int secondary_count;
+  int thin_count;
+};
+
+TriggerResult GetTriggerWindows(double* ptime, int maxpoints, double* sampl, double dt, double trigger_threshold) {
     // Function to get trigger windows
     // dt: time step
     // threshold: threshold for the signal
@@ -3611,22 +3617,19 @@ vector<pair<double, double>> GetTriggerWindows(double* ptime, int maxpoints, dou
       }
 
       // Remove secondary and thin pulses
+      int secondary_count = 0;
+      int thin_count = 0;
       vector<pair<double, double>> pulse_bounds_filtered;
       for (size_t i = 0; i < pulse_bounds.size(); ++i) {
-        if (secondary_rejects[i]) {
-          //count secondary pulses
-
-        }
-        if (thin_rejects[i]) {
-          //count thin pulses
-
-        }
-         if (!secondary_rejects[i] && !thin_rejects[i]) {
+        if (secondary_rejects[i]) secondary_count++;
+        if (thin_rejects[i]) thin_count++;
+        // if (!secondary_rejects[i] && !thin_rejects[i]) {
+        if (!thin_rejects[i]) {
            pulse_bounds_filtered.push_back(pulse_bounds[i]);
          }
        }
 
-      return pulse_bounds_filtered;
+      return {pulse_bounds_filtered, secondary_count, thin_count};
 }
 
 void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<double>& y_int,
