@@ -1279,7 +1279,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int successfulFits_double_sigmoid = 0;
   int totalFits_double_sigmoid = 0;
 
-
+  int total_secondary_count = 0;
+  int total_thin_count = 0;
 //while (1 && eventNo<10000)
   while (eventNo<nevents)
   {
@@ -1389,14 +1390,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         cout <<"Default derivation for "<<DT<<" ns , with sampling of "<<dt<<" ns ==> derivation points npt = "<<npt<< endl;
 
 
-        evdcanv[ci]->cd(1);gPad->SetGrid(1,1);
+        evdcanv[ci]->cd(1);//gPad->SetGrid(1,1);
         waveform = new TGraph(maxpoints,ptime,amplC[ci]);
         //waveform2 = new TGraph(maxpoints,ptime,amplC[ci]);
         maxc[ci]=TMath::MaxElement(maxpoints,amplC[ci]);
         minc[ci]=TMath::MinElement(maxpoints,amplC[ci]); //the peak amplitude of the pulse
-	      sprintf(cname,"Event %d Waveform C%d\n",evNo,ci+1);
+	    sprintf(cname,"Event %d Waveform C%d\n",evNo,ci+1);
         waveform->SetTitle(cname);
-        waveform->SetLineColor(clr[ci]);
+        waveform->SetLineColor(clr[ci+1]);
         waveform->SetMarkerColor(clr[ci]);
         waveform->SetFillColor(0);
 
@@ -1580,9 +1581,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   	if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0) {
 		adjust_baseline(maxpoints, ptime, sampl);
   		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
-		trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
+		TriggerResult trigger_results = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
   	  	// cout << "Event number: " << eventNo << " Channel number: " << ci << endl;
   		// cin.get();
+  		//print event number that had secondary pulses
+  		if (trigger_results.secondary_count > 0) {
+  			cout<<"Event number: "<<eventNo<<" Secondary pulses detected: "<<trigger_results.secondary_count<<endl;
+  		}
+  		trigger_windows = trigger_results.pulse_bounds_filtered;
+  		total_secondary_count += trigger_results.secondary_count;
+  		total_thin_count += trigger_results.thin_count;
+
+  		// cout << "Secondary pulses rejected: " << secondary_counts << endl;
+		// cout << "Thin pulses rejected: " << thin_counts << endl;
 	}
   	auto trigger_windows_iterator = trigger_windows.begin();
 
@@ -1960,7 +1971,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     graphSum->SetTitle(cname);
     graphSum->GetXaxis()->SetTitle("Time [ns]");
     graphSum->GetYaxis()->SetTitle("Amplitude [V]");
-	graphSum->Draw("apl");
+	// graphSum->Draw("apl");
 
 	TGraph *sgraphSum = new TGraph(maxpoints,ptime,sampl);
 	sgraphSum->SetLineColor(7);
@@ -1970,7 +1981,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	sgraphSum->SetTitle(cname);
     sgraphSum->GetXaxis()->SetTitle("Time [ns]");
     sgraphSum->GetYaxis()->SetTitle("Amplitude [V]");
-	sgraphSum->Draw("pl");
+	// sgraphSum->Draw("pl");
 
  //    TGraph *sgraphSumS = new TGraph(maxpoints,ptime,samplC);
 	// sgraphSumS->SetLineColor(2);
@@ -2279,7 +2290,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   	cout<<"Total Fits Double Sigmoid = "<<totalFits_double_sigmoid<<endl;
   	cout<<"Percentage of successful fits Double Sigmoid= "<<100.*successfulFits_double_sigmoid/totalFits_double_sigmoid<<"%"<<endl;
 
-
+	cout<<endl<<"Total secondary pulses rejected = "<<total_secondary_count<<endl;
+	cout<<endl<<"Total thin pulses rejected = "<<total_thin_count<<endl;
+	cout<<endl<<"Percentage of secondary pulses rejected in all the pulses = "<<100.*total_secondary_count/(ntrigsTot[0]+ntrigsTot[1]+ntrigsTot[2]+ntrigsTot[3])<<"%"<<endl;
+	cout<<endl<<"Percentage of thin pulses rejected in all the pulses = "<<100.*total_thin_count/(ntrigsTot[0]+ntrigsTot[1]+ntrigsTot[2]+ntrigsTot[3])<<"%"<<endl;
 
   if (draw) 
   {
