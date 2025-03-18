@@ -2000,7 +2000,8 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       par->risetime = par->t90 - par->t10;
 
       //calculate the rise charge of the fit using the integral of the sigmoid fit for the rise time
-      par->risecharge = sig_fit->Integral(par->t10, par->t90);
+      
+      par->risecharge = sig_fit->Integral(par->t10, par->t90) - par->risetime*sig_fit->GetParameter(3);
 #ifdef DEBUGMSG
   cout << "chi2 sigmoid " << par->chi2_sigmoid << endl;
 
@@ -2670,12 +2671,17 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
+  double bsl_old = sig_fittot->GetParameter(3);
+  sig_fittot->SetParameter(3,0.);  ///subtracting the baseline of the double sigmoid for amplitude and integral calculations!
+  
+  
   //find the time of the maximum of the sig_fittot
   // par->maxtime = sig_fittot->GetMaximumX(fit_double_start_point, fit_double_end_point);
   par->maxtime = sig_fittot->GetMinimumX(fit_double_start_point, fit_double_end_point);
   // cout<<BLUE<<"Maxtime = "<<par->maxtime<<endlr;
   //find the maximum amplitude of the sig_fittot
-  par->ampl = sig_fittot->GetMinimum(fit_double_start_point, fit_double_end_point);
+  par->ampl = sig_fittot->Eval(par->maxtime); 
+//   par->ampl = sig_fittot->GetMinimum(fit_double_start_point, fit_double_end_point);
   // cout<<BLUE<<"Amplitude = "<<par->ampl<<endlr;
   // cout<<MAGENTA<<"Amplitude of maximum of the fit "<< par->sigmoidtot[0]<<endlr;
   // cin.get();
@@ -2702,8 +2708,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   // cin.get();
 
   //find the 10% point of the double sigmoid on the falling edge
-  // double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point);
-  // par->tb10 = fit_double_sigmoid_falling_edge;
+  double target_y_end_10 = 0.1 * par->ampl;
+  double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point+10.);
+  par->tb10 = fit_double_sigmoid_falling_edge;
   // cout<<BLUE<<"tb10 = "<<par->tb10<<endlr;
 
   double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point);
@@ -2721,6 +2728,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
 
   par->width = par->tb50 - par->t50;
+  sig_fittot->SetParameter(3,bsl_old);  ///subtracting the baseline of the double sigmoid for amplitude and integral calculations!
 
   delete sig_fitd;
   delete sig_waveformd;
@@ -4179,25 +4187,31 @@ double miny = data[i_start];
       // cin.get();
 
       par->te_peak_end = par->e_peak_end_pos * dt;
-      par->risecharge *= dt;
-      par->tot[0] *= dt;
+//       par->risecharge *= dt;   // from function
+      par->tot[0] *= dt;   /// not used
       // par->maxtime = par->maxtime_pos*dt;
-      par->t90 *= dt;
-      par->t10 *= dt;
-      par->tb10 *= dt;
+//       par->t90 *= dt;
+//       par->t10 *= dt;
+//       par->tb10 *= dt;
       //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
       par->sampl = data[par->stime_pos];
       par->fampl = data[par->ftime_pos];
+      par->dampl = data[par->maxtime_pos];
       par->bslch = -0.5 * (data[par->stime_pos] + data[par->ftime_pos])*(par->ftime_pos - par->stime_pos +1.)*dt;
       // par->width = (par->ftime_pos-par->stime_pos)*dt;
       par->ampl*=-1.;
-      par->charge*=-1.*dt;   ///charge is calculated in V * ns.
-      par->totchargefixed*=-1.*dt; ///charge is calculated in V * ns.
-      par->ioncharge*=-1.*dt; ///charge is calculated in V * ns.
-      par->risecharge*=-1.*dt;
+      par->charge*=-1.*dt;   ///charge is calculated in V * ns - not used.
+
+      par->echargefixed*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
+      par->echarge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
+      par->echargefit *= -1.*ConvFactorCERN;  ///calculated from the integral of the fit V * ns.
+      par->ioncharge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
+      par->totcharge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
+      par->totchargefixed*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns from the cumulative.  [nCb]
+      par->risecharge*=-1.*ConvFactorCERN; /// from function
       // par->risetime = (par->t90-par->t10)*dt;
-      par->echargefit *= -1.*dt;  ///calculated from the integral of the fit V * ns.
-      par->echargefixed *= -1.*dt; ///charge is calculated in V * ns.
+      // par->echargefit *= -1.*dt;  ///calculated from the integral of the fit V * ns.
+      // par->echargefixed *= -1.*dt; ///charge is calculated in V * ns.
 
   // cout << "Finished AnalysePicosecBounds" << endl;
 
@@ -4472,6 +4486,7 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    
    spar->maxtime = ipar->maxtime; 
    spar->ampl=ipar->ampl;
+   spar->dampl=ipar->dampl;
    spar->e_peak_end_ampl = ipar->e_peak_end_ampl;
    spar->sampl=ipar->sampl;
    spar->fampl=ipar->fampl;
