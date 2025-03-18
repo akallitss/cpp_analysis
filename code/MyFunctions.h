@@ -40,7 +40,7 @@
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-// #undef DEBUGMSG
+#undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
