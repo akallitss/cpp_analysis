@@ -58,7 +58,8 @@ public:
    int tot_sig_end_pos; /// double sigmoid for ampl/charge end point for the fit
    
    double maxtime;      /// maxtime from double sigmoid
-   double ampl;         
+   double ampl;         /// maximum from double sigmoid
+   double dampl;        /// maximum from data
    double e_peak_end_ampl;
    double sampl;        /// data[stime_pos]
    double fampl;        /// data[ftime_pos]
@@ -109,7 +110,7 @@ public:
   }
     void Reset() {
       maxtime_pos = stime_pos = ftime_pos = e_peak_end_pos = sig_start_pos = sig_end_pos = tot_sig_end_pos = -111;
-      maxtime = ampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
+      maxtime = ampl = dampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
       echarge = echargefixed = echargefit = totchargefixed = totcharge = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
         for (int i=0; i<10; i++) tot[i] = -999.;
@@ -422,6 +423,10 @@ const int MAXRUN = 1000;
 const int TOTRUNS = MAXRUN-MINRUN+1;
 
 const double Threshold = 0.0073;
+
+
+const double ConvFactorCERN = 50. * 100.;  /// 50 Ohm * Amplifier Gain
+const double ConvFactorCividec = 50. * 100.;  /// 50 Ohm * Amplifier Gain
 
 //const int N_INTEGRATION_POINTS = 10; default
 const int N_INTEGRATION_POINTS = 20;
