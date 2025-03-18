@@ -1586,7 +1586,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   		// cin.get();
   		//print event number that had secondary pulses
   		if (trigger_results.secondary_count > 0) {
-  			cout<<"Event number: "<<eventNo<<" Secondary pulses detected: "<<trigger_results.secondary_count<<endl;
+  			// cout<<"Event number: "<<eventNo<<" Secondary pulses detected: "<<trigger_results.secondary_count<<endl;
   		}
   		trigger_windows = trigger_results.pulse_bounds_filtered;
   		total_secondary_count += trigger_results.secondary_count;
