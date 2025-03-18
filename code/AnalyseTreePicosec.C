@@ -2256,6 +2256,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  return (ntrigs);
 	}
 
+    if (eventNo % (evpm) == 0)
+	{
+	  cout<<CYAN<<"Event "<<setw(6)<< eventNo<<" Channel C"<<ci+1<<endl;
+      cout<<"Found ntrigs ="<<ntrigs<<" pulses "<<endl;
+	  cout<<"Found ntrigsCuts ="<<ntrigsCuts <<" pulses after cuts"<<endlr;
+	}
+    
   }
        /////////////////////////////////////////////////////////////////
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2264,11 +2271,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       ////////////////////////////////////////////////////////////////
 
 
-    if (eventNo % (evpm) == 0)
-	{
-	  cout<<"Found ntrigs ="<<ntrigs<<" pulses for event "<<eventNo<<endl;
-	  cout<<"Found ntrigsNEUTRONS ="<<ntrigsCuts <<" pulses for event "<<eventNo<<endl;
-	}
+
     //  for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
 
     otree->Fill();
