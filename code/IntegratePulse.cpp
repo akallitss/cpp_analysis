@@ -443,8 +443,8 @@ int IntegratePulse() {
     // y_integration_threshold->Draw("SAME");
     // y_int_ion_tail_threshold->Draw("SAME");
 
-    vector<pair<double, double>> trigger_windows = GetTriggerWindows(xValues, npoints, data, dt,
-            trigger_threshold);
+    TriggerResult trigger_results = GetTriggerWindows(xValues, npoints, data, dt, trigger_threshold);
+    vector<pair<double,double>> trigger_windows = trigger_results.pulse_bounds_filtered;
     for(size_t i = 0; i < trigger_windows.size(); i++) {
         double x_left = trigger_windows[i].first;
         double x_right = trigger_windows[i].second;
