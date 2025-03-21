@@ -2214,9 +2214,14 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 
 
 #endif
-      par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
-      //cout<<RED<<"sigmoid timepoint ="<< par->tfit20<<endlr;
-      par->chi2_sigmoid = sig_fit->GetChisquare();
+    par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
+    par->chi2_sigmoid = sig_fit->GetChisquare();
+    //Calculate the rise time using the 10% and 90% points of the sigmoid fit
+    par->t10 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.1*par->ampl-sig_pars[3])-1.)));
+    par->t90 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.9*par->ampl-sig_pars[3])-1.)));
+    par->risetime = par->t90 - par->t10;
+    par->t50 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.5*par->ampl-sig_pars[3])-1.)));
+    par->risecharge = sig_fit->Integral(par->t10, par->t90) - par->risetime*sig_fit->GetParameter(3);
 
 
   delete sig_fit;
@@ -2722,7 +2727,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   // par->tb90 = fit_double_sigmoid_falling_edge_90;
 
 
-  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point);
+  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
@@ -2826,52 +2831,6 @@ bool isSigmoidfitSuccessful(TFitResultPtr r) {
   }
 }
 
-// pair<vector<double>, vector<double>> IntegratePulse_std(
-//     const vector<double>& x, const vector<double>& y, int n) {
-//
-//   int size = x.size();
-//   if (size < n) {
-//     return {{}, {}}; // Return empty vectors if n is larger than input size
-//   }
-//
-//   vector<double> x_int(size - n + 1);
-//   vector<double> y_int(size - n + 1);
-//
-//   // Compute initial window sum
-//   double x_sum = 0.0;
-//   double y_sum = 0.0;
-//   for (int i = 0; i < n; ++i) {
-//     x_sum += x[i];
-//     y_sum += y[i];
-//   }
-//
-//   // Store first integrated value
-//   x_int[0] = x_sum / n;
-//   y_int[0] = y_sum;
-//
-//
-//   // Compute moving average for x
-//   for (size_t i = 0; i <= size - n; ++i) {
-//     x_int[i] = accumulate(x.begin() + i, x.begin() + i + n, 0.0) / n;
-//
-//   }
-//
-//   // Compute convolution for y
-//   // for (size_t i = 0; i <= size - n; ++i) {
-//   //   y_int[i] = accumulate(y.begin() + i, y.begin() + i + n, 0.0);
-//   //   //cout << "i: " << i << ", integral_value: " << y_int[i] << endl; // Debugging print
-//   // }
-//
-//   for (int i = 1; i <= size - n; ++i) {
-//     x_sum += x[i + n - 1] - x[i - 1]; // Add new point, remove old point
-//     y_sum += y[i + n - 1] - y[i - 1];
-//
-//     x_int[i] = x_sum / n;
-//     y_int[i] = y_sum;
-//   }
-//
-//   return {x_int, y_int};
-// }
 
 // Function to compute the moving integral (cumulative sum) for y and moving average for x
 pair<vector<double>, vector<double>> IntegratePulse_std(const vector<double>& x, const vector<double>& y, int n) {
@@ -3693,37 +3652,6 @@ void PlotIntegralWithBounds(const std::vector<double>& x_int, const std::vector<
   }
 }
 
-// vector<double> CDF(const vector<double>& data) {
-//   // Function to calculate the cumulative distribution function (CDF) of a dataset
-//   // data: waveform data
-//   // points: number of points in the waveform
-//   // Returns: cdf of the data
-//
-//   int points = data.size();
-//   vector<double> cdf(points);
-//
-//   cdf[0] = data[0];
-//   for (int i = 1; i < points; i++) {
-//     cdf[i] = cdf[i - 1] + data[i];
-//   }
-//
-//   //Normalize the CDF
-//   double normFactor = fabs(cdf[points - 1]); // Ensure positive normalization
-//   for (int i = 0; i < points; i++) {
-//     cdf[i] /= -normFactor;  // Normalize to range [0,1]
-//
-//   }
-//   return cdf;
-//
-// }
-
-
-// vector<double> Accumulate(const vector<double>& data) {
-//   vector<double> acc(data.size());
-//   partial_sum(data.begin(), data.end(), acc.begin());
-//   return acc;
-// }
-
 
 int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* drv, PEAKPARAM *par, double threshold, double sig_shift, int tshift)
 {
@@ -4139,14 +4067,6 @@ double miny = data[i_start];
   bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, 0, i_start);
   par->doubleSigmoidfitSuccess = doubleSigmoidfitSuccess;
 
-
-  //find the 90% time -- this was done in the TimeSigmoid function
-
-  //find the 10% time-- this was done in the TimeSigmoid function
-
-  //find the 10% time at the falling edge -- this was done in the FullSigmoind function
-
-  //Calculate the cumulative sum
   vector<double> data_vec(data, data + points);
   vector<double> csum = CumulativeSum(data_vec);
 
@@ -4159,7 +4079,7 @@ double miny = data[i_start];
   }
 
   par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
-  par->ioncharge =  csum[par->e_peak_end_pos] - csum[par->ftime_pos];
+  par->ioncharge = csum[par->ftime_pos] - csum[par->e_peak_end_pos] ;
   par->totcharge = csum[par->ftime_pos] - csum[par->stime_pos];
 
   int i_peak_duration_from_start = i_start + static_cast<int>(CIVIDEC_PEAK_DURATION/dt);
@@ -4187,31 +4107,24 @@ double miny = data[i_start];
       // cin.get();
 
       par->te_peak_end = par->e_peak_end_pos * dt;
-//       par->risecharge *= dt;   // from function
       par->tot[0] *= dt;   /// not used
-      // par->maxtime = par->maxtime_pos*dt;
-//       par->t90 *= dt;
-//       par->t10 *= dt;
-//       par->tb10 *= dt;
-      //cout<<"electron peak end point @ "<< e_peak_end.x <<endl;
-      par->sampl = data[par->stime_pos];
-      par->fampl = data[par->ftime_pos];
-      par->dampl = data[par->maxtime_pos];
+      par->sampl = -data[par->stime_pos];
+      par->fampl = -data[par->ftime_pos];
+      par->dampl = -data[par->maxtime_pos];
       par->bslch = -0.5 * (data[par->stime_pos] + data[par->ftime_pos])*(par->ftime_pos - par->stime_pos +1.)*dt;
-      // par->width = (par->ftime_pos-par->stime_pos)*dt;
       par->ampl*=-1.;
       par->charge*=-1.*dt;   ///charge is calculated in V * ns - not used.
 
-      par->echargefixed*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
-      par->echarge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
-      par->echargefit *= -1.*ConvFactorCERN;  ///calculated from the integral of the fit V * ns.
-      par->ioncharge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
-      par->totcharge*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns  from the cumulative.
-      par->totchargefixed*=-1.*ConvFactorCERN*dt; ///charge is calculated in V * ns from the cumulative.  [nCb]
-      par->risecharge*=-1.*ConvFactorCERN; /// from function
-      // par->risetime = (par->t90-par->t10)*dt;
-      // par->echargefit *= -1.*dt;  ///calculated from the integral of the fit V * ns.
-      // par->echargefixed *= -1.*dt; ///charge is calculated in V * ns.
+      /// the next integrals are calculated from functions
+      par->echargefit *= -1. * ConvFactorCERN;  ///calculated from the integral of the fit V * ns.
+      par->risecharge*=-1. * ConvFactorCERN; /// from function
+      
+      /// the next integrals are calculated from CDF, so we need to multiply by dt
+      par->echargefixed*=-1.* dt* ConvFactorCERN; ///charge is calculated in V * ns  from the cumulative.
+      par->echarge*=-1.*dt * ConvFactorCERN; ///charge is calculated in V * ns  from the cumulative.
+      par->ioncharge*=-1.*dt * ConvFactorCERN; ///charge is calculated in V * ns  from the cumulative.
+      par->totcharge*=-1.*dt * ConvFactorCERN; ///charge is calculated in V * ns  from the cumulative.
+      par->totchargefixed*=-1.*dt * ConvFactorCERN; ///charge is calculated in V * ns from the cumulative.  [nCb]
 
   // cout << "Finished AnalysePicosecBounds" << endl;
 
@@ -4414,35 +4327,31 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
                 break;
     }
    }
-  
+
+  bool SigmoidfitSuccess = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
+  par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
+
    par->te_peak_end = par->e_peak_end_pos * dt;
-   par->risecharge *= dt;
+   par->risecharge *= -1.;
    par->tot[0] *= dt;
    par->maxtime = par->maxtime_pos*dt;
-   par->t90 *= dt;
-   par->t10 *= dt;
    par->tb10 *= dt;
-
    par->sampl = data[par->stime_pos];
    par->fampl = data[par->ftime_pos];
    par->bslch = -0.5 * (data[par->stime_pos] + data[par->ftime_pos])*(par->ftime_pos - par->stime_pos +1.)*dt;
    par->width = (par->ftime_pos-par->stime_pos)*dt;
    par->ampl*=-1.;
    par->charge*=-1.*dt;   ///charge is calculated in V * ns. 
-   par->risetime = (par->t90-par->t10)*dt;
   //cout<<YELLOW<<"First quick scan of parameters finished "<<endlr;
 
 /// make the sig fit for sigmoind timepoint.
-   // par->tfit20 = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
 
-  bool SigmoidfitSuccess = TimeSigmoidMCP(points, data, dt,par, evNo, sig_shift, tshift);
   par->SigmoidfitSuccess = SigmoidfitSuccess;
 
   //cin.get();
    //cout<<BLUE<<"Time Sigmoid processed, tfit20 =  "<< par->tfit20 <<endlr;
 
    //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;
-   par->tnaive20 = Xpoint_linear_interpolation(data, dt, par);
    //cout<<BLUE<<"NAIVE TIME = "<< par->tnaive20<<endlr;
    //cout<<"Sigmoid Timepoint = "<<par->tfit20<<endl;
    //double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par )
