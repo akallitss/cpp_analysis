@@ -813,10 +813,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     }
     if (oscsetup->AmplifierNo[i]==1 || oscsetup->AmplifierNo[i]==4)
     {
-        rtMax[i]=5;
-        pwMax[i]=40;
-        totMax[i]=200;
-        chMax[i]=amplMax[i]/mV*12.5;
+        rtMax[i]=0.6;
+        pwMax[i]=20;
+        totMax[i]=350;
+        chMax[i]=amplMax[i]/mV*(12.5 * ConvFactorCERN) ;
         Thresholds[i] = 20/mV;
     }
     else if (oscsetup->AmplifierNo[i]==3)
@@ -901,8 +901,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int ntim = 10;                         /// in case needing the rates per 10 or 20 or ... sec make it 10, 20, ...
   double timebinwidth = ntim * 1;   /// multiples of 10 (or 20...) in sec!!!
   
-  int pointsperbin = 100;
-  
+  if (!isCalibration)
+    timebinwidth = 60;  ///60 seconds, likethis we have ~ 1 spill per binwidth
   
   int tbins = (int) ((epochF-epochS) / (timebinwidth) );   
   
@@ -949,8 +949,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       dtbins=50;
   if (nevents<500)
       dtbins=25;
+  
+  if (!isCalibration) rmax = (4*exprate*8);  /// maximum 4 spills of 8 sec
 
-  cout<<RED<<"Run duration = "<< epochF - epochS<<" sec.   time bin = "<<timebinwidth <<"  ,  nbins = "<<tbins<<endlr;
+  cout<<RED<<"Run duration = "<< epochF - epochS<<" sec.   time bin = "<<timebinwidth <<"  ,  nbins = "<<tbins<<"  ,  rmax = "<<rmax <<endlr;
   
   cout<<RED<<"Expected average rate = "<< exprate<<" / sec ,  average DT = "<<1./exprate<<" , implemented DT = "<<tmax/dtbins<<"  Tmax = "<<tmax<<endlr;
   
@@ -958,8 +960,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   ///////// Histogram definitions here /////////////////////////
   
   TH1D *hAMPL[4];
-  TH1D *hCH[4];
-  TH1D *hsCH[4];
+  TH1D *htotCH[4];
+//   TH1D *hsCH[4];
   TH1D *hRT[4];
   TH1D *hPW[4];
   TH1D *hPD[4];
@@ -967,12 +969,25 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   TH1D *hCutsAMPL[4];
   TH1D *hCutsCH[4];
   TH1D *hCutsDt[4];
+
+  TH1D *hDAMPL[4];
+  TH1D *heCH[4];
+  TH1D *heCHfit[4];
+  TH1D *heCHfixed[4];
+  TH1D *htotCHfixed[4];
+  TH1D *hionCH[4];
+
+
   //TH1D *hCutsRT[4];
   //TH1D *hCutsPW[4];
   //TH1D *hCutsTOT[4];
   TH1D *hRateCuts[4];
-  TH1D *hCHovAmpl[4];
-  TH1D *hsCHovAmpl[4];
+  TH1D *htotCHovAmpl[4];
+  TH1D *htotCHovAmplCuts[4];
+  TH1D *hAmplovDampl[4];
+  TH1D *heCHovAmpl[4];
+  TH1D *heCHovtotCh[4];
+  
   TH1D *hRate[4];
   TH1D *hRateStructure[4];
   TH1D *hSRStriggerStruct[4];
@@ -985,15 +1000,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //   TH1D *hSparkEvolution[4];
   //   TH1D *hPD;
   
-  TH2D *heCHvsiCH[4];
-  TH2D *hCHvsAMPL[4];
-  TH2D *hAmplvsPD[4];
-  TH2D *hAmplvsRT[4];
-  TH2D *h2dCutsCH[4];
-  TH2D *h2dCutsAMPL[4];
+  TH2D *h2deCHvsiCH[4];
+  TH2D *h2dtotCHvsAmpl[4];
+  TH2D *h2dAmplvsPD[4];
+  TH2D *h2dAmplvsRT[4];
+  TH2D *h2dAmplvsDampl[4];
+  TH2D *h2dCutsCHevolution[4];
+  TH2D *h2dCutsAmplEvolution[4];
+  TH2D *h2deCHvsAmpl[4];
+  TH2D *h2deCHvstotCh[4];
   
-  TH2D *hXY[4];
-  TH2D *hXYcuts[4];
+  TH2D *h2dXY[4];
+  TH2D *h2dXYcuts[4];
+
 
 //   TH1D* hSparkEvolution;
 // cin.get();
@@ -1013,10 +1032,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hRate[i]=new TH1D(hname,htitle,rbins,0.,rmax);
 
 // // Nphotons per pulse as found by rate evolution plot!!!
-    sprintf(htitle,"Rate (photons per %gs) from evolution plot",period);
+    sprintf(htitle,"Rate (events per %gs) from evolution plot",period);
     sprintf(hname,"Run%03d_pool%d_C%d_Rate_Cuts_per%3.1fseconds_%s",runNo,poolNo,i+1,period,ftype);
     hRateCuts[i]=new TH1D(hname,htitle,rbins,0.,rmax);
-//     sprintf(axtitle,"goodpeaks / %gsec",period);
+    sprintf(axtitle,"average peak rate [events / %gsec]",period);
     hRateCuts[i]->GetXaxis()->SetTitle(axtitle);
 //     cout<<RED<<"Histo rate "<<i+1<<" ready"<<endlr;
 ///________________________________________________________________
@@ -1037,7 +1056,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hRateEvolution[i]->GetXaxis()->SetLabelOffset(0.02);
     hRateEvolution[i]->SetMinimum(0);
     
-// neutron average rate per pulse . Exclude spark events && correlated (pulse uncorrelated) goodpeaks    
+// neutron average rate per pulse . Exclude spark events && pulsedBeam (pulse uncorrelated) goodpeaks    
     sprintf(hname,"Run%03d_pool%d_C%d_RateEvolutiongoodPeaks[ci]_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"Rate evolution (cuts)");
     hRateEvolutionCuts[i]=new TH1D(hname,htitle,tbins,epochS,epochF);
@@ -1101,6 +1120,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 ///________________________________________________________________
 ///  Amplitude plots 
 
+    
     sprintf(hname,"Run%03d_pool%d_C%d_Amplitude_%s",runNo,poolNo,i+1,ftype);
     sprintf(htitle,"Pulse amplitude C%d",i+1);
     hAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]);
@@ -1111,125 +1131,199 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hCutsAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]);
     hCutsAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
     
+    sprintf(hname,"Run%03d_pool%d_C%d_DataAmplitude_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"Pulse amplitude from data C%d",i+1);
+    hDAMPL[i]=new TH1D(hname,htitle,nbins,0.,amplMax[i]);
+    hDAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+
     sprintf(htitle,"Pulse amplitude evolution C%d",i+1);
     sprintf(hname,"Run%03d_pool%d_C%d_AmplitudeEvolution_%s",runNo,poolNo,i+1,ftype);
-    h2dCutsAMPL[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,amplMax[i]);
-    h2dCutsAMPL[i]->GetXaxis()->SetTimeDisplay(1);
-    h2dCutsAMPL[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
-    h2dCutsAMPL[i]->GetXaxis()->SetLabelSize(0.03);
-    h2dCutsAMPL[i]->GetXaxis()->SetLabelOffset(0.02);
-    h2dCutsAMPL[i]->GetYaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dCutsAmplEvolution[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,amplMax[i]);
+    h2dCutsAmplEvolution[i]->GetXaxis()->SetTimeDisplay(1);
+    h2dCutsAmplEvolution[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
+    h2dCutsAmplEvolution[i]->GetXaxis()->SetLabelSize(0.03);
+    h2dCutsAmplEvolution[i]->GetXaxis()->SetLabelOffset(0.02);
+    h2dCutsAmplEvolution[i]->GetYaxis()->SetTitle("Pulse amplitude [mV]");
 
 ///________________________________________________________________
 ///  Charge plots 
 
     sprintf(hname,"Run%03d_pool%d_C%d_Charge_%s",runNo,poolNo,i+1,ftype);
-    sprintf(htitle,"Pulse charge C%d",i+1);
-    hCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
-    hCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
+    sprintf(htitle,"Total charge C%d",i+1);
+    htotCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    htotCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
     
-    sprintf(htitle,"Pulse charge (cuts cut)");
+    sprintf(htitle,"Total charge (cuts cut)");
     sprintf(hname,"Run%03d_pool%d_C%d_Charge_Cuts_%s",runNo,poolNo,i+1,ftype);
     hCutsCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
     hCutsCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
 
+    sprintf(hname,"Run%03d_pool%d_C%d_Charge_Fixed_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"Total charge (fixed duration)C%d",i+1);
+    htotCHfixed[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    htotCHfixed[i]->GetXaxis()->SetTitle("charge [a.u.]");
+
+    sprintf(hname,"Run%03d_pool%d_C%d_eCharge_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"e-peak charge C%d",i+1);
+    heCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    heCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
+
+    sprintf(hname,"Run%03d_pool%d_C%d_eChargeFit_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"e-peak charge from fit C%d",i+1);
+    heCHfit[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    heCHfit[i]->GetXaxis()->SetTitle("charge [a.u.]");
+
+    sprintf(hname,"Run%03d_pool%d_C%d_eChargeFixed_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"e-peak charge (fixed duration) C%d",i+1);
+    heCHfixed[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    heCHfixed[i]->GetXaxis()->SetTitle("charge [a.u.]");
+
+    sprintf(hname,"Run%03d_pool%d_C%d_ionCharge_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"Ion tail charge C%d",i+1);
+    hionCH[i]=new TH1D(hname,htitle,nbins*1,0.,chMax[i]);
+    hionCH[i]->GetXaxis()->SetTitle("charge [a.u.]");
+
     sprintf(htitle,"Pulse charge evolution C%d",i+1);
     sprintf(hname,"Run%03d_pool%d_C%d_ChargeEvolution_%s",runNo,poolNo,i+1,ftype);
-    h2dCutsCH[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,chMax[i]);
-    h2dCutsCH[i]->GetXaxis()->SetTimeDisplay(1);
-    h2dCutsCH[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
-    h2dCutsCH[i]->GetXaxis()->SetLabelSize(0.03);
-    h2dCutsCH[i]->GetXaxis()->SetLabelOffset(0.02);
-    h2dCutsCH[i]->GetYaxis()->SetTitle("charge [a.u.]");
+    h2dCutsCHevolution[i] = new TH2D(hname,htitle,100,epochS,epochF,nbins/2,0.,chMax[i]);
+    h2dCutsCHevolution[i]->GetXaxis()->SetTimeDisplay(1);
+    h2dCutsCHevolution[i]->GetXaxis()->SetTimeFormat("#splitline{%H:%M:%S}{%m/%d/%y}");
+    h2dCutsCHevolution[i]->GetXaxis()->SetLabelSize(0.03);
+    h2dCutsCHevolution[i]->GetXaxis()->SetLabelOffset(0.02);
+    h2dCutsCHevolution[i]->GetYaxis()->SetTitle("charge [a.u.]");
+    
+    
 ///________________________________________________________________    
 ///  pulse time properties plots     
     
     sprintf(htitle,"Rise Time C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_Risetime_%s",runNo,poolNo,i+1,ftype);
-    hRT[i]=new TH1D(fname2,htitle,int(rtMax[i]/dt),0.,rtMax[i]);
+    hRT[i]=new TH1D(fname2,htitle,int(50*rtMax[i]/dt),0.,rtMax[i]);
     hRT[i]->GetXaxis()->SetTitle("Risetime [ns]");  
     
     sprintf(htitle,"Pulse Width C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_Pulse_Width_%s",runNo,poolNo,i+1,ftype);
-    hPW[i]=new TH1D(fname2,htitle,(int)floor(pwMax[i]/dt)/2,0.,pwMax[i]);
+    hPW[i]=new TH1D(fname2,htitle,(int)floor(pwMax[i]/dt),0.,pwMax[i]);
     hPW[i]->GetXaxis()->SetTitle("e-Peak Width [ns]");
 
     sprintf(htitle,"Pulse Duration C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_Pulse_Duration_%s",runNo,poolNo,i+1,ftype);
-    hPD[i]=new TH1D(fname2,htitle,(int)floor(totMax[i]/dt)/2,0.,totMax[i]);
+    hPD[i]=new TH1D(fname2,htitle,(int)floor(totMax[i]/dt),0.,totMax[i]);
     hPD[i]->GetXaxis()->SetTitle("Pulse Duration [ns]");
 ///________________________________________________________________
 ///  Correlation plots    
     double chovamax = 500.;
+    double amplovdampl = 500.;
     if (dv[i]<=50 || vm[i]>490) chovamax = 800.;
     
     if (oscsetup->AmplifierNo[i]==1 || oscsetup->AmplifierNo[i]==4)
     {
        chovamax =20;   
+       amplovdampl =10.;
     }
     if (oscsetup->AmplifierNo[i]==3)
     {
        chovamax =4000;   
+       amplovdampl =20.;
     }
     if (oscsetup->AmplifierNo[i]==2)
     {
        chovamax =30000;   
+       amplovdampl =20.;
     }
     else
     {
        chovamax =30000;   
+       amplovdampl =20.;
     }
 
-    chovamax = (hCH[i]->GetXaxis()->GetXmax())/(hAMPL[i]->GetXaxis()->GetXmax());
+    chovamax = (htotCH[i]->GetXaxis()->GetXmax())/(hAMPL[i]->GetXaxis()->GetXmax()) *2.;
     
-    sprintf(htitle,"Charge over Amplitude");
+    sprintf(htitle,"Total Charge over Amplitude");
     sprintf(hname,"Run%03d_pool%d_C%d_Charge_ov_Amplitude_%s",runNo,poolNo,i+1,ftype);
-    hCHovAmpl[i]=new TH1D(hname,htitle,nbins*2,0.,chovamax);
-    hCHovAmpl[i]->GetXaxis()->SetTitle("ratio [pC/V]");
+    htotCHovAmpl[i]=new TH1D(hname,htitle,nbins*2,0.,2*chovamax);
+    htotCHovAmpl[i]->GetXaxis()->SetTitle("ratio [nC/mV]");
 
-    sprintf(htitle,"Pulse Charge over Amplitude");
+    sprintf(htitle,"Total Charge over Amplitude (after cuts)");
     sprintf(hname,"Run%03d_pool%d_C%d_selected_Charge_ov_Amplitude_%s",runNo,poolNo,i+1,ftype);
-    hsCHovAmpl[i]=new TH1D(hname,htitle,nbins*2,0.,chovamax);
-    hsCHovAmpl[i]->SetLineColor(kRed);
-    hsCHovAmpl[i]->GetXaxis()->SetTitle("ratio [nC/V]");
+    htotCHovAmplCuts[i]=new TH1D(hname,htitle,nbins*2,0.,2*chovamax);
+    htotCHovAmplCuts[i]->SetLineColor(kRed);
+    htotCHovAmplCuts[i]->GetXaxis()->SetTitle("ratio [nC/mV]");
+
+  	sprintf(htitle,"e-peak Charge over Amplitude");
+  	sprintf(hname,"Run%03d_pool%d_C%d_eCharge_ov_Amplitude_%s",runNo,poolNo,i+1,ftype);
+  	heCHovAmpl[i]=new TH1D(hname,htitle,nbins*2,0.,chovamax);
+  	heCHovAmpl[i]->GetXaxis()->SetTitle("ratio [nC/mV]");
+
+  	sprintf(htitle,"e-peak Amplitude (max data) over e-epeak Amplitude Fit");
+  	sprintf(hname,"Run%03d_pool%d_C%d_selected_Amplitude_ov_Damplitude_%s",runNo,poolNo,i+1,ftype);
+  	// hAmplovDampl[i]=new TH1D(hname,htitle,nbins*2,0.,amplMax[i]);
+  	hAmplovDampl[i]=new TH1D(hname,htitle,nbins*2,0.,2.);
+  	hAmplovDampl[i]->SetLineColor(kBlack);
+  	hAmplovDampl[i]->GetXaxis()->SetTitle("ratio [V/V]");
+
+    sprintf(hname,"Run%03d_pool%d_Ch%d_eCh_ov_iCh_%s",runNo,poolNo,i+1,ftype);
+    sprintf(htitle,"e-peak charge / total charge C%d",i+1);
+  	heCHovtotCh[i]=new TH1D(hname,htitle,nbins*2,0.,1.);
+  	heCHovtotCh[i]->SetLineColor(kBlue);
+  	heCHovtotCh[i]->GetXaxis()->SetTitle("ratio [nC/nC]");
+
+
+    sprintf(fname2,"Run%03d_pool%d_C%d_Amplitude_vs_dataAmplitude_C_%s",runNo,poolNo,i+1,ftype);
+    h2dAmplvsDampl[i]=new TH2D(fname2,fname2,nbins/2,0.,amplMax[i],nbins/2,0.,amplMax[i]);
+    h2dAmplvsDampl[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dAmplvsDampl[i]->GetYaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dAmplvsDampl[i]->SetStats(0);
+
+    sprintf(fname2,"Run%03d_pool%d_C%d_Charge_vs_Amplitude_C_%s",runNo,poolNo,i+1,ftype);
+    h2dtotCHvsAmpl[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],nbins,0.,chMax[i]);
+    h2dtotCHvsAmpl[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dtotCHvsAmpl[i]->GetYaxis()->SetTitle("Total charge [a.u.]");
+    h2dtotCHvsAmpl[i]->SetStats(0);
+
+    sprintf(fname2,"Run%03d_pool%d_C%d_eCharge_vs_Amplitude_C_%s",runNo,poolNo,i+1,ftype);
+    h2deCHvsAmpl[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],nbins,0.,chMax[i]);
+    h2deCHvsAmpl[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    h2deCHvsAmpl[i]->GetYaxis()->SetTitle("e-peak charge [a.u.]");
+    h2deCHvsAmpl[i]->SetStats(0);
+
+    sprintf(fname2,"Run%03d_pool%d_C%d_eCharge_vs_totCharge_C_%s",runNo,poolNo,i+1,ftype);
+    h2deCHvstotCh[i]=new TH2D(fname2,fname2,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    h2deCHvstotCh[i]->GetXaxis()->SetTitle("Total charge [a.u.]");
+    h2deCHvstotCh[i]->GetYaxis()->SetTitle("e-peak charge [a.u.]");
+    h2deCHvstotCh[i]->SetStats(0);
 
     sprintf(fname2,"Run%03d_pool%d_C%d_Ampl_vs_Rise_Time_C_%s",runNo,poolNo,i+1,ftype);
-    hAmplvsRT[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],25,0.,rtMax[i]);
-    hAmplvsRT[i]->GetXaxis()->SetTitle("Pulse amplitude [V]");
-    hAmplvsRT[i]->GetYaxis()->SetTitle("Risetime [ns]");
-    hAmplvsRT[i]->SetStats(0);
+    h2dAmplvsRT[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],(int)(50*rtMax[i]),0.,rtMax[i]);
+    h2dAmplvsRT[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dAmplvsRT[i]->GetYaxis()->SetTitle("Risetime [ns]");
+    h2dAmplvsRT[i]->SetStats(0);
     
-    sprintf(fname2,"Run%03d_pool%d_C%d_Charge_vs_Amplitude_C_%s",runNo,poolNo,i+1,ftype);
-    hCHvsAMPL[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],nbins,0.,chMax[i]);
-    hCHvsAMPL[i]->GetXaxis()->SetTitle("Pulse amplitude [V]");
-    hCHvsAMPL[i]->GetYaxis()->SetTitle("Charge [a.u.]");
-    hCHvsAMPL[i]->SetStats(0);
-
     sprintf(fname2,"Run%03d_pool%d_C%d_Amplitude_vs_PD_C_%s",runNo,poolNo,i+1,ftype);
-    hAmplvsPD[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],int(totMax[i]/dt),0.,totMax[i]);
-    hAmplvsPD[i]->GetXaxis()->SetTitle("Pulse amplitude [V]");
-    hAmplvsPD[i]->GetYaxis()->SetTitle("Pulse Duration [ns]");
-    hAmplvsPD[i]->SetStats(0);
+    h2dAmplvsPD[i]=new TH2D(fname2,fname2,nbins,0.,amplMax[i],int(totMax[i]/dt),0.,totMax[i]);
+    h2dAmplvsPD[i]->GetXaxis()->SetTitle("Pulse amplitude [mV]");
+    h2dAmplvsPD[i]->GetYaxis()->SetTitle("Pulse Duration [ns]");
+    h2dAmplvsPD[i]->SetStats(0);
 
     sprintf(fname2,"Run%03d_pool%d_C%d_eCharge_vs_iCharge_C_%s",runNo,poolNo,i+1,ftype);
-    heCHvsiCH[i]=new TH2D(fname2,fname2,nbins,0.,chMax[i],nbins,0.,chMax[i]);
-    heCHvsiCH[i]->GetXaxis()->SetTitle("e-Charge [a.u.]");
-    heCHvsiCH[i]->GetYaxis()->SetTitle("i-Charge [a.u.]");
-    heCHvsiCH[i]->SetStats(0);
+    h2deCHvsiCH[i]=new TH2D(fname2,fname2,nbins,0.,chMax[i],nbins,0.,chMax[i]);
+    h2deCHvsiCH[i]->GetXaxis()->SetTitle("e-Charge [a.u.]");
+    h2deCHvsiCH[i]->GetYaxis()->SetTitle("i-Charge [a.u.]");
+    h2deCHvsiCH[i]->SetStats(0);
 
     sprintf(htitle,"Hit map C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_C_%s",runNo,poolNo,i+1,ftype);
-    hXY[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
-    hXY[i]->GetXaxis()->SetTitle("X [mm]");
-    hXY[i]->GetYaxis()->SetTitle("Y [mm]");
-    hXY[i]->SetStats(0);
+    h2dXY[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
+    h2dXY[i]->GetXaxis()->SetTitle("X [mm]");
+    h2dXY[i]->GetYaxis()->SetTitle("Y [mm]");
+    h2dXY[i]->SetStats(0);
 
     sprintf(htitle,"Hit map C%d",i+1);
     sprintf(fname2,"Run%03d_pool%d_C%d_XYmap_Cuts_C_%s",runNo,poolNo,i+1,ftype);
-    hXYcuts[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
-    hXYcuts[i]->GetXaxis()->SetTitle("X [mm]");
-    hXYcuts[i]->GetYaxis()->SetTitle("Y [mm]");
-    hXYcuts[i]->SetStats(0);
+    h2dXYcuts[i]=new TH2D(fname2,htitle,200,-100.,100.,200,-100.,100.);
+    h2dXYcuts[i]->GetXaxis()->SetTitle("X [mm]");
+    h2dXYcuts[i]->GetYaxis()->SetTitle("Y [mm]");
+    h2dXYcuts[i]->SetStats(0);
     
     
 
@@ -1270,7 +1364,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int totNsparks = 0;
   long double drawdt=0.;
 //   if (oscsetup->AmplifierNo[i]==5) eventNo=2000; ///skip first events because of the time change in the oscilloscope.
-  
+//   nevents=10000;
   cout <<"Start processing the "<<nevents<<" events"<<endl;  
   //
 
@@ -1281,7 +1375,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   int total_secondary_count = 0;
   int total_thin_count = 0;
-//while (1 && eventNo<10000)
   while (eventNo<nevents)
   {
   	//cout << "Event Number: " << eventNo << endl;
@@ -1309,7 +1402,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   	  for (int ci=0; ci<4; ci++) {
   	  	if (!active[ci]) continue;
 	  	  rmsC[ci] = rmsBaselineCalculators[ci].get_epoch_rms(epoch);
-  	  	  bslC[ci] = rmsBaselineCalculators[ci].get_epoch_baseline(epoch);
+  	  	//  bslC[ci] = rmsBaselineCalculators[ci].get_epoch_baseline(epoch);  // Imperfect waveform-by-waveform baseline correction done in previous code. Will adjust later with adjust_basline
   	  }
 
       double maxc[]={0.,0.,0.,0.};
@@ -1534,7 +1627,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     /// smooth sumn array for analysis
     int nsmooth = 1;
   	//int nsmooth = 3;
-    if (oscsetup->AmplifierNo[ci]==1 || oscsetup->AmplifierNo[ci] == 3 ) // smoothing with 3 points
+    if (oscsetup->AmplifierNo[ci]==1 || oscsetup->AmplifierNo[ci] == 3) // smoothing with 3 points
     {
         DT = 2.;
         nsmooth = 3;
@@ -1562,11 +1655,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     int itrig =0;
     ntrigs = 0;
     ntrigsCuts=0;
-    int correlated = 0;
+    int pulsedBeam = 0;
     itrig = itrigger;
     if (itrig>0)
-        correlated = 1;
-        //correlated = callibrationRun;
+        pulsedBeam = 1;
+        //pulsedBeam = callibrationRun;
 
 /// Having the following "if (detspark)" here means that an event with a spark, of a "baseline recovery event will not be analysed!!!
     if (detspark)
@@ -1598,6 +1691,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   	auto trigger_windows_iterator = trigger_windows.begin();
 
     int ti = 0;
+    bool isMM = kFALSE;
+    
     while (ti < maxpoints-50 && ntrigs<MAXTRIG)
 	{
        ppar->Reset();
@@ -1625,6 +1720,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       {
+         isMM = kTRUE;
       	// break;
       	//cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
 	      //ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dsampl,ppar,threshold, dt, ti);    /// all the analysis is done here!!!!
@@ -1770,50 +1866,80 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 ///*************************************************************
 
 
-	  double rstm = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
-      if (oscsetup->AmplifierNo[ci]==1)
-          rstm = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
+	  double risetime = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
+      if (isMM) risetime = spar[ci][ntrigs].risetime;
+      
+      double pulseDuration = (spar[ci][ntrigs].ftime_pos - spar[ci][ntrigs].stime_pos)*dt;
 
+      
 	  hAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
-	  hCH[ci]->Fill(spar[ci][ntrigs].charge);
+
 // 	  hsCH[ci]->Fill(spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch);
-	  hRT[ci]->Fill(rstm);
-	  hPD[ci]->Fill(spar[ci][ntrigs].tot[0]);
-	  if (!correlated)
+	  hRT[ci]->Fill(risetime);
+      hPD[ci]->Fill(pulseDuration);
+
+      if (!pulsedBeam)
 	  {
 	    hRateStructure[ci]->Fill(spar[ci][ntrigs].t10*microsec);//t10 is ns, so to pass to us
 	  }
 
 	  //cout << "rate structure = " << spar[ci][ntrigs].t10/1000. << endl;
-	  hAmplvsRT[ci]->Fill(spar[ci][ntrigs].ampl*mV,rstm);
-// 	  hCHvsAMPL->Fill(spar[ci][ntrigs].ampl,spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch);
-	  hCHvsAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].charge);
-	  hAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].tot[0]);
-// 	  hCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
-	  hCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/(spar[ci][ntrigs].ampl*mV));
+	  h2dAmplvsRT[ci]->Fill(spar[ci][ntrigs].ampl*mV,risetime);
+	  h2dAmplvsPD[ci]->Fill(spar[ci][ntrigs].ampl*mV,pulseDuration);
 
-	  T10 = spar[ci][ntrigs].t10;
-	  T90 = spar[ci][ntrigs].t90;
-	  TB10 = spar[ci][ntrigs].tb10;
-	  Ampl = spar[ci][ntrigs].ampl;
-	  Charge = spar[ci][ntrigs].charge;
-	  Width = spar[ci][ntrigs].width;
-	  TOT = spar[ci][ntrigs].tot[0];
-	  BSLch = spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch;
+      if (isMM)  /// Micromegas specific plots
+      {
+         hDAMPL[ci]->Fill(spar[ci][ntrigs].dampl*mV);
+         htotCH[ci]->Fill(spar[ci][ntrigs].totcharge);
+         htotCHfixed[ci]->Fill(spar[ci][ntrigs].totchargefixed);
+         heCHfixed[ci]->Fill(spar[ci][ntrigs].echargefixed);
+         heCHfit[ci]->Fill(spar[ci][ntrigs].echargefit);
+         heCH[ci]->Fill(spar[ci][ntrigs].echarge);
+         hionCH[ci]->Fill(spar[ci][ntrigs].ioncharge);
 
+         htotCHovAmpl[ci]->Fill((spar[ci][ntrigs].totcharge)/(spar[ci][ntrigs].ampl*mV) );
+         hAmplovDampl[ci]->Fill((spar[ci][ntrigs].ampl*mV)/(spar[ci][ntrigs].dampl*mV) );
+         heCHovAmpl[ci]->Fill((spar[ci][ntrigs].echarge)/(spar[ci][ntrigs].ampl*mV) );
+         heCHovtotCh[ci]->Fill((spar[ci][ntrigs].echarge)/(spar[ci][ntrigs].totcharge) );
+         // cout<<YELLOW<<"spar[ci][ntrigs].ioncharge = "<<spar[ci][ntrigs].ioncharge<<endl;
+         h2deCHvsiCH[ci]->Fill((spar[ci][ntrigs].ioncharge),(spar[ci][ntrigs].echarge) );
+	     // cout<<YELLOW<<"spar[ci][ntrigs].ioncharge = "<<spar[ci][ntrigs].ioncharge<<endl;
+      	// cin.get();
+		 h2dtotCHvsAmpl[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].totcharge);
+         h2dAmplvsDampl[ci]->Fill(spar[ci][ntrigs].dampl*mV,spar[ci][ntrigs].ampl*mV);
+         h2deCHvsAmpl[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].echarge);
+      	 h2deCHvstotCh[ci]->Fill(spar[ci][ntrigs].echarge,spar[ci][ntrigs].totcharge);
+#ifdef DEBUGMSG         
+         cout<<BLUE<<"spar[ci][ntrigs].totcharge = "<<spar[ci][ntrigs].totcharge<<endl;
+         cout<<BLUE<<"spar[ci][ntrigs].totchargefixed = "<<spar[ci][ntrigs].totchargefixed<<endl;
+         cout<<BLUE<<"spar[ci][ntrigs].echarge = "<<spar[ci][ntrigs].echarge<<endl;
+         cout<<BLUE<<"spar[ci][ntrigs].echargefit = "<<spar[ci][ntrigs].echargefit<<endl;
+         cout<<BLUE<<"spar[ci][ntrigs].echargefixed = "<<spar[ci][ntrigs].echargefixed<<endl;
+         cout<<BLUE<<"risetime = "<<risetime<<endl;
+#endif
+        
+      }
+      else  /// other detector plots
+      {
+        htotCH[ci]->Fill(spar[ci][ntrigs].charge);
+        h2dtotCHvsAmpl[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].charge);
+        htotCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/(spar[ci][ntrigs].ampl*mV));
+      }
+      
 
+      
       int cut1 = spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl>250.;
 	  cut1 =1;
 	  if (oscsetup->AmplifierNo[ci]==1)
       {
           cut1 = spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl>1.5 && spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl<6.;
-          cut1 *= rstm>0.25 && rstm<2.0;
+          cut1 *= risetime>0.25 && risetime<2.0;
       }
 	  if (oscsetup->AmplifierNo[ci]==3)
       {
           cut1 = spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl>400 && spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl<850;
           cut1 *= (TOT>80);
-          cut1 *= (rstm>45);
+          cut1 *= (risetime>45);
           cut1 *= (Width>170);
 //           cut1=!cut1;
       }
@@ -1821,7 +1947,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       {
           cut1 = spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl>400 && spar[ci][ntrigs].charge/spar[ci][ntrigs].ampl<850;
           cut1 *= (TOT>80);
-          cut1 *= (rstm>45);
+          cut1 *= (risetime>45);
           cut1 *= (Width>170);
 //           cut1=!cut1;
       }
@@ -1843,23 +1969,25 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  // //doubling histos for nthreshold
 	  if(1 || ((spar[ci][ntrigs].ampl) > (peTh) && (spar[ci][ntrigs].charge) > (peThCh) && cut1))//(spar[ci][ntrigs].tot>60) && (spar[ci][ntrigs].tot<100)(spar[ci][ntrigs].width>60) && (spar[ci][ntrigs].width<100))
 	  {
-	      hCutsAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
-	      h2dCutsAMPL[ci]->Fill(tnow,spar[ci][ntrigs].ampl*mV);
-	      hCutsCH[ci]->Fill(spar[ci][ntrigs].charge);
-	      //h2dCutsCH[ci]->Fill(tnow,spar[ci][ntrigs].charge);
-	      //hCutsRT[ci]->Fill(rstm);
-	      //hCutsTOT[ci]->Fill(spar[ci][ntrigs].tot[0]);
-	      //hCutsPW[ci]->Fill(spar[ci][ntrigs].width);
-// 	      hsCHovAmpl->Fill((spar[ci][ntrigs].charge-spar[ci][ntrigs].bslch)/spar[ci][ntrigs].ampl);
-	      hsCHovAmpl[ci]->Fill((spar[ci][ntrigs].charge)/spar[ci][ntrigs].ampl);
-	      if (ntrigsCuts>0)  /// here we take the dt between concecutive peaks on the same waveform!
+	      if (isMM)
+          {
+            hCutsCH[ci]->Fill(spar[ci][ntrigs].totcharge);
+            htotCHovAmplCuts[ci]->Fill((spar[ci][ntrigs].totcharge)/spar[ci][ntrigs].ampl);
+          }
+          else
+          {
+            hCutsCH[ci]->Fill(spar[ci][ntrigs].charge);
+            htotCHovAmplCuts[ci]->Fill((spar[ci][ntrigs].charge)/spar[ci][ntrigs].ampl);
+          }
+          hCutsAMPL[ci]->Fill(spar[ci][ntrigs].ampl*mV);
+	      h2dCutsAmplEvolution[ci]->Fill(tnow,spar[ci][ntrigs].ampl*mV);
+
+          if (ntrigsCuts>0)  /// here we take the dt between concecutive peaks on the same waveform!
           {
             hCutsDt[ci]->Fill((spar[ci][ntrigsCuts].t10-spar[ci][ntrigsCuts-1].t10)*1e-9);
           }
-          
 
-
-          ntrigsCuts++;
+           ntrigsCuts++;
 	    }
 	  //------------------------
 
@@ -1881,12 +2009,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 /// fill in the XY plots. Single good peak is required for the cuts
       for (int i=0;i<eventTracks;i++)
       {
-        hXY[ci]->Fill(hitX_C[ci][0],hitY_C[ci][0]);
+        h2dXY[ci]->Fill(hitX_C[ci][i],hitY_C[ci][i]);
       }
       
       if (ngoodPeaks[ci]==1)
       {
-          hXYcuts[ci]->Fill(hitX_C[ci][0],hitY_C[ci][0]);
+          h2dXYcuts[ci]->Fill(hitX_C[ci][0],hitY_C[ci][0]);
       }
 
 /// fill in rate evolution plots      
@@ -1919,8 +2047,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         hSRStriggerStruct[ci]->Fill(ttrig*microsec);//t10 is ns, so to pass to us
         
         hRateEvolutionCuts[ci]->Fill(evtime,ngoodPeaks[ci]);
-        if (ngoodPeaks[ci]>0 && longpulse)
-              hRate[ci]->Fill(ngoodPeaks[ci]);
       }
 
       if (eventNo>0 && npeaks[ci]>0)  /// here we take the dt between the first peaks of concecutive waveforms
@@ -2256,12 +2382,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  return (ntrigs);
 	}
 
-    if (eventNo % (evpm) == 0)
-	{
-	  cout<<CYAN<<"Event "<<setw(6)<< eventNo<<" Channel C"<<ci+1<<endl;
-      cout<<"Found ntrigs ="<<ntrigs<<" pulses "<<endl;
-	  cout<<"Found ntrigsCuts ="<<ntrigsCuts <<" pulses after cuts"<<endlr;
-	}
+
     
   }
        /////////////////////////////////////////////////////////////////
@@ -2269,9 +2390,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
  /// END of the channel loop (ci) inside events tree entry processing
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
       ////////////////////////////////////////////////////////////////
-
-
-
+	for (int ci = 0; ci < 4; ++ci) {
+		if (eventNo % (evpm) == 0)
+		{
+			// cout<<CYAN<<"Event "<<setw(6)<< eventNo<<" Channel C"<<ci+1<<endl;
+			cout<<"Found ntrigs ="<<ntrigs<<" pulses "<<endl;
+			cout<<"Found ntrigsCuts ="<<ntrigsCuts <<" pulses after cuts"<<endlr;
+		}
+	}
     //  for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
 
     otree->Fill();
@@ -2316,7 +2442,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   double *err0;
   for (int ci = 0; ci < 4; ++ci)
   {
-      if (!active[ci]) continue;
+    if (!active[ci]) continue;
+      
+    bool isMM = kFALSE;
+    if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0) isMM = kTRUE;  
 
     cout<<BLUE<<"Preparing rate evolution for channel "<<MAGENTA<<ci+1<<endlr;
     if (firstactive)
@@ -2341,6 +2470,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 //         ScaleHistoErr(hSparkEvolution[ci],1.0/timebinwidth);
         cout<<GREEN<<"done"<<endlr;
     }
+    
 
     /// divide with binwidth to make rates per second
     for (int i = 0; i<hRateEvolutionCuts[ci]->GetNbinsX();i++)
@@ -2348,7 +2478,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         
         double y = hRateEvolutionCuts[ci]->GetBinContent(i);
       
-        y *= timebinwidth; /// convert it to events per time periode width
+        y /= timebinwidth; /// convert it to events per time periode width
         hRateCuts[ci]->Fill(y);
     }
 
@@ -2421,16 +2551,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hCutsAMPL[ci]->Fit(fpolyaAmpl,"B0","",minax,amplMax[ci]);
     cout<<"Fit "<<channel<<"  "<<2<<endl;
     hCutsAMPL[ci]->Fit(fpolyaAmpl,"RM","",minax,amplMax[ci]);
-// cout<<"Fit "<<3<<endl;
-// hCutsAMPL->Fit(f2,"BM+0","",Thresholds[ci]*mV,peTh*1.0*mV);
-// cout<<"Fit "<<4<<endl;
-// hCutsAMPL->Fit(f2,"BM+","",Thresholds[ci]*mV,peTh*1.0*mV);
-// // hAMPL->Draw();
+
     hCutsAMPL[ci]->SetLineColor(2);
     hCutsAMPL[ci]->SetMaximum(hAMPL[ci]->GetMaximum()*2.);
     hCutsAMPL[ci]->Draw("");
     hAMPL[ci]->Draw("same");
+    
+    if (isMM)
+    {
+       hDAMPL[ci]->SetLineColor(kBlack);
+       hDAMPL[ci]->Draw("same");
+    }
 
+    
     fpolyaAmpl->SetRange(minax,amplMax[ci]);
     fpolyaAmpl->Draw("same");
     // f2->Draw("same");
@@ -2506,18 +2639,33 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     cout<<"Fit "<<channel<<"  "<<7<<endl;
     //hCutsCH[ci]->Fit(fpolyaCH,"BM","",minchx,chMax[ci]);
 
-    hCutsCH[ci]->SetMaximum(2.*hCH[ci]->GetMaximum());
+    hCutsCH[ci]->SetMaximum(2.*htotCH[ci]->GetMaximum());
     cch->SetLogy(); 
     hCutsCH[ci]->SetLineColor(2);
     hCutsCH[ci]->Draw();
-//   hCH->Sumw2();
+//   htotCH->Sumw2();
 //   hsCH->Draw("same");
 //  hsCH[ci]->SetLineColor(kMagenta);
-    hCH[ci]->Draw("same");
+    htotCH[ci]->Draw("same");
     fpolyaCH->SetRange(minchx,chMax[ci]);
     fpolyaCH->Draw("same");
+
+    if (isMM)
+    {
+       heCH[ci]->SetLineColor(kMagenta);
+       heCHfit[ci]->SetLineColor(kBlack);
+       heCHfixed[ci]->SetLineColor(kBlue-2);
+       hionCH[ci]->SetLineColor(kGreen+1);
+       heCH[ci]->Draw("same");
+       heCHfit[ci]->Draw("same");
+       heCHfixed[ci]->Draw("same");
+       hionCH[ci]->Draw("same");
+    }
+    
     cch->Update();
     cch->BuildLegend(0.6,0.5,0.9,0.65);
+    
+   
   
 //  TPad* subpad1=(TPad*)cch->GetPrimitive(Form("%s_%d",rcanv->GetName(),4));
     cch->Update();  /// VERY IMPORTANT!!!!! crashes without update!!!
@@ -2643,7 +2791,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hRateEvolution[ci]->SetStats(0);  
     //hRateEvolutionCuts[ci]->SetStats(0);  
     double maxy = hRateEvolution[ci]->GetMaximum()*1.6;
-    hRateEvolution[ci]->SetMaximum(200);
+     hRateEvolution[ci]->SetMaximum(maxy);
       hRateEvolution[ci]->Draw();
     hRateEvolutionCuts[ci]->SetLineColor(2);
     hRateEvolutionCuts[ci]->SetLineWidth(2);
@@ -2696,7 +2844,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     rcanv->cd(6);
     gPad->SetLogy();
     //hCutsCH[ci]->Draw("");
-    hCH[ci]->Draw("");
+    htotCH[ci]->Draw("");
     //hCutsCH[ci]->SetLineColor(2);
     
     subpad=(TPad*)rcanv->GetPrimitive(Form("%s_%d",rcanv->GetName(),6));
@@ -2870,8 +3018,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     tex->SetLineWidth(2);
     tex->SetTextAlign(23);
     tex->Draw();
-    runpar->grate=f1->GetParameter(1);
-    runpar->sgrate=f1->GetParError(1);
+    // runpar->grate=f1->GetParameter(1);
+    // runpar->sgrate=f1->GetParError(1);
     
     sprintf(txt2,"#LTr_{n(#it{thr=%gmV})}#GT = #bf{%3.1f #pm %3.1f} #frac{counts}{sec}",peTh*mV,f12->GetParameter(1),f12->GetParError(1));
     if (exprate<1)
@@ -2882,8 +3030,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     tex->SetLineWidth(2);
     tex->SetTextAlign(23);
     tex->Draw();
-    runpar->rate=f12->GetParameter(1);
-    runpar->srate=f12->GetParError(1);
+    // runpar->rate=f12->GetParameter(1);
+    // runpar->srate=f12->GetParError(1);
     
     long double duration = (epochF-epochS)/3600. ;
     sprintf(txt2,"#it{#bf{%d sparks} were observed within #bf{%3.1LF} hours}",totNsparks,duration);
@@ -2914,8 +3062,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     tex->SetLineWidth(2);
     tex->SetTextAlign(23);
     tex->Draw();
-    runpar->ampl = fpolyaAmpl->GetParameter(1);
-    runpar->sampl = fpolyaAmpl->GetParameter(2);
+    // runpar->ampl = fpolyaAmpl->GetParameter(1);
+    // runpar->sampl = fpolyaAmpl->GetParameter(2);
     
     sprintf(txt2,"#it{Charge}: %s = #bf{%3.1f #pm %3.2f} , %s = #bf{%3.3g} ",fpolyaCH->GetParName(1),fpolyaCH->GetParameter(1),fpolyaCH->GetParError(1),fpolyaCH->GetParName(2),fpolyaCH->GetParameter(2));
     tex = new TLatex(0.5,0.1,txt2);
@@ -2925,8 +3073,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     tex->SetTextAlign(23);
     tex->Draw();
   
-    runpar->charge = fpolyaCH->GetParameter(1);
-    runpar->scharge = fpolyaCH->GetParameter(2);
+    // runpar->charge = fpolyaCH->GetParameter(1);
+    // runpar->scharge = fpolyaCH->GetParameter(2);
 
     rcanv->Update();
   
@@ -2955,20 +3103,21 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     TCanvas *camplch = new TCanvas("CHovAmplitude"+chname,"Charge over Amplitude "+chname);
     gStyle->SetOptFit(111);
     gStyle->SetOptStat(1100);
-    hsCHovAmpl[ci]->Sumw2();
-    hsCHovAmpl[ci]->Draw();
-    hCHovAmpl[ci]->Draw("same");
+    htotCHovAmplCuts[ci]->Sumw2();
+    htotCHovAmplCuts[ci]->Draw();
+    htotCHovAmpl[ci]->Draw("same");
 
-    int maxbin = hCHovAmpl[ci]->GetMaximumBin();
-    double maxbinval = hCHovAmpl[ci]->GetBinLowEdge(maxbin);
+
+    int maxbin = htotCHovAmpl[ci]->GetMaximumBin();
+    double maxbinval = htotCHovAmpl[ci]->GetBinLowEdge(maxbin);
     TF1 *fgaus3 = new TF1("fgaus4","gaus",maxbin-100.,maxbin+100.);
     fgaus3->SetParameter(2,50.);
-    fgaus3->SetParameter(0,hCHovAmpl[ci]->GetMaximum());
+    fgaus3->SetParameter(0,htotCHovAmpl[ci]->GetMaximum());
     fgaus3->SetParameter(1,maxbinval);
     cout<<"Fit "<<channel<<"  "<<14<<endl;
-    hCHovAmpl[ci]->Fit(fgaus3,"M+","",maxbinval-250.0,maxbinval+250.0);
-    runpar->chovampl = fgaus3->GetParameter(1);
-    runpar->schovampl = fgaus3->GetParameter(2);
+    htotCHovAmpl[ci]->Fit(fgaus3,"M+","",maxbinval-250.0,maxbinval+250.0);
+    // runpar->chovampl = fgaus3->GetParameter(1);
+    // runpar->schovampl = fgaus3->GetParameter(2);
 
 
     gStyle->SetOptFit(111);
@@ -2978,10 +3127,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
  
     sccanv->cd(1);
     gStyle->SetOptStat(1100);
- 
-    hCHovAmpl[ci]->Draw();
-    hsCHovAmpl[ci]->Draw("same");
- 
+    htotCHovAmpl[ci]->Draw();
+    htotCHovAmplCuts[ci]->Draw("same");
+
     sccanv->cd(2);
     hRateStructure[ci]->SetStats(0);
     hRateStructure[ci]->GetXaxis()->SetLabelSize(0.05);
@@ -3018,8 +3166,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //cout<<"Fit "<<channel<<"  "<<15<<endl;
     //hCutsRT[ci]->Fit(fgrt,"mb+","same",hCutsRT[ci]->GetMean()-3*hCutsRT[ci]->GetRMS(),hCutsRT[ci]->GetMean()+3*hCutsRT[ci]->GetRMS());
     //  hCutsRT->Draw("same");
-    //runpar->risetime=fgrt->GetParameter(1);
-    //runpar->srisetime=fgrt->GetParameter(2);
  
     sccanv->cd(4);
     //hCutsPW[ci]->SetLineColor(2);
@@ -3028,14 +3174,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //TF1* fgw = new TF1("fgw","gaus",0.,pwMax[ci]);
     //fgw->SetNpx(1000);
     //fgw->SetParameter(0,hCutsPW[ci]->GetMaximum());
-    //runpar->width=hCutsPW[ci]->GetMean();
-    //fgw->SetParameter(1,runpar->width);
     //hCutsPW[ci]->Sumw2();
     //cout<<"Fit "<<channel<<"  "<<16<<endl;
-    //hCutsPW[ci]->Fit(fgw,"mb+","same",runpar->width-3*hCutsPW[ci]->GetRMS(),runpar->width+3*hCutsPW[ci]->GetRMS());
-    //runpar->width=fgw->GetParameter(1);
-    //runpar->swidth=fgw->GetParameter(2);
- 
+
     sccanv->cd(3);
     //hCutsTOT[ci]->Draw("");
     hPD[ci]->Draw("");
@@ -3048,23 +3189,78 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //cout<<"Fit "<<channel<<"  "<<17<<endl;
     //hCutsTOT[ci]->Fit(fgtot,"mb+","same",hCutsTOT[ci]->GetMean()-3*hCutsTOT[ci]->GetRMS(),hCutsTOT[ci]->GetMean()+3*hCutsTOT[ci]->GetRMS());
     //  hCutsRT->Draw("same");
-    //runpar->tot=fgtot->GetParameter(1);
-    //runpar->stot=fgtot->GetParameter(2);
- 
+
     sccanv->cd(7);
-    hAmplvsRT[ci]->Draw("colz");
+    h2dAmplvsRT[ci]->Draw("colz");
     sccanv->cd(5);
-    hCHvsAMPL[ci]->Draw("colz");
+    h2dtotCHvsAmpl[ci]->Draw("colz");
     sccanv->cd(8);
-    hAmplvsPD[ci]->Draw("colz");
+    h2dAmplvsPD[ci]->Draw("colz");
 
     sccanv->Modified();
     sccanv->Update();
     sccanv->SaveAs(".png");
     sccanv->SaveAs(".pdf");
  
+
+    if (isMM)
+    {
+      TCanvas *champlcanv = new TCanvas("ChAmplCorrelations"+chname,"Charge - Amplitude Correlations "+chname,1600,1100);
+      champlcanv->Divide(4,2);
+  
+      champlcanv->cd(1);
+      gStyle->SetOptStat(1100);
+  
+      htotCHovAmpl[ci]->Draw();
+      htotCHovAmplCuts[ci]->SetLineColor(2);
+      htotCHovAmplCuts[ci]->Draw("same");
+  
+      champlcanv->cd(4+1);
+      h2dtotCHvsAmpl[ci]->Draw();
+      
+      champlcanv->cd(2);
+      gStyle->SetOptStat(1100);
+  
+      heCHovAmpl[ci]->Draw();
+
+      champlcanv->cd(4+2);
+      h2deCHvsAmpl[ci]->Draw();
+      
+      champlcanv->cd(3);
+      gStyle->SetOptStat(1100);
+  
+      heCHovtotCh[ci]->Draw();
+
+      champlcanv->cd(4+3);
+      h2deCHvstotCh[ci]->Draw();
+      
+      champlcanv->cd(4);
+      gStyle->SetOptStat(1100);
+  
+      hAmplovDampl[ci]->Draw();
+
+      champlcanv->cd(4+4);
+      h2dAmplvsDampl[ci]->Draw();
+      
+
+      champlcanv->Modified();
+      champlcanv->Update();
+      champlcanv->SaveAs(".png");
+      champlcanv->SaveAs(".pdf");
+      
+      ///--------
+      TCanvas *echichcanv = new TCanvas("eCHiCH"+chname,"e-Charge vs i-Charge "+chname);
+      h2deCHvsiCH[ci]->Draw("colz");
+      
+      echichcanv->Modified();
+      echichcanv->Update();
+      echichcanv->SaveAs(".png");
+      echichcanv->SaveAs(".pdf");
+      
+      
+    }  /// end of MM only canvases
     
-  }  
+  }    /// end of ci loop for canvases  
 
 //   TString chname = ctypes;
   TCanvas *xycanv = new TCanvas("XYmaps","XY Maps "+ctypes,1600,1100);
@@ -3081,9 +3277,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     cout<<GREEN<<"done"<<endlr;
 
     xycanv->cd(ci_shift+1);
-    hXY[ci]->Draw();
-     xycanv->cd(ci_shift+actch+1);
-     hXYcuts[ci]->Draw();
+    h2dXY[ci]->Draw();
+    xycanv->cd(ci_shift+actch+1);
+    h2dXYcuts[ci]->Draw();
      
      ci_shift++;
      
@@ -3093,7 +3289,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
      xycanv->SaveAs(".pdf");
      
   }
-  
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -3146,7 +3341,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   pcanv->cd(3);
   gPad->SetLogy();
   hCutsCH->Draw("Charge");
-  hCH->Draw("same");
+  htotCH->Draw("same");
   
   
 //   pcanv->Update();
@@ -3306,16 +3501,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
  
  scanv->cd(4);
  
- hsCHovAmpl->Draw();
- hCHovAmpl->Draw("same");
+ htotCHovAmplCuts->Draw();
+ htotCHovAmpl->Draw("same");
 
  scanv->cd(5);
  
- h2dCutsAMPL->Draw("colz");
+ h2dCutsAmplEvolution->Draw("colz");
 
  scanv->cd(6);
  
- h2dCutsCH->Draw("colz");
+ h2dCutsCHevolution->Draw("colz");
 
  scanv->Update();
  
@@ -3364,14 +3559,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
    cout<<"Creating Summary file:\n"<<command<<endl;
    int comtst=system(command);
    cout<<"Done!"<<endl;
+	RegisterRunParameters(runpar,basedirname);
 
-
- RegisterRunParameters(runpar,basedirname);  
-	*/
-
+*/
  ofile->Write("",TObject::kOverwrite);
  gSystem->ChangeDirectory(tmpdir);
-cout<<BLUE<<"End of script!"<<endl;
+ cout<<BLUE<<"End of script!"<<endl;
  return 0; 
 //// turn the warnings back on
 }
