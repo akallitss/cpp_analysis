@@ -2436,19 +2436,32 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           }
 
 #endif
-        int oldErrorLevel = gErrorIgnoreLevel;
-        
-        gErrorIgnoreLevel = kError;   // Only error messages will be shown, no warnings or info
-
+        // int oldErrorLevel = gErrorIgnoreLevel;
+        // gErrorIgnoreLevel = kError;   // Only error messages will be shown, no warnings or info
         /// Perform the fit
         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
-        gErrorIgnoreLevel = oldErrorLevel;
+        // gErrorIgnoreLevel = oldErrorLevel;
         ///Debugging the fit
-        if (r->IsValid())
+        ///
+      if (!r) {
+        std::cerr << "Fit failed!" << std::endl;
+      } else {
+        std::cout << "Fit successful!" << std::endl;
+
+        if (r.Get()) {  // Ensure r actually contains a result before accessing it
+          std::cout << "r->IsValid() = " << r->IsValid() << std::endl;
+        } else {
+          std::cout << "r does not contain a valid fit result." << std::endl;
+        }
+      }
+
+        // cout << "r->IsValid() = " << r->IsValid() << endl;
+        // cin.get();
+        if (r && r.Get() && r->IsValid())  //  r fit result sometimes crashing when checking if valid? Weird but this is a workaround
           {
 #ifdef DEBUGMSG
-          r->Print("V"); //prints the info of the fit
-          TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
+          // r->Print("V"); //prints the info of the fit
+          // TMatrixDSym cov = r->GetCovarianceMatrix(); //get covariance matrix
           cout << MAGENTA << "Fit successful!" << endlr;
 #endif
           }
@@ -2456,7 +2469,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         else {
 #ifdef DEBUGMSG
           cout << RED << "Fit failed sig_fit2." << endlr;
+
 #endif
+          // return 0;
         }
 
         // Print final parameter values
@@ -2466,16 +2481,17 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           cout << "Parameter " << i << ": " << sig_fit2->GetParameter(i)
                << " (error: " << sig_fit2->GetParError(i) << ")" << endlr;
         }
-
-      cout << "Fit Result:" << endl;
-      cout << "Chi-square: " << r->Chi2() << endl;
-      cout << "NDF: " << r->Ndf() << endl;
-      cout << "Probability: " << r->Prob() << endl;
-      cout << "Status: " << r->Status() << endl;
-      //sig_waveformd->Fit("sig_fit2", "QMR0S");
-      //sig_waveformd->Fit("sig_fit2", "QMR0S");
-      cout<<MAGENTA<<"HERE IS THE fitiing SIFIT2!" << endlr;
-
+  if (r && r.Get() && r->IsValid())  //  r fit result sometimes crashing when checking if valid? Weird but this is a workaround
+  {
+    cout << "Fit Result:" << endl;
+    cout << "Chi-square: " << r->Chi2() << endl;
+    cout << "NDF: " << r->Ndf() << endl;
+    cout << "Probability: " << r->Prob() << endl;
+    cout << "Status: " << r->Status() << endl;
+    //sig_waveformd->Fit("sig_fit2", "QMR0S");
+    //sig_waveformd->Fit("sig_fit2", "QMR0S");
+    cout<<MAGENTA<<"HERE IS THE fitiing SIFIT2!" << endlr;
+  }
  #endif
       sig_fit2->SetRange(sig_lim_min-3.,sig_lim_max2+10.);
       sig_fit2->SetLineColor(kCyan);
@@ -2485,11 +2501,11 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         par->sigmoidF[i] = sig_fit2->GetParameter(i);
 #ifdef DEBUGMSG
  //Debugging the fit
-      // TCanvas *c = new TCanvas("c", "Fit Result", 800, 600);
-      // sig_waveformd->Draw("AP");
-      // sig_fit2->Draw("same");
-      // c->SaveAs("fit_result.png");
-      //
+      TCanvas *c = new TCanvas("c", "Fit Result", 800, 600);
+      sig_waveformd->Draw("AP");
+      sig_fit2->Draw("same");
+      c->SaveAs("fit_result.png");
+
 #endif
 
   TF1 *sig_fittot =  new TF1("sig_fittot",fermi_dirac_sym_double,sig_lim_min,sig_lim_max2+SIGMOID_EXTENTION, 6);
@@ -2560,9 +2576,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       if (r_tot->IsValid())
       {
     #ifdef DEBUGMSG
-        r_tot->Print("V"); //prints the info of the fit
-        TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
-        cout << MAGENTA << "Fit successful!" << endlr;
+        // r_tot->Print("V"); //prints the info of the fit
+        // TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
+        // cout << MAGENTA << "Fit successful!" << endlr;
     #endif
       }
 
