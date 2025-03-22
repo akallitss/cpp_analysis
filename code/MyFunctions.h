@@ -332,7 +332,7 @@ const int MAX_N_FILES=11000;
 //  const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2022_October_h4/tracker/reconstructed";
 
 //const char *CODEDIR="/eos/project-p/picosec/analysis/code";
-const char *CODEDIR="/afs/cern.ch/user/a/akallits/condor_sumbit_test/code";
+const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code";
 const char *BASEDIRNAME="/eos/project-p/picosec/Saclay/data/2022_October_h4";
 const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2022_October_h4/wdir";
 const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2022_October_h4/plots";
