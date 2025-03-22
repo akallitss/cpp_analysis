@@ -1388,9 +1388,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   int total_secondary_count = 0;
   int total_thin_count = 0;
-	nevents = 2000;
-  while (eventNo<nevents)
+	while (eventNo<nevents)
   {
+	// if (eventNo<33593 || eventNo>34278) { eventNo++; continue;};
   	//cout << "Event Number: " << eventNo << endl;
   	// if (eventNo < 1200) { eventNo++; continue; }
   	//if (eventNo!=47) { eventNo++; continue;}
@@ -1689,7 +1689,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 		adjust_baseline(maxpoints, ptime, sampl);
   		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
 		TriggerResult trigger_results = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
-  	  	cout << "Event number: " << eventNo << " Channel number: " << ci << endl;
+  	  	// cout << "Event number: " << eventNo << " Channel number: " << ci << endl;
   		// cin.get();
   		//print event number that had secondary pulses
   		if (trigger_results.secondary_count > 0) {

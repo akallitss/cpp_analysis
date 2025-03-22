@@ -1920,17 +1920,16 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         
         double sig_pars[4];
      
-        double y_half_point = 0.5*par->ampl;
-    
-        // double  x_mid_left = (x[par->sig_end_pos - par->sig_start_pos]+ x[1])/2.;
         double  x_mid_left = (fit_end_point + x[1])/2.;
-
-        // double steepness_left = 5.0/(x[par->sig_end_pos - par->sig_start_pos] - x[1]);
         double steepness_left = 5.0/(fit_end_point - x[1]);
+
+        if (steepness_left <= 0.1 || steepness_left >= 15)
+          steepness_left = (0.1 + 15.) / 2.;  // Set to middle of bounds
+
         sig_pars[0] = arr[par->maxtime_pos]; // - arr[sig_start_pos];
         sig_pars[1] = x_mid_left; 
         sig_pars[2] = steepness_left;
-        sig_pars[3] = 0.0;//arr[sig_start_pos];
+        sig_pars[3] = 0.001;//arr[sig_start_pos];
 
         sig_fit->SetParameters(sig_pars[0],sig_pars[1],sig_pars[2],sig_pars[3]);
 
@@ -1945,8 +1944,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(2, 0.05);
       sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
+      sig_fit->SetParLimits(0,sig_fit->GetParameter(0)*0.85,sig_fit->GetParameter(0)*1.15);
       sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
-      sig_fit->SetParLimits(2, 0.1, 10);
+      sig_fit->SetParLimits(2, 0.1, 15);
+      sig_fit->SetParLimits(3,-fabs(sig_fit->GetParameter(3)*4.1),fabs(sig_fit->GetParameter(3)*4.1));
+
 
 #ifdef DEBUGMSG
       for (int i = 0; i < 4; i++) {
@@ -1959,7 +1961,7 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   // int oldErrorLevel = gErrorIgnoreLevel;
 
   // gErrorIgnoreLevel = kError;
-      TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
+  TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
   // gErrorIgnoreLevel = oldErrorLevel;
 #ifdef DEBUGMSG
       cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
@@ -2120,18 +2122,18 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         TF1 *sig_fit =  new TF1("sig_fit",fermi_dirac,fit_start_point,fit_end_point, 4);
         
         double sig_pars[4];
-     
-        double y_half_point = 0.5*par->ampl;
-    
+
         double  x_mid_left = (fit_end_point + x[1])/2.;
 
         double steepness_left = 5.0/(fit_end_point - x[1]);
 
+        if (steepness_left <= 0.1 || steepness_left >= 15)
+          steepness_left = (0.1 + 15.) / 2.;  // Set to middle of bounds
 
         sig_pars[0] = arr[par->maxtime_pos]; // - arr[sig_start_pos];
         sig_pars[1] = x_mid_left; 
         sig_pars[2] = steepness_left;
-        sig_pars[3] = 0.0;//arr[sig_start_pos];
+        sig_pars[3] = 0.001;//arr[sig_start_pos];
 
         sig_fit->SetParameters(sig_pars[0],sig_pars[1],sig_pars[2],sig_pars[3]);
 
@@ -2142,8 +2144,11 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         sig_fit->SetParError(2, 0.05);
         sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
+        sig_fit->SetParLimits(0,sig_fit->GetParameter(0)*0.85,sig_fit->GetParameter(0)*1.15);
         sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
-        sig_fit->SetParLimits(2, 0.1, 10);
+        sig_fit->SetParLimits(2, 0.1, 15);
+        sig_fit->SetParLimits(3,-fabs(sig_fit->GetParameter(3)*4.1),fabs(sig_fit->GetParameter(3)*4.1));
+
 #ifdef DEBUGMSG
         for (int i = 0; i < 4; i++) {
           cout << "Parameter " << i << ": " << sig_fit->GetParameter(i)
@@ -2289,6 +2294,29 @@ void TimeSigmoidDraw(int maxpoints, double *arr, double *arrt, PEAKPARAM* par, i
 
 
 }
+
+double GetXFitValue(TF1* func, double y_target, double x_min, double x_max) {
+//Disclaimer: This function is using kFatal ignore level to suppress the error messages.
+//This is not a good practice and should be avoided.
+//It has been tested and all precautions have been taken to avoid any issues.
+//but if there is any issue, please remove the kFatal ignore level and check the error messages.
+
+  if (!func) {
+    cout<<RED<<"GetXFitValue: Function is NULL"<<endlr;
+    return -1;
+  }
+  Int_t oldLevel = gErrorIgnoreLevel;
+  gErrorIgnoreLevel = kFatal;
+  double x_solution = func->GetX(y_target, x_min, x_max);
+  gErrorIgnoreLevel = oldLevel;
+
+  if (TMath::IsNaN(x_solution)) {
+    // cout<<RED<<"GetXFitValue: Solution is NaN"<<endlr;
+    return -999.;
+  }
+  return x_solution;
+}
+
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
       ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
@@ -2332,8 +2360,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
         par->tot_sig_end_pos =  sigend;
    
-        double y_half_point = 0.5*par->ampl;
-        double x_mid_left = (x[par->sig_end_pos - par->sig_start_pos]+ x[1])/2.;
+        // double y_half_point = 0.5*par->ampl;
+        // double x_mid_left = (x[par->sig_end_pos - par->sig_start_pos]+ x[1])/2.;
         double steepness_left = 5./(x[par->sig_end_pos-par->sig_start_pos] - x[1]);
         
         double x_d[1000], y_d[1000], erx_d[1000], ery_d[1000];
@@ -2367,25 +2395,29 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fitd->SetParameters(sig_pars_d);
 
 
-      double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
+      // double x_mid_right =  par->maxtime_pos*dt + 3. ;  // ns
 
       /// double sigmoid fit here
       double sig_lim_min2 = par->maxtime_pos*dt;
       // double sig_lim_max2 = par->maxtime_pos*dt+(1.5); //ns
       par->tot_sig_end_pos = par->maxtime_pos + (int) (1.5/dt) + 1;
       double sig_lim_max2 = par->tot_sig_end_pos*dt;
+      double x_mid_right = (sig_lim_min2+sig_lim_max2)/2.;
+
       double sig_pars[4];
 
-      if (x_mid_right <= sig_lim_min2 || x_mid_right >= sig_lim_max2)
-         x_mid_right = (sig_lim_min2+sig_lim_max2)/2.;
+      // if (x_mid_right <= sig_lim_min2 || x_mid_right >= sig_lim_max2)
+         // x_mid_right = (sig_lim_min2+sig_lim_max2)/2.;
 
       if (steepness_left <= 0 || steepness_left >= 5)
-         steepness_left = (0.+5.)/2.;
+         steepness_left = (0. + 5.) / 2.;  // Set to middle of bounds
          
       sig_pars[0] = arr[par->maxtime_pos];
+      // sig_pars[0] = sig_fitd->GetParameter(0);
       sig_pars[1] = x_mid_right;
       sig_pars[2] = -steepness_left;
-      sig_pars[3] = arr[par->maxtime_pos]*0.1;
+      // sig_pars[3] = arr[par->maxtime_pos]*0.1;
+      sig_pars[3] = sig_fitd->GetParameter(3);
       if (sig_pars[3]==0) sig_pars[3]=0.001;
       //cout<<GREEN<<"Preparing 2nd Simple sigmoid FIT - normalization"<<endlr;
       //cout<<RED<<" Initial parameters sig_fit2 = "<< sig_pars[0] <<" "<< sig_pars[3]<<" From the sig_fitd "<< sig_fitd->GetParameter(0)<< " "<< sig_fitd->GetParameter(3)<<endlr;
@@ -2396,8 +2428,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         sig_fit2->SetParameters(sig_pars);
 // //         sig_fit2->FixParameter(0,sig_fitd->GetParameter(0));
 //         sig_fit2->FixParameter(3,sig_fitd->GetParameter(3));
-        sig_fit2->SetParLimits(0,sig_fitd->GetParameter(0)*0.85,sig_fitd->GetParameter(0)*1.15);
-        sig_fit2->SetParLimits(3,-fabs(sig_fitd->GetParameter(3)*4.1),fabs(sig_fitd->GetParameter(3)*4.1));
+        // sig_fit2->SetParLimits(0,sig_fitd->GetParameter(0)*0.85,sig_fitd->GetParameter(0)*1.15);
+        sig_fit2->SetParLimits(0,sig_fit2->GetParameter(0)*0.85,sig_fit2->GetParameter(0)*1.15);
+        sig_fit2->SetParLimits(3,-fabs(sig_fit2->GetParameter(3)*4.1),fabs(sig_fit2->GetParameter(3)*4.1));
         //cout<<GREEN<<"HERE IS THE fitiing FIX PARAMETERS SIFIT2!" << endlr;
 
         //the error encountered comes from the fact that all the parameters are fixed while they are not set to be fixed
@@ -2424,8 +2457,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
 
             // Check if parameter is fixed
-            Double_t parMin, parMax;
-            sig_fit2->GetParLimits(i, parMin, parMax);
+            // Double_t parMin, parMax;
+            // sig_fit2->GetParLimits(i, parMin, parMax);
             //bool isFixed = (parMin == parMax);
             bool isFixed = (initialError == 0);
 
@@ -2436,30 +2469,20 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
             // Set step size if parameter is not fixed
             if (!isFixed) {
               double stepSize = (initialError > 0) ? initialError : 0.1 * std::abs(initialValue);
+              if (stepSize != initialError) { cout << "INITIAL ERROR WAS NEGATIVE" << endlr; }
               sig_fit2->SetParError(i, stepSize);
               cout << "  Setting step size for parameter " << i << " to " << stepSize << endlr;
             }
           }
 
 #endif
-        // int oldErrorLevel = gErrorIgnoreLevel;
+         // int oldErrorLevel = gErrorIgnoreLevel;
         // gErrorIgnoreLevel = kError;   // Only error messages will be shown, no warnings or info
         /// Perform the fit
         TFitResultPtr r = sig_waveformd->Fit("sig_fit2", "QMR0S");
         // gErrorIgnoreLevel = oldErrorLevel;
         ///Debugging the fit
         ///
-      if (!r) {
-        std::cerr << "Fit failed!" << std::endl;
-      } else {
-        std::cout << "Fit successful!" << std::endl;
-
-        if (r.Get()) {  // Ensure r actually contains a result before accessing it
-          std::cout << "r->IsValid() = " << r->IsValid() << std::endl;
-        } else {
-          std::cout << "r does not contain a valid fit result." << std::endl;
-        }
-      }
 
         // cout << "r->IsValid() = " << r->IsValid() << endl;
         // cin.get();
@@ -2734,43 +2757,23 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   par->e_peak_end_pos = (sig_fittot->GetXmax())/dt; //extend the end of the fit to the baseline
   par->tb10 = sig_fittot->GetXmax();
   par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
-  // gErrorIgnoreLevel = kFatal;
-  double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
-  if (TMath::IsNaN(fit_double_sigmoid_rising_edge_50)) {
-    cout << RED << "Error: fit_double_sigmoid_rising_edge_50 is NaN." << endlr;
-    cin.get(); //press enter to continue
-    fit_double_sigmoid_rising_edge_50 = -999.;
-  }
+
+
+  // double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
+  double fit_double_sigmoid_rising_edge_50 = GetXFitValue(sig_fittot, target_y_50, fit_double_start_point, par->maxtime);
   par->t50 = fit_double_sigmoid_rising_edge_50;
-  // cout<<RED<<"t50 = "<<par->t50<<endlr;
-  // cin.get();
 
   //find the 10% point of the double sigmoid on the falling edge
   double target_y_end_10 = 0.1 * par->ampl;
-  double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point+10.);
-  if (TMath::IsNaN(fit_double_sigmoid_falling_edge)) {
-    cout << RED << "Error: fit_double_sigmoid_falling_edge is NaN." << endlr;
-    cin.get(); //press enter to continue
-    fit_double_sigmoid_falling_edge = -999.;
-  }
+  // double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point+10.);
+  double fit_double_sigmoid_falling_edge = GetXFitValue(sig_fittot, target_y_end_10, fit_double_start_point, par->maxtime);
   par->tb10 = fit_double_sigmoid_falling_edge;
-  // cout<<BLUE<<"tb10 = "<<par->tb10<<endlr;
 
-  double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point);
-  if (TMath::isNaN(fit_double_sigmoid_falling_edge_50)) {
-    cout << RED << "Error: fit_double_sigmoid_falling_edge_50 is NaN." << endlr;
-    cin.get(); //press enter to continue
-    fit_double_sigmoid_falling_edge_50 = -999.;
-  }
+  // double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point+10.);
+  double fit_double_sigmoid_falling_edge_50 = GetXFitValue(sig_fittot, target_y_50, par->maxtime, fit_double_end_point+10.);
   par->tb50 = fit_double_sigmoid_falling_edge_50;
-  // cout<<RED<<"tb50 = "<<par->tb50<<endlr;
-  // cin.get();
 
-  // double fit_double_sigmoid_falling_edge_90 = sig_fittot->GetX(0.9*par->ampl, par->maxtime, sig_lim_max2+SIGMOID_EXTENTION);
-  // par->tb90 = fit_double_sigmoid_falling_edge_90;
-
-
-  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
+ double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
