@@ -2047,6 +2047,7 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   c1->Modified();
   // cin.get();
   c1->SaveAs("fit_result_single_MM.png");
+  c1->SaveAs("fit_result_single_MM.eps");
 #endif
 
        delete sig_fit;
