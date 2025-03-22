@@ -1388,6 +1388,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
   int total_secondary_count = 0;
   int total_thin_count = 0;
+	nevents = 2000;
   while (eventNo<nevents)
   {
   	//cout << "Event Number: " << eventNo << endl;

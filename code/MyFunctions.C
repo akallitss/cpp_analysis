@@ -2736,6 +2736,11 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
   // gErrorIgnoreLevel = kFatal;
   double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
+  if (TMath::IsNaN(fit_double_sigmoid_rising_edge_50)) {
+    cout << RED << "Error: fit_double_sigmoid_rising_edge_50 is NaN." << endlr;
+    cin.get(); //press enter to continue
+    fit_double_sigmoid_rising_edge_50 = -999.;
+  }
   par->t50 = fit_double_sigmoid_rising_edge_50;
   // cout<<RED<<"t50 = "<<par->t50<<endlr;
   // cin.get();
@@ -2743,10 +2748,20 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   //find the 10% point of the double sigmoid on the falling edge
   double target_y_end_10 = 0.1 * par->ampl;
   double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point+10.);
+  if (TMath::IsNaN(fit_double_sigmoid_falling_edge)) {
+    cout << RED << "Error: fit_double_sigmoid_falling_edge is NaN." << endlr;
+    cin.get(); //press enter to continue
+    fit_double_sigmoid_falling_edge = -999.;
+  }
   par->tb10 = fit_double_sigmoid_falling_edge;
   // cout<<BLUE<<"tb10 = "<<par->tb10<<endlr;
 
   double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point);
+  if (TMath::isNaN(fit_double_sigmoid_falling_edge_50)) {
+    cout << RED << "Error: fit_double_sigmoid_falling_edge_50 is NaN." << endlr;
+    cin.get(); //press enter to continue
+    fit_double_sigmoid_falling_edge_50 = -999.;
+  }
   par->tb50 = fit_double_sigmoid_falling_edge_50;
   // cout<<RED<<"tb50 = "<<par->tb50<<endlr;
   // cin.get();
