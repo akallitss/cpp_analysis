@@ -1956,11 +1956,11 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 #endif
 //Save the fit results and get the success of the fit
 
-  int oldErrorLevel = gErrorIgnoreLevel;
+  // int oldErrorLevel = gErrorIgnoreLevel;
 
-  gErrorIgnoreLevel = kError;
+  // gErrorIgnoreLevel = kError;
       TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
-  gErrorIgnoreLevel = oldErrorLevel;
+  // gErrorIgnoreLevel = oldErrorLevel;
 #ifdef DEBUGMSG
       cout << MAGENTA << "Final parameters for sig_fit MM:" << endlr;
       for (int i = 0; i < 4; i++) {
@@ -1977,7 +1977,10 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
-      bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+      bool SigmoidfitSuccess = false;
+      if (r_single && r_single.Get() && r_single->IsValid()) {
+        SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+      }
       if(!SigmoidfitSuccess) {
 #ifdef DEBUGMSG
         cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
@@ -2148,11 +2151,11 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         }
 #endif
         //Save the fit results and get the success of the fit
-        int oldErrorLevel = gErrorIgnoreLevel;
+        // int oldErrorLevel = gErrorIgnoreLevel;
 
-        gErrorIgnoreLevel = kError;
+        // gErrorIgnoreLevel = kError;
         TFitResultPtr r_single = sig_waveform->Fit("sig_fit", "QMR0S");
-        gErrorIgnoreLevel = oldErrorLevel;
+        // gErrorIgnoreLevel = oldErrorLevel;
 #ifdef DEBUGMSG
         cout << MAGENTA << "Final parameters for sig_fit MCP:" << endlr;
         for (int i = 0; i < 4; i++) {
@@ -2171,7 +2174,10 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
           //cout<<"SIGMOID PARAMETERS = "<< i <<" = "<<par->sigmoidR[i]<<endl;
         }
 
-    bool SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+    bool SigmoidfitSuccess = false;
+  if (r_single && r_single.Get() && r_single->IsValid()) {
+    SigmoidfitSuccess = isSigmoidfitSuccessful(r_single);
+  }
     if(!SigmoidfitSuccess) {
 #ifdef DEBUGMSG
       cout<<RED<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has failed ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
@@ -2562,9 +2568,9 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   double fit_double_start_point = sig_lim_min;
   double fit_double_end_point = sig_lim_max2+2.6;
-  gErrorIgnoreLevel = kError;
+  // gErrorIgnoreLevel = kError;
   TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "QMR0S");
-  gErrorIgnoreLevel = kInfo;
+  // gErrorIgnoreLevel = kInfo;
   // TFitResultPtr r_tot = sig_waveformd->Fit("sig_fittot", "MR0S");
   sig_fittot->SetRange(fit_double_start_point,fit_double_end_point);
   sig_fittot->SetLineColor(kRed);
@@ -2573,12 +2579,14 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       for (int i=0;i<6;i++)
         par->sigmoidtot[i]=sig_fittot->GetParameter(i);
 
-      if (r_tot->IsValid())
+      if (r_tot && r_tot.Get() && r_tot->IsValid())
       {
     #ifdef DEBUGMSG
-        // r_tot->Print("V"); //prints the info of the fit
-        // TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
-        // cout << MAGENTA << "Fit successful!" << endlr;
+        if (r_tot && r_tot.Get() && r_tot->IsValid()) {
+          r_tot->Print("V"); //prints the info of the fit
+          TMatrixDSym cov = r_tot->GetCovarianceMatrix(); //get covariance matrix
+          cout << MAGENTA << "Fit successful!" << endlr;
+        }
     #endif
       }
 
@@ -2690,7 +2698,10 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
          << " (error: " << sig_fittot->GetParError(i) << ")" << endlr;
   }
 #endif
-  bool doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
+  bool doubleSigmoidfitSuccess = false;
+  if (r_tot && r_tot.Get() && r_tot->IsValid()) {
+    doubleSigmoidfitSuccess = isdoubleSigmoidfitSuccessful(r_tot);
+  }
   par->chi2_doubleSigmoid = sig_fittot->GetChisquare();
 
   double bsl_old = sig_fittot->GetParameter(3);
@@ -2723,7 +2734,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   par->e_peak_end_pos = (sig_fittot->GetXmax())/dt; //extend the end of the fit to the baseline
   par->tb10 = sig_fittot->GetXmax();
   par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
-  gErrorIgnoreLevel = kFatal;
+  // gErrorIgnoreLevel = kFatal;
   double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
   par->t50 = fit_double_sigmoid_rising_edge_50;
   // cout<<RED<<"t50 = "<<par->t50<<endlr;
@@ -2833,7 +2844,7 @@ void FullSigmoidDraw(int maxpoints, double *arr, double *arrt, double dt, PEAKPA
 
 
 bool isdoubleSigmoidfitSuccessful(TFitResultPtr r) {
-  if (r->IsValid()) {
+  if (r && r.Get() && r->IsValid()) {
     return true;
   } else {
     return false;
@@ -2841,7 +2852,7 @@ bool isdoubleSigmoidfitSuccessful(TFitResultPtr r) {
 }
 
 bool isSigmoidfitSuccessful(TFitResultPtr r) {
-  if (r->IsValid()) {
+  if (r && r.Get() && r->IsValid()) {
     return true;
   } else {
     return false;
