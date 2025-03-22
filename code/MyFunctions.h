@@ -407,14 +407,14 @@ const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2022_Octob
 // //// //
 
 
-const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
-const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test";
-const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/wdir";
-const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/plots";
-const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/dataTrees";
-const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/tracking";
-const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/processedTrees";
-const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/processedTrees/ParameterTrees";
+// const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
+// const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test";
+// const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/wdir";
+// const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/plots";
+// const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/dataTrees";
+// const char *TRACKDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/tracking";
+// const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/processedTrees";
+// const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4_test/processedTrees/ParameterTrees";
 //
 
 // const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code";
