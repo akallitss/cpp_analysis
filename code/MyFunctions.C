@@ -2782,7 +2782,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   cout << " tb50 = " << par->tb50 << endlr;
 
- double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
+ double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
