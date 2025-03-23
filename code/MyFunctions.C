@@ -2318,6 +2318,29 @@ double GetXFitValue(TF1* func, double y_target, double x_min, double x_max) {
   return x_solution;
 }
 
+
+double GetXFitValue(TF1* func, double y_target, double x_min, double x_max, int event_no) {
+//Disclaimer: This function is using kFatal ignore level to suppress the error messages.
+//This is not a good practice and should be avoided.
+//It has been tested and all precautions have been taken to avoid any issues.
+//but if there is any issue, please remove the kFatal ignore level and check the error messages.
+
+  if (!func) {
+    cout<<RED<<"GetXFitValue: Function is NULL"<<endlr;
+    return -1;
+  }
+  // Int_t oldLevel = gErrorIgnoreLevel;
+  // gErrorIgnoreLevel = kFatal;
+  double x_solution = func->GetX(y_target, x_min, x_max);
+  // gErrorIgnoreLevel = oldLevel;
+
+  if (TMath::IsNaN(x_solution)) {
+    cerr<<"GetXFitValue: Solution is NaN for event " << event_no << endl;
+    return x_max;
+  }
+  return x_solution;
+}
+
 bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
       ROOT::Math::Minimizer* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
@@ -4072,7 +4095,7 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
 {
   /// use the integrated+filtered pulse to define a region where a trigger occured. (integral above threshold)
   ///pulses are considered negative!!!
-#ifdef DEBUGMSG
+#ifdef DEBUGMSGSigmoid
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << i_start <<endl;
   // cout << "Threshold = " << threshold << endlr;
   // //cin.get();();
