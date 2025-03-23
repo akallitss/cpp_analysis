@@ -2305,10 +2305,10 @@ double GetXFitValue(TF1* func, double y_target, double x_min, double x_max) {
     cout<<RED<<"GetXFitValue: Function is NULL"<<endlr;
     return -1;
   }
-  Int_t oldLevel = gErrorIgnoreLevel;
-  gErrorIgnoreLevel = kFatal;
+  // Int_t oldLevel = gErrorIgnoreLevel;
+  // gErrorIgnoreLevel = kFatal;
   double x_solution = func->GetX(y_target, x_min, x_max);
-  gErrorIgnoreLevel = oldLevel;
+  // gErrorIgnoreLevel = oldLevel;
 
   if (TMath::IsNaN(x_solution)) {
     // cout<<RED<<"GetXFitValue: Solution is NaN"<<endlr;
@@ -2754,14 +2754,18 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   double target_y_50= 0.5 * par->ampl;
 
 
+    cout << " target_y_50 = " << target_y_50 << endlr;
   par->e_peak_end_pos = (sig_fittot->GetXmax())/dt; //extend the end of the fit to the baseline
   par->tb10 = sig_fittot->GetXmax();
   par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
 
+    cout << " e_peak_end_pos = " << par->e_peak_end_pos << endlr;
 
   // double fit_double_sigmoid_rising_edge_50 = sig_fittot->GetX(target_y_50, fit_double_start_point, par->maxtime);
   double fit_double_sigmoid_rising_edge_50 = GetXFitValue(sig_fittot, target_y_50, fit_double_start_point, par->maxtime);
   par->t50 = fit_double_sigmoid_rising_edge_50;
+
+  cout << " t50 = " << par->t50 << endlr;
 
   //find the 10% point of the double sigmoid on the falling edge
   double target_y_end_10 = 0.1 * par->ampl;
