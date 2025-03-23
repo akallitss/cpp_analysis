@@ -2782,7 +2782,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   cout << " tb50 = " << par->tb50 << endlr;
 
- double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point);
+ double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
@@ -2799,6 +2799,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   delete sig_fittot;
   delete minimizer;
 
+  cout<<"exitting full sigmoid"<<endl;
+  cout<<doubleSigmoidfitSuccess<<endl;
   return doubleSigmoidfitSuccess;
 
 }
@@ -4124,7 +4126,7 @@ double miny = data[i_start];
   // Double Sigmoid fit and Fit Success check
   bool doubleSigmoidfitSuccess =  FullSigmoid(points, data, dt, par, evNo, 0, i_start);
   par->doubleSigmoidfitSuccess = doubleSigmoidfitSuccess;
-
+  cout<<"Double Sigmoid Fit: "<<doubleSigmoidfitSuccess<<endlr;
   vector<double> data_vec(data, data + points);
   vector<double> csum = CumulativeSum(data_vec);
 
@@ -4135,6 +4137,7 @@ double miny = data[i_start];
   } else {
     par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
   }
+  cout<<"e_peak_end_pos = "<<par->e_peak_end_pos<<endl;
 
   par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
   par->ioncharge = csum[par->ftime_pos] - csum[par->e_peak_end_pos] ;
