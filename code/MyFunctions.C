@@ -2312,7 +2312,8 @@ double GetXFitValue(TF1* func, double y_target, double x_min, double x_max) {
 
   if (TMath::IsNaN(x_solution)) {
     // cout<<RED<<"GetXFitValue: Solution is NaN"<<endlr;
-    return -999.;
+    // return -999.;
+    return x_max;
   }
   return x_solution;
 }
@@ -2770,21 +2771,28 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   //find the 10% point of the double sigmoid on the falling edge
   double target_y_end_10 = 0.1 * par->ampl;
   // double fit_double_sigmoid_falling_edge = sig_fittot->GetX(target_y_end_10, par->maxtime, fit_double_end_point+10.);
-  double fit_double_sigmoid_falling_edge = GetXFitValue(sig_fittot, target_y_end_10, fit_double_start_point, par->maxtime);
+  double fit_double_sigmoid_falling_edge = GetXFitValue(sig_fittot, target_y_end_10,par->maxtime, fit_double_end_point+10.);
   par->tb10 = fit_double_sigmoid_falling_edge;
+
+  cout << " tb10 = " << par->tb10 << endlr;
 
   // double fit_double_sigmoid_falling_edge_50 = sig_fittot->GetX(target_y_50, par->maxtime, fit_double_end_point+10.);
   double fit_double_sigmoid_falling_edge_50 = GetXFitValue(sig_fittot, target_y_50, par->maxtime, fit_double_end_point+10.);
   par->tb50 = fit_double_sigmoid_falling_edge_50;
+
+  cout << " tb50 = " << par->tb50 << endlr;
 
  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
   //par->echargefit =  abs(fit_integral) / 50;
   par->echargefit =  fit_integral;
   // cout<<BLUE<<"Epeak charge fit = " << par->echargefit <<endlr;
 
+  cout << " echargefit = " << par->echargefit << endlr;
+
   par->width = par->tb50 - par->t50;
   sig_fittot->SetParameter(3,bsl_old);  ///subtracting the baseline of the double sigmoid for amplitude and integral calculations!
 
+  cout << " width = " << par->width << endlr;
   delete sig_fitd;
   delete sig_waveformd;
   delete sig_fit2;
