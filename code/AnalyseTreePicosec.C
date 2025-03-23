@@ -170,7 +170,7 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
       filetype.assign(ftypetmp);
       cout<<"runNo = "<<rtmp<<" ("<<runNo<<")"<<endl;
       cout<<"poolNo = "<<dtmp<<endl;
-      cout<<BLUE<<"input file ==>"<<fnametmp<<"<=="<<endlr;
+      //cout<<BLUE<<"input file ==>"<<fnametmp<<"<=="<<endlr;
 
       //       cout<<BLUE<<"filetype -->"<<ftypetmp<<"<--"<<endlr;
 
@@ -186,11 +186,11 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
       cout<<"Available runs: "<<MINRUN<<" - "<<MAXRUN<<endl;
       return (-2);
     }
-      cout <<"executed command -->"<<command<<"<--"<<endl;
+      //cout <<"executed command -->"<<command<<"<--"<<endl;
     
     
   const char *cftype = filetype.c_str();  /// add here any directory supplement
-  cout<<MAGENTA<<"-->"<<cftype<<"<--"<<endlr;
+  //cout<<MAGENTA<<"-->"<<cftype<<"<--"<<endlr;
   
   char ftype[1000];
   strcpy (ftype,cftype);
@@ -213,7 +213,7 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   sprintf(fname,"%s/%s",basedirname,fnametmp);
   
   replaceEOL(fname);
-  cout<<BLUE<<"Input filename =>"<<fname<<"<="<<endlr;
+  //cout<<BLUE<<"Input filename =>"<<fname<<"<="<<endlr;
 
 	TFile *ifile = new TFile(fname);
 
@@ -1337,28 +1337,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     h2dXYcuts[i]->GetXaxis()->SetTitle("X [mm]");
     h2dXYcuts[i]->GetYaxis()->SetTitle("Y [mm]");
     h2dXYcuts[i]->SetStats(0);
-    
-    
-
-    //----------------------------------------------
-    //---------doubling histos for peThreshold--------
-
-    
-     //sprintf(fname2,"Run%03d_pool%d_C%d_Risetime_Cuts_%s",runNo,poolNo,i+1,ftype);
-     //sprintf(htitle,"Rise Time (n_{th} = %g mV)",peTh*1000);
-     //hCutsRT[i]=new TH1D(fname2,htitle,int(rtMax[i]/dt),0.,rtMax[i]);
-     //hCutsRT[i]->GetXaxis()->SetTitle("Risetime [ns]");
-     //sprintf(fname2,"Run%03d_pool%d_C%d_Pulse_Width_Cuts_%s",runNo,poolNo,i+1,ftype);
-     //sprintf(htitle,"Pulse Width (n_{th} = %g mV)",peTh*1000);
-     //hCutsPW[i]=new TH1D(fname2,htitle,int(pwMax[i]/dt)/2,0.,pwMax[i]);
-     //hCutsPW[i]->GetXaxis()->SetTitle("Pulse Duration [ns]");
-     // 
-//     sprintf(fname2,"Run%03d_pool%d_C%d_TOT_GoodPeaksTh%gmV_%s",runNo,poolNo,i+1,ftype);
-//     sprintf(htitle,"TOT  (n_{th} = %g mV)",peTh*1000);
-//     hCutsTOT=new TH1D(fname2,htitle,int(totMax/dt)/2,0.,totMax);
-//     hCutsTOT->GetXaxis()->SetTitle("TOT [ns]");
-
-    //-----------------------------------------------------
   }
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// END the 4-loop of histograms here!
@@ -1402,7 +1380,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	{
 	  cout<<endl<<"______________________________________________________________________"<<endl<<endl;;
 #ifdef DEBUGMSG
-    	cout<<endl<<"Entering 1st draw_____________________________________________________"<<endl<<endl;;
+    	//cout<<endl<<"Entering 1st draw_____________________________________________________"<<endl<<endl;;
 #endif
     	cout<<KRESET<<"Event to draw : ";
 	  cin>>eventNo;
@@ -1484,9 +1462,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     if (draw)
     {
 #ifdef DEBUGMSG
-        cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
+        //cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
 #endif
-		cout<<GREEN<<"Baseline rms per channel "<<ci+1<<" = "<<rmsC[ci]<<endl;
+		//cout<<GREEN<<"Baseline rms per channel "<<ci+1<<" = "<<rmsC[ci]<<endl;
     	// cin.get();
         cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
@@ -1526,11 +1504,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       double maxelement_dampl[4]= {0,0,0,0};
       double minelement_dampl[4] = {0,0,0,0};
       int nsmooth = 3;
-    	cout<<BLUE<< "Smooting starts here for: "<< npt <<" points"<<endlr;
-    	cout<<BLUE<<"                           "<<endlr;
-    	cout<<BLUE<<" data to Sampl"<<endlr;
-    	cout<<YELLOW<<"                           "<<endlr;
-    	cout<<YELLOW<<" Derivation of to Sampl to dampl"<<endlr;
+    	// cout<<BLUE<< "Smooting starts here for: "<< npt <<" points"<<endlr;
+    	// cout<<BLUE<<"                           "<<endlr;
+    	// cout<<BLUE<<" data to Sampl"<<endlr;
+    	// cout<<YELLOW<<"                           "<<endlr;
+    	// cout<<YELLOW<<" Derivation of to Sampl to dampl"<<endlr;
       SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
       DerivateArray(samplC,dampl[ci],maxpoints,dt,npt,1); ///with the number of points
 
@@ -1553,11 +1531,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //if (oscsetup->AmplifierNo[ci]==1) nsmooth = 3;
 // //       SmoothArray(amplC[ci], samplC, maxpoints, nsmooth, 1);
       //cout<<RED<<"Ready to derivate smoothed array"<<endlr;
-      cout<<RED<< "Smooting here for: "<< npt <<" points"<<endlr;
-      cout << RED << "                           " << endlr;
-      cout << RED << " data to Sampl" << endlr;
-      cout << YELLOW << "                           " << endlr;
-      cout << YELLOW << " Derivation of to Sampl to dsampl now" << endlr;;
+      // cout<<RED<< "Smooting here for: "<< npt <<" points"<<endlr;
+      // cout << RED << "                           " << endlr;
+      // cout << RED << " data to Sampl" << endlr;
+      // cout << YELLOW << "                           " << endlr;
+      // cout << YELLOW << " Derivation of to Sampl to dsampl now" << endlr;;
       DerivateArray(samplC, dsampl,maxpoints,dt,npt,1);
       //cout<<YELLOW<<"Ready to plot Smoothed derivative"<<endlr;
       TGraph *graph22 = new TGraph(maxpoints,ptime,dsampl);
@@ -1819,68 +1797,19 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       	}
 
       	++trigger_windows_iterator;
-
-   //    	int last_ti = ti;
-   //    	//for each trigger window do the analysis
-   //    	adjust_baseline(maxpoints, ptime, sampl);
-   //    	vector<pair<double, double>> trigger_windows = GetTriggerWindows(ptime, maxpoints, sampl, dt, Thresholds[ci]);
-   //    	// cin.get();
-   //    	cout << "Current ti: " << ti << ", Last ti: " << last_ti << endl;
-   //    	// range based for loop for the trigger windows
-   //    	cout << "Number of trigger windows: " << trigger_windows.size() << endl;
-   //    	for (auto trigger_window : trigger_windows) {
-   //    		cout << "Trigger window: (" << trigger_window.first << ", " << trigger_window.second << ")" << endl;
-   //    		int i_start = convert_x_to_index(ptime, maxpoints, trigger_window.first);
-   //    		cout << "i_start: " << i_start << endl;
-   //    		int i_end = convert_x_to_index(ptime, maxpoints, trigger_window.second);
-   //    		cout << "i_end: " << i_end << endl;
-   //    		cout << "Analyzing trigger window..." << endl;
-   //    		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
-	  //
-   //    		if (i_end < maxpoints - 50) {
-   //    			successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-   //    			totalFits_sigmoid++;
-   //    			successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
-   //    			totalFits_double_sigmoid++;
-   //    		}
-			// last_ti = i_end;
-   //    		cout << "Last ti: " << last_ti << endl;
-   //    	}
-	  //
-   //    	ti = last_ti;
-			//   	cout << "ti: " << ti << endl;
-
-        // ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-    //     ti = AnalyseLongPulseCiv(maxpoints,evNo,sampl,dt,dsampl,ppar,Thresholds[ci],sig_tshift[ci], ti);    /// all the analysis is done here!!!!
-    //   	if (ti<0) break;
-    //   	if (ti < maxpoints-50) {
-    //   		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
-    //   		totalFits_sigmoid++;
-    //   		successfulFits_double_sigmoid += ppar->doubleSigmoidfitSuccess;
-    //   		totalFits_double_sigmoid++;
-	  	// }
       }
       else
-      { //cout<< CYAN<<"Channel "<<ci+1<<" does not use the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
-          //cout <<GREEN<<"Event "<<evNo <<" Channnel "<<ci+1<<" start ti = "<< ti << endlr;
+      {
           ti = AnalyseLongPulse(maxpoints,sampl,dsampl,ppar,Thresholds[ci], dt, ti);
-          //cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" returned ti = "<< ti <<" maxpoints = "<<maxpoints<< endlr;
           if (ti<0) break;
       }
 
-
-		//cout <<RED<<"Event "<<evNo <<" Channnel "<<ci+1<<" Found trig at "<<ti*dt<< "  "<< ti<< "  "<<itrig<< "  "<<itrig*dt<< "  "<<ttrig<< "  "<< endlr;
-
-    	// Add peak parameters to the TClonesArray
-    	// PEAKPARAM* newPpar = new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);
-    	new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);// only for storing the peak parameters to the output tree
-
+      new ((*sparArr[ci])[ntrigs]) PEAKPARAM(*ppar);// only for storing the peak parameters to the output tree
 
    	  AddPar(ppar,&spar[ci][ntrigs]); // this is for the output visualization plots and histograms
 ///*************************************************************
 
-
-	  double risetime = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
+      double risetime = spar[ci][ntrigs].t90-spar[ci][ntrigs].t10;
       if (isMM) risetime = spar[ci][ntrigs].risetime;
       
       double pulseDuration = (spar[ci][ntrigs].ftime_pos - spar[ci][ntrigs].stime_pos)*dt;
@@ -1974,12 +1903,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  }
 // 	  else
           tnow = 1.*epoch + nn*1e-9 + spar[ci][0].t10*1e-9;   /// normally we arrive here only in the first peak per pulse!!!!
-// 	    cout<<"tnow set to "<<epoch<<" + "<<nn*1e-9<<" + "<<t0<<"   "<< endl;
-	  //cout << "hDT filling = " << (spar[ci][ntrigs].t10-spar[ntrigs-1].t10)*1e-9 << endl;
-/// 	  if (spar[ci][ntrigs].tot<400)
-/// 	    hsCH->Fill(spar[ci][ntrigs].charge);
-///
-	  // //-----------------------------
+
 	  // //doubling histos for nthreshold
 	  if(1 || ((spar[ci][ntrigs].ampl) > (peTh) && (spar[ci][ntrigs].charge) > (peThCh) && cut1))//(spar[ci][ntrigs].tot>60) && (spar[ci][ntrigs].tot<100)(spar[ci][ntrigs].width>60) && (spar[ci][ntrigs].width<100))
 	  {
@@ -2080,26 +2004,15 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       if (eventNo>0 && ngoodPeaks[ci]>0)
       {
           dtlastgoodpeaks[ci] = tnowgoodpeaks - tlastgoodpeaks[ci];
-      // 	  if (dtlastgoodpeaks<0)
-      // 	  {
-      // 	    cout<<"negative DT!!!!\n event ="<<eventNo<<endl;
-      // 	    printf("tnow = %18.8lf,    tlast =  %18.8lf ,     DT =  %18.8lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
-//          	    cout<<CYAN<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks[ci]<<"    DT = "<< dtlastgoodpeaks[ci]<<endlr;
-      // 	  }
-      //  	  printf("tnow = %Lf,    tlast =  %Lf ,     DT =  %Lf\n",tnowgoodpeaks,tlastgoodpeaks,dtlastgoodpeaks);
-      // 	  cout<<"tnow = "<<tnowgoodpeaks<<"  tlast = "<<tlastgoodpeaks<<"    DT = "<< dtlastgoodpeaks<<endl;
           hCutsDt[ci]->Fill(dtlastgoodpeaks[ci]);
           tlastgoodpeaks[ci] = tnowgoodpeaks ;
       }
-//      tlastgoodpeaks = tnowgoodpeaks ;
-
-      
 
  /// 3rd IF DRAW
       //----------------------
     if (draw)
 	{
-    cout<<endl<<"Entering 3rd if (draw) after the analysis________________________"<<endl<<endl;;
+    //cout<<endl<<"Entering 3rd if (draw) after the analysis________________________"<<endl<<endl;;
 	  cout<<"Found "<<ntrigs<<" pulses "<<endl;
 
 	  evdcanv[ci]->cd(1);
@@ -2125,17 +2038,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     sgraphSum->GetYaxis()->SetTitle("Amplitude [V]");
 	// sgraphSum->Draw("pl");
 
- //    TGraph *sgraphSumS = new TGraph(maxpoints,ptime,samplC);
-	// sgraphSumS->SetLineColor(2);
-	// sgraphSumS->SetFillColor(0);
-	// sgraphSumS->SetLineWidth(2);
-	// sprintf(cname,"Smoothed signal 33 event %d",evNo);
-	// sgraphSumS->SetTitle(cname);
- //    sgraphSumS->GetXaxis()->SetTitle("Time [ns]");
- //    sgraphSumS->GetYaxis()->SetTitle("Amplitude [V]");
-	// sgraphSumS->Draw("pl");
-
-
 	  evdcanv[ci]->cd(2);
     //TGraph* graph22 = new TGraph(maxpoints,ptime,dsampl);
 	  TGraph* graph22 = new TGraph(maxpoints,ptime, dampl[ci]);
@@ -2149,16 +2051,16 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  sprintf(cname,"Derivative\n");
 	  graph22->SetTitle(cname);
 	  //graph22->Draw("pl");
-    graphSum->SetMarkerColor(clr[ci+2]);
-    graphSum->SetLineColor(clr[ci+2]);
-    graphSum->SetFillColor(0);
-    graphSum->SetLineWidth(2);
-    graphSum->SetLineStyle(7);
-    sprintf(cname,"Raw signal channel %d", evNo, ci+1);
-    graphSum->SetTitle(cname);
-    graphSum->GetXaxis()->SetTitle("Time [ns]");
-    graphSum->GetYaxis()->SetTitle("Amplitude [V]");
-    graphSum->Draw("pl");
+	  graphSum->SetMarkerColor(clr[ci+2]);
+	  graphSum->SetLineColor(clr[ci+2]);
+	  graphSum->SetFillColor(0);
+	  graphSum->SetLineWidth(2);
+	  graphSum->SetLineStyle(7);
+	  sprintf(cname,"Raw signal channel %d", evNo, ci+1);
+	  graphSum->SetTitle(cname);
+	  graphSum->GetXaxis()->SetTitle("Time [ns]");
+	  graphSum->GetYaxis()->SetTitle("Amplitude [V]");
+	  graphSum->Draw("pl");
 
 
     evdcanv[ci]->cd(3);
@@ -2221,17 +2123,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //integralh->SetMaximum(maxelement_dampl[ci]+0.1);
     //integralh->SetMinimum(mind[ci]-0.1);
     mg->Add(integralh);
-
-/*
-    double intgrA = IntegrateA(maxpoints,iampl,iamplC,nint*dt);
-    TGraph *iwaveform3 = new TGraph(maxpoints,ptime,iamplC);
-    sprintf(cname,"Event %d Int-Waveform C%d\n",evNo,ci+1);
-    iwaveform3->SetTitle(cname);
-    iwaveform3->SetLineColor(clr[ci+4]);
-    iwaveform3->SetMarkerColor(clr[ci+4]);
-    iwaveform3->SetFillColor(0);
-    //iwaveform3->Draw("apl");
-    mg->Add(iwaveform3);*/
     mg->GetXaxis()->SetTitle("Time [ns]"); //this is to the integral graph only
     mg->GetYaxis()->SetTitle("Amplitude [V]");
 
@@ -2244,17 +2135,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       TH1F* h2 = (TH1F*) derivative->GetHistogram();
       TH1F* h3 = (TH1F*) integralh->GetHistogram();
 
-      //TH1F* h4 = (TH1F*) graph23->GetHistogram();
-      //TH1F* h5 = (TH1F*) graph22->GetHistogram();
 
-      //h4->SetMaximum(mind[ci]);
-      //h4->SetMinimum(maxelement_dampl[ci]);
-
-      //h4->SetMaximum(-1.);
-
-      //h2->SetMaximum(TMath::MaxElement(4,maxd) + 0.005);
- 	    //h2->SetMaximum(maxd);
-	    //h2->SetMinimum(maxelement_dampl);
       h1->GetXaxis()->SetTitle("Time [ns]");
       h1->GetYaxis()->SetTitle("Amplitude [V]");
       h2->GetXaxis()->SetTitle("Time [ns]");
@@ -2603,22 +2484,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
  
     TCanvas *cch = new TCanvas("Charge"+chname,"Charge "+chname);
 
-    //hCutsCH[ci]->GetXaxis()->SetRangeUser(peThCh,chMax[ci]*0.75);
-    //double maxch = hCutsCH[ci]->GetMaximum();
-    //int maxchbin = hCutsCH[ci]->GetMaximumBin();
-    //hCutsCH[ci]->GetXaxis()->UnZoom();
-    //double maxchx = hCutsCH[ci]->GetBinLowEdge(maxchbin);
     double minchx = peThCh;
-    /*for (int i=maxchbin;i>1;i--)
-    {
-        double y = hCutsCH[ci]->GetBinContent(i);
-        if (y<0.6*maxch)
-        {
-            minchx = hCutsCH[ci]->GetBinLowEdge(i);
-            break;
-        }
-    }
-    */
+
     minchx = peThCh + +1.5*ctoaf/1000.;
     minchx = minax*ctoaf/1000.*10;
     minchx = 150.;
@@ -2638,16 +2505,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     fpolyaCH->SetParameter(1,500); //Charge
     fpolyaCH->SetParameter(2,30); //theta
     fpolyaCH->SetParLimits(2,0.001,5000); //theta
-
-    //hCutsCH[ci]->Sumw2(); 
-//     cout<<"Fit "<<channel<<"  "<<5<<endl;
-//     hCutsCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
-//     hCutsCH[ci]->Fit(fpolyaCH,"QR0","",minchx,chMax[ci]);
-//     hCutsCH[ci]->Fit(fpolyaCH,"QB0","",minchx,chMax[ci]);
-//     hCutsCH[ci]->Fit(fpolyaCH,"QBM","",minchx,chMax[ci]);
-//   
-//   fpolyaCH->SetParLimits(2,1.e-2,  1000.);
-//   fpolyaCH->SetParLimits(1,1.e-2,  1000.);
 
 
     //hCutsCH[ci]->SetStats(1);
@@ -2817,23 +2674,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hRateEvolutionCuts[ci]->Draw("same"); 
   
 
-//     hSparkEvolution[ci]->SetLineColor(4);
-//     hSparkEvolution[ci]->SetLineWidth(2);
-//     hSparkEvolution[ci]->Draw("sameE0");
-
-
-  /*TPad *rpad = new TPad("RateEvolution", "rate evolution",0.5,0.58,0.9,0.88);
-    rpad->Draw();
-    rpad->cd();
-    rpad->SetFillColor(0);
-    rpad->SetBorderMode(0);
-   rpad->SetBorderSize(2); 
-   rpad->SetTopMargin(0.01);
-   rpad->SetTopMargin(0.008);
-   rpad->SetBottomMargin(0.185);
-   rpad->SetFrameBorderMode(0);*/ ///To place it in same canvas as hRateStructure
- 
-//   rcanv->Update();
     rcanv->cd(3);
     gPad->SetLogy();
     gStyle->SetOptFit(111);
@@ -2880,19 +2720,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     st->SetTextSize(0.031);
     
     subpad->Modified();
-  
 
-  //  cout<<"______________________________"<<endl;
-  //  subpad->ls();
-  //  cout<<"______________________________"<<endl;
-  //  subpad->ls(); 
-  //  cout<<"______________________________"<<endl;
-  //  hCutsAMPL->ls();
-  //  cout<<"______________________________"<<endl;
-  //  rcanv->ls();
-  //  cout<<"______________________________"<<endl;
-
-//   rcanv->Update();
     rcanv->cd(4);   
     double ttot = tmax-0.;
     //exponential fit
@@ -2932,10 +2760,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     hCutsDt[ci]->Draw("same");
 
     TF1* f11 = new TF1("f11","[0]*exp(-[1]*x)",0.,tmax*2.);
-  //  f11->SetParLimits(1,1e2,1e6);
-  //  f11->SetParameter(1,1e3);
-  //  f11->SetLineColor(kBlue+2);
-  //  hDt->Fit(f11,"+QB0","",0.,tbeam);//crate[4]);
 
 
     f1->Draw("same"); 
@@ -3176,38 +3000,15 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     gStyle->SetOptStat(1100);
     //hCutsRT[ci]->Draw("");
     hRT[ci]->Draw("");
-    //hCutsRT[ci]->SetLineColor(2);
-    //TF1* fgrt = new TF1("fgrt","gaus",0.,rtMax[ci]);
-    //fgrt->SetNpx(1000);
-    //fgrt->SetParameter(0,hCutsRT[ci]->GetMaximum());
-    //fgrt->SetParameter(1,hCutsRT[ci]->GetMean());
-    //hCutsRT[ci]->Sumw2();
-    //cout<<"Fit "<<channel<<"  "<<15<<endl;
-    //hCutsRT[ci]->Fit(fgrt,"mb+","same",hCutsRT[ci]->GetMean()-3*hCutsRT[ci]->GetRMS(),hCutsRT[ci]->GetMean()+3*hCutsRT[ci]->GetRMS());
-    //  hCutsRT->Draw("same");
+
  
     sccanv->cd(4);
-    //hCutsPW[ci]->SetLineColor(2);
-    //hCutsPW[ci]->Draw("");
+
     hPW[ci]->Draw("");
-    //TF1* fgw = new TF1("fgw","gaus",0.,pwMax[ci]);
-    //fgw->SetNpx(1000);
-    //fgw->SetParameter(0,hCutsPW[ci]->GetMaximum());
-    //hCutsPW[ci]->Sumw2();
-    //cout<<"Fit "<<channel<<"  "<<16<<endl;
 
     sccanv->cd(3);
     //hCutsTOT[ci]->Draw("");
     hPD[ci]->Draw("");
-    //hCutsTOT[ci]->SetLineColor(2);
-    //TF1* fgtot = new TF1("fgtot","gaus",0.,rtMax[ci]);
-    //fgtot->SetNpx(1000);
-    //fgtot->SetParameter(0,hCutsTOT[ci]->GetMaximum());
-    //fgtot->SetParameter(1,hCutsTOT[ci]->GetMean());
-    //hCutsTOT[ci]->Sumw2();
-    //cout<<"Fit "<<channel<<"  "<<17<<endl;
-    //hCutsTOT[ci]->Fit(fgtot,"mb+","same",hCutsTOT[ci]->GetMean()-3*hCutsTOT[ci]->GetRMS(),hCutsTOT[ci]->GetMean()+3*hCutsTOT[ci]->GetRMS());
-    //  hCutsRT->Draw("same");
 
     sccanv->cd(7);
     h2dAmplvsRT[ci]->Draw("colz");
@@ -3327,273 +3128,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 /// end of ci loop
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-/* 
 
-
-/// ....................................................... ///
-/// /////////////// drawing summary plots /////////////////////
-/// /////////////// output in one ps file /////////////////////
-/// _______________________________________________________ /// 
-
-//   sprintf(psname,"%s/Summary%s.ps",plotdirname,ctypes.Data());
-//   TPostScript *psfile = new TPostScript(psname,4121);
-//   psfile->NewPage();
-
-  char stst[1000];
-  sprintf(stst,"/%s Summary plots\n" ,ctypes.Data() );
-//   psfile->PrintRaw();
-  
-  TCanvas *pcanv = new TCanvas("Performace_"+ctypes,"Performance "+ctypes,1600,1100);
-  pcanv->Divide(3,2);
-  pcanv->cd(6);
-  gStyle->SetOptFit(111);
-  gStyle->SetOptStat(1110);
-
- 
-  hRateCuts->Draw("");
-///  fbsl2->Draw("same");  // no point to draw these
-
-  pcanv->cd(5);
-  hRateEvolutionCuts[ci]->Draw(""); 
-  
-  if (callibrationRun)
-  {
-    hBkgGoodPeaksRateEvolution->Draw("sameE0"); 
-  }
-  hSparkEvolution->Draw("sameE0");
-
-
-  pcanv->cd(2);
-  hCutsAMPL->Draw();
-  pad = (TPad*) gPad;
-  pad->SetLogy();
-  hAMPL->Draw("same");
-    
-//   pcanv->Update();
-  pcanv->cd(3);
-  gPad->SetLogy();
-  hCutsCH->Draw("Charge");
-  htotCH->Draw("same");
-  
-  
-//   pcanv->Update();
-  pcanv->cd(4);   
-  hDt->Draw("E0");
-  hCutsDt->Draw("same");
-
-  f1->Draw("same"); 
-  f12->Draw("same"); 
-  
-  pad = (TPad*) gPad;
-  pad->SetLogy();
-  
-//   pcanv->Update();
-  pcanv->cd(1); 
-
-  sprintf(txt2," #it{run:} #color[4]{#bf{%03d}} \t #it{amplifier:} #color[4]{#bf{%s}} \t #it{R = } #color[4]{#bf{%s m}}",runNo,amplifier,detector); 
-  tex = new TLatex(0.02,0.95,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.065);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(12);
-  tex->Draw();
-
-//   sprintf(txt2," V_{m} = #color[4]{-%d}V, V_{d} = #color[4]{-%d}V, peak = #color[4]{%g}mV, n = #color[4]{%g}mV",vm,vd,fabs(Thresholds[ci]*1000.),fabs(peTh*1000.)); 
-//   sprintf(txt2," V_{m} = #bf{-%d V}, V_{d} = #bf{-%d V}, peak = #bf{%g mV}, n = #bf{%g mV}",vm,vd,fabs(Thresholds[ci]*1000.),fabs(peTh*1000.)); 
-  sprintf(txt2," V_{m} = #bf{-%d V},  V_{d} = #bf{-%d V}",vm,vd); 
-  tex = new TLatex(0.5,0.88,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  sprintf(txt2," #it{Thresholds:}  peak = #bf{%g mV},  n = #bf{%g mV}",fabs(Thresholds[ci]*1000.),fabs(peTh*1000.)); 
-  tex = new TLatex(0.5,0.80,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  sprintf(txt2,"#LTr_{pe}#GT = #bf{%3.2f #pm %3.2f} #frac{n}{#it{%gs}} = #bf{%3.3g #pm %3.3g} s^{-1}",calcr,calcrerr,timebinwidth,calcr/timebinwidth,calcrerr/timebinwidth);
-  if (exprate>100)
-      sprintf(txt2,"#LTr_{pe}#GT = #bf{%3.0f #pm %3.1f} #frac{n}{#it{%gs}} = #bf{%3.0f #pm %3.1f} s^{-1}",calcr,calcrerr,timebinwidth,calcr/timebinwidth,calcrerr/timebinwidth);
-  //  if (fgaus)
-  //    sprintf(txt2,"#LTr_{n(#it{#Deltat=%gs})}#GT = #bf{%3.2f #pm %3.3f} #frac{n}{pulse}",timebinwidth,frate->GetParameter(1),frate->GetParameter(2));
-  tex = new TLatex(0.5,0.7,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-
-  
-  sprintf(txt2,"#DeltaT fit, all events:");
-  tex = new TLatex(0.5,0.6,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  
-  sprintf(txt2,"#LTr_{all events}#GT = #bf{%3.3g #pm %3.3g} #frac{counts}{sec}",f1->GetParameter(1),f1->GetParError(1));
-  if (exprate<1)
-      sprintf(txt2,"#LTr_{all events}#GT = #(){#bf{%3.2f #pm %3.2g}}#times10^{-3} #frac{counts}{sec}",f1->GetParameter(1)*1e3,f1->GetParError(1)*1e3);
-  if (exprate>100)
-      sprintf(txt2,"#LTr_{all events}#GT = #bf{%3.0f #pm %3.1f} #frac{counts}{sec}",f1->GetParameter(1),f1->GetParError(1));
-  tex = new TLatex(0.5,0.55,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  
-  sprintf(txt2,"#LTr_{pe(#it{thr=%gmV})}#GT = #bf{%3.3g #pm %3.3g} #frac{counts}{sec}",peTh*mV,f12->GetParameter(1),f12->GetParError(1));
-  if (exprate<1)
-    sprintf(txt2,"#LTr_{pe(#it{thr=%gmV})}#GT = #(){#bf{%3.2f #pm %3.2g}}#times10^{-3} #frac{counts}{sec}",peTh*mV,f12->GetParameter(1)*1000.,f12->GetParError(1)*1000.);
-  if (exprate>100)
-      sprintf(txt2,"#LTr_{pe(#it{thr=%gmV})}#GT = #bf{%3.0f #pm %3.1f} #frac{counts}{sec}",peTh*mV,f12->GetParameter(1),f12->GetParError(1));
-  tex = new TLatex(0.5,0.46,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  
-  sprintf(txt2,"#it{#bf{%d sparks} were observed within #bf{%3.1LF} hours}",totNsparks,duration);
-  if (totNsparks==0)
-      sprintf(txt2,"#it{#bf{No spark} was observed within #bf{%3.1LF} hours}",duration);
-  else if (totNsparks==1)
-      sprintf(txt2,"#it{#bf{%d spark} was observed within #bf{%3.1LF} hours}",totNsparks,duration);
-
-  tex = new TLatex(0.5,0.335,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetTextColor(kRed);
-  if(totNsparks==0)
-    tex->SetTextColor(kBlue);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-
-  sprintf(txt2,"#it{Landau fits}");
-  tex = new TLatex(0.5,0.25,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-
-  sprintf(txt2,"#it{Ampl}: %s = #bf{%3.1f #pm %3.2f} mV , %s = #bf{%3.3g} ",fpolyaAmpl->GetParName(1),fpolyaAmpl->GetParameter(1)*1000./mV,fpolyaAmpl->GetParError(1)*1000./mV,fpolyaAmpl->GetParName(2),fpolyaAmpl->GetParameter(2));
-  tex = new TLatex(0.5,0.18,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  
-  sprintf(txt2,"#it{Charge}: %s = #bf{%3.1f #pm %3.2f} , %s = #bf{%3.3g} ",fpolyaCH->GetParName(1),fpolyaCH->GetParameter(1),fpolyaCH->GetParError(1),fpolyaCH->GetParName(2),fpolyaCH->GetParameter(2));
-  tex = new TLatex(0.5,0.1,txt2);
-  tex->SetTextFont(132);
-  tex->SetTextSize(0.05);
-  tex->SetLineWidth(2);
-  tex->SetTextAlign(23);
-  tex->Draw();
-  
-  gSystem->ChangeDirectory(plotdirname);
-  pcanv->SaveAs(".png");
-  pcanv->SaveAs(".pdf");
-  pcanv->Update();
-//   psfile->Off();
- 
-//  psfile->NewPage();
-  
-  
- //  psfile = new TPostScript(psname,4121);
-//  psfile->NewPage();
- 
- TCanvas *scanv = new TCanvas("Signals_"+ctypes,"Signal timing "+ctypes,1600,1100);
- scanv->Divide(3,2);
-
- scanv->cd(1);
- gStyle->SetOptStat(1100);
- hCutsRT->Draw("");
- hRT->Draw("same");
-//  fgrt->SetNpx(1000);
- 
- scanv->cd(2);
- hCutsPW->SetLineColor(2);
- hCutsPW->Draw("");
- hPW->Draw("same");
-//  fgw->SetNpx(1000);
- 
- scanv->cd(3);
- hCutsTOT->Draw("");
- hPD->Draw("same");
-//  fgtot->SetNpx(1000);
- 
- scanv->cd(4);
- 
- htotCHovAmplCuts->Draw();
- htotCHovAmpl->Draw("same");
-
- scanv->cd(5);
- 
- h2dCutsAmplEvolution->Draw("colz");
-
- scanv->cd(6);
- 
- h2dCutsCHevolution->Draw("colz");
-
- scanv->Update();
- 
-//  psfile->NewPage();
-
- char pname[1000];
- sprintf(pname,"Pedestals%03d-%s-%d-%d-%s-%s",runNo,amplifier,vm,vd,detector,RTYPE);
- cout<<"Pedestal canvas: "<<pname<<endl;
- TCanvas* pedcanv = (TCanvas*) ifile->Get(pname);
- pedcanv->Draw();
- pedcanv->Update();
- gSystem->ChangeDirectory(plotdirname);
- pedcanv->SaveAs(".png");
-// // // pedcanv->SaveAs(".pdf");
- pedcanv->Write();
-
-//  psfile->Close();
-
- gSystem->ChangeDirectory(plotdirname);
- scanv->Modified();
- scanv->Update();
- scanv->SaveAs(".png");
- scanv->SaveAs(".pdf");
- scanv->Write();
-
-
-//   psfile->NewPage();
-//   scanv->Print(psname);
-//   psfile->Close();
-
- 
-//  pcanv->Modified();
-//  pcanv->Draw();
-//  pcanv->Update();
- scanv->Modified();
-//  scanv->Draw();
- 
- 
-   char psname[1000];
-   sprintf(psname,"Summary_%s.pdf",ctypes.Data());
-   char snames[1000];
-   sprintf(snames,"*%03d_%02d*.png *%03d-%s*.png",runNo,preamNo,runNo,amplifier);
-
-   
-   sprintf(command,"cd %s\nmontage %s -tile 1x2 -geometry 1600 %s",plotdirname,snames, psname);
-   cout<<"Creating Summary file:\n"<<command<<endl;
-   int comtst=system(command);
-   cout<<"Done!"<<endl;
-	RegisterRunParameters(runpar,basedirname);
-
-*/
  ofile->Write("",TObject::kOverwrite);
  gSystem->ChangeDirectory(tmpdir);
  cout<<BLUE<<"End of script!"<<endl;
