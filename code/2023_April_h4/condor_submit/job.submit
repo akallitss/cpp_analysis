@@ -2,12 +2,14 @@
 
 Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4
 
-Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_sumbit/submit.sh
+Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_sumbit/run_code.sh
+
+Arguments = $(run_number) $(pool_number)
 
 # Define the log, output, and error files
-Log = job.log
-Output = job.out
-Error = job.err
+Log = log/job_run.log
+Output = out/job_run$(run_number)_pool$(pool_number).out
+Error = err/job_run$(run_number)_pool$(pool_number).err
 
 +MaxRuntime = 7200
 
@@ -16,4 +18,4 @@ RequestCpus = 1
 RequestMemory = 2GB
 
 # Specify the job queue (submit one job)
-Queue
+Queue run_number, pool_number from processedTrees_run_list.txt
