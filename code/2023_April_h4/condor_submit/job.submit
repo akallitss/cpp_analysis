@@ -4,6 +4,7 @@ Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_Ap
 
 Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_submit/run_code.sh
 
+
 Arguments = $(run_number) $(pool_number)
 
 # Define the log, output, and error files
