@@ -2384,11 +2384,8 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         // double y_half_point = 0.5*par->ampl;
         // double x_mid_left = (x[par->sig_end_pos - par->sig_start_pos]+ x[1])/2.;
         double steepness_left = 5./(x[par->sig_end_pos-par->sig_start_pos] - x[1]);
-        double* x_d  = new double[Npoints];
-        double* y_d = new double[Npoints];
-        double* erx_d = new double[Npoints];
-        double* ery_d = new double[Npoints];
 
+        double x_d[1000], y_d[1000], erx_d[1000], ery_d[1000];
 
         int Npointsd = 0;
         int extention =  (int) (SIGMOID_EXTENTION / dt);
