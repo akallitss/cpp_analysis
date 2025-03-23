@@ -2332,11 +2332,31 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       // ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(10000);
       // ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
       // ROOT::Math::MinimizerOptions::SetDefaultPrintLevel(0);
+        int Npoints = par->sig_end_pos - par->sig_start_pos+1;
 
-       int points = 0;
-       double x[1000], y[1000], erx[1000], ery[1000];
+        if(Npoints >100 || Npoints<=1)
+        {
+      #ifdef DEBUGMSG
+          cout<<"FullSigmoid Function"<<endl;
+          cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
+          cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
+          cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
+
+          cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
+      #endif
+          //           return (kFALSE);
+        }
+
+        double* x = new double[Npoints];
+        double* y = new double[Npoints];
+        double* erx = new double[Npoints];
+        double* ery = new double[Npoints];
+
+        int points = 0;
         //cout<<" loop boundaries "<<par->sig_end_pos - par->sig_start_pos<<endl;
-        for (int i = 0; i <= par->sig_end_pos - par->sig_start_pos; i++)
+
+
+        for (int i = 0; i < Npoints ; i++)
         {
             y[i] = arr[par->sig_start_pos + i];
             //x[i] = arrt[i+sig_start_pos];
@@ -4130,18 +4150,18 @@ double miny = data[i_start];
   vector<double> data_vec(data, data + points);
   vector<double> csum = CumulativeSum(data_vec);
 
-  if (par->e_peak_end_pos >= csum.size() || par->stime_pos >= csum.size()) {
+  if (par->e_peak_end_pos >= csum.size() || par->stime_pos >= csum.size() || par->ftime_pos >= csum.size()
+    || par->e_peak_end_pos < 0 || par->stime_pos < 0 || par->ftime_pos < 0) {
     cerr << "ERROR: Index out of bounds! e_peak_end_pos = " << par->e_peak_end_pos
          << ", stime_pos = " << par->stime_pos
          << ", csum size = " << csum.size() << endl;
   } else {
     par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
+    par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
+    par->ioncharge = csum[par->ftime_pos] - csum[par->e_peak_end_pos] ;
+    par->totcharge = csum[par->ftime_pos] - csum[par->stime_pos];
   }
   cout<<"e_peak_end_pos = "<<par->e_peak_end_pos<<endl;
-
-  par->echarge = csum[par->e_peak_end_pos] - csum[par->stime_pos];
-  par->ioncharge = csum[par->ftime_pos] - csum[par->e_peak_end_pos] ;
-  par->totcharge = csum[par->ftime_pos] - csum[par->stime_pos];
 
   int i_peak_duration_from_start = i_start + static_cast<int>(CIVIDEC_PEAK_DURATION/dt);
   if (i_peak_duration_from_start < csum.size()) {
