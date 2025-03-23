@@ -2390,31 +2390,16 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         double* ery_d = new double[Npoints];
 
 
-        int pointsd = 0;
-
+        int Npointsd = 0;
         int extention =  (int) (SIGMOID_EXTENTION / dt);
-        int Npointsd = sigend+extention-sigstart+1;
-
-        if(Npointsd >100 || Npointsd<=1)
-        {
-      #ifdef DEBUGMSG
-          cout<<"FullSigmoid Function Npointsd check"<<endl;
-          cout<<BLUE<<"Start time pos = "<<par->sig_start_pos *dt <<"  sig_shift = "<< sig_shift *dt <<BLUE<<"  endpoint = "<< par->sig_end_pos *dt <<endl;
-          cout<<GREEN<<"Start time pos = "<<par->sig_start_pos <<"  sig_shift = "<< sig_shift  <<BLUE<<"  endpoint = "<< par->sig_end_pos  <<endl;
-          cout<<RED<<"END point sigmoid = "<<par->sig_end_pos<<endlr;
-
-          cout<<MAGENTA<<"Attention : "<<" in Event " << evNo <<" Sigmoid fit has few points ==> Number of points on sig_waveform ==>"<< Npoints <<endlr;
-      #endif
-          //           return (kFALSE);
-        }
-        for (int i = 0; i < Npointsd  &&i<1000; ++i)
+        for (int i = 0; i < sigend+extention-sigstart &&i<1000; ++i)
         {
             x_d[i] = (i+sigstart)*dt;
             y_d[i] = arr[i+sigstart];
             erx_d[i] = 0;
             ery_d[i] =par->rms;
             if (i> sigend-sigstart) ery_d[i]*=3.3;
-            pointsd++;
+            Npointsd++;
 
         }
 
@@ -2424,7 +2409,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
       TF1 *sig_fitd =  new TF1("sig_fitd",fermi_dirac,sig_lim_min,sig_lim_max, 4);
 
-      TGraphErrors* sig_waveformd = new TGraphErrors(pointsd, x_d, y_d, erx_d, ery_d);
+      TGraphErrors* sig_waveformd = new TGraphErrors(Npointsd, x_d, y_d, erx_d, ery_d);
 
 
       for (int i=0;i<4; i++)
