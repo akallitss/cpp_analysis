@@ -2050,7 +2050,7 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   c1->Update();
   c1->Modified();
-  // cin.get();
+  // //cin.get();();
   c1->SaveAs("fit_result_single_MM.png");
   c1->SaveAs("fit_result_single_MM.eps");
 #endif
@@ -2506,7 +2506,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
         ///
 
         // cout << "r->IsValid() = " << r->IsValid() << endl;
-        // cin.get();
+        // //cin.get();();
         if (r && r.Get() && r->IsValid())  //  r fit result sometimes crashing when checking if valid? Weird but this is a workaround
           {
 #ifdef DEBUGMSG
@@ -2597,7 +2597,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 
   if (any_zero) {
     cout << RED << "At least one parameter has an error of 0." << endlr;
-    cin.get(); //press enter to continue
+    //cin.get();(); //press enter to continue
   }
 
 
@@ -2637,7 +2637,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       else {
 #ifdef DEBUGMSG
         cout << RED << "Fit failed sig_fittot." << endlr;
-        cin.get(); //press enter to continue
+        //cin.get();(); //press enter to continue
 #endif
 
         // Open a file to write the failed event number
@@ -2761,7 +2761,7 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
 //   par->ampl = sig_fittot->GetMinimum(fit_double_start_point, fit_double_end_point);
   // cout<<BLUE<<"Amplitude = "<<par->ampl<<endlr;
   // cout<<MAGENTA<<"Amplitude of maximum of the fit "<< par->sigmoidtot[0]<<endlr;
-  // cin.get();
+  // //cin.get();();
   #ifdef DEBUGMSG
   if(doubleSigmoidfitSuccess) {
     cout<<GREEN<<"Fit successful!"<<endlr;
@@ -3740,7 +3740,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 #ifdef DEBUGMSG
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << tshift <<endlr;
   cout << "Threshold = " << threshold << endlr;
-  cin.get();
+  //cin.get();();
   cout << "tshift = " << tshift << endlr;
 #endif
 
@@ -3881,7 +3881,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
 //   cout << GREEN << "End of the pulse = " << par->ftime_pos << endlr; //correct end of the pulse
 //   cout<< MAGENTA <<"pulse duration at that point = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
-// cin.get();
+// //cin.get();();
   //find the point of derivative array that correspond to the par->ftime_pos
 //   cout<<"derivative point value at the ftime_pos = "<<drv[par->ftime_pos]<<endl;
 
@@ -3894,7 +3894,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
 
       //cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
-      // cin.get();
+      // //cin.get();();
       break;
     }
 
@@ -3930,7 +3930,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
   // }
 
   // cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
-  // cin.get();
+  // //cin.get();();
 
   par->charge=0.;
   par->echarge=0.;
@@ -3967,12 +3967,12 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
 
   #ifdef DEBUGMSG
    cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_point ="<< par->e_peak_end_pos*dt<<endlr;
-   cin.get();
+   //cin.get();();
  //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
      cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
      cout<<"CIVIDEC epeak pulse duration in points = "<<CIVIDEC_PEAK_DURATION/dt<<" or in ns = "<<CIVIDEC_PEAK_DURATION<<endl;
      cout<<"trigger point "<<par->stime_pos<<endl;
-     cin.get();
+     //cin.get();();
 #endif
       par->totchargefixed = 0;
       double tot_charge_fixed_position = 0;
@@ -3983,7 +3983,7 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       }
       // cout<<RED<< "Total Charge FIXED on 120ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Total Charge between start-end position: "<<par->charge<<endlr;
-      // cin.get();
+      // //cin.get();();
 
     /// make the sig fit for sigmoind timepoint.
 #ifdef DEBUGMSG
@@ -4022,11 +4022,11 @@ int AnalyseLongPulseCiv(int points,int evNo, double* data, double dt, double* dr
       }
       #ifdef DEBUGMSG
        cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_point ="<< par->e_peak_end_pos/dt<<endlr;
-       cin.get();
+       //cin.get();();
        #endif
       // cout<<RED<< "Epeak Charge FIXED on 6ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Epeak Charge fit: "<<par->echargefit<<endlr;
-      // cin.get();
+      // //cin.get();();
 
       par->te_peak_end = par->e_peak_end_pos * dt;
       par->risecharge *= dt;
@@ -4075,7 +4075,7 @@ void AnalysePicosecBounds(int points, int evNo, double* data, double dt, int i_s
 #ifdef DEBUGMSG
   cout<<MAGENTA<<"Starting Analysis for cividec at start point " << i_start <<endl;
   // cout << "Threshold = " << threshold << endlr;
-  // cin.get();
+  // //cin.get();();
   // cout << "tshift = " << tshift << endlr;
 #endif
 
@@ -4174,18 +4174,18 @@ double miny = data[i_start];
   }
   #ifdef DEBUGMSG
    // cout<<YELLOW<<"Epeak charge before double sigmoid "<< par->charge<<" at e_peak_end_time_point ="<< par->e_peak_end_pos*dt<<endlr;
-   cin.get();
+   //cin.get();();
  //calculate the integral from the start point to the end point of the waveform on a constant window of 120ns
      cout<<"CIVIDEC pulse duration in points = "<<CIVIDEC_PULSE_DURATION/dt<<" or in ns = "<<CIVIDEC_PULSE_DURATION<<endl;
      cout<<"CIVIDEC epeak pulse duration in points = "<<CIVIDEC_PEAK_DURATION/dt<<" or in ns = "<<CIVIDEC_PEAK_DURATION<<endl;
      cout<<"trigger point "<<par->stime_pos<<endl;
-     cin.get();
+     //cin.get();();
      cout<<MAGENTA<<" Ion charge AFTER double sigmoid "<< par->ioncharge<<" at e_peak_end_time_point ="<< par->e_peak_end_pos*dt<<endlr;
-     cin.get();
+     //cin.get();();
  #endif
       // cout<<RED<< "Epeak Charge FIXED on 6ns window: " << par->totchargefixed << endlr;
       // cout<<BLUE<<"Epeak Charge fit: "<<par->echargefit<<endlr;
-      // cin.get();
+      // //cin.get();();
 
       par->te_peak_end = par->e_peak_end_pos * dt;
       par->tot[0] *= dt;   /// not used
@@ -4351,7 +4351,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
 
   // cout << GREEN << "End of the pulse MCP = " << par->ftime_pos << endlr; //correct end of the pulse
   // cout<< MAGENTA <<"pulse duration at that point MCP = "<<(par->ftime_pos-par->stime_pos)*dt<<endlr;
-  // cin.get();
+  // //cin.get();();
 
   for (int i=par->ftime_pos; i<points; i++) {
     par->ftime_pos=i;
@@ -4361,7 +4361,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
       //cout<<BLUE<<"end of the pulse position"<<par->ftime_pos<<endlr;
 
       //cout<<RED<<drv[i]<<"  "<<threshold/5.<<" data "<<data[i]<<" "<<threshold*0.8<<endlr;
-      // cin.get();
+      // //cin.get();();
       break;
     }
 
@@ -4376,7 +4376,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
 /// extend to CIVIDEC_PULSE_DURATION ns in order to get the ion tail
 ///
   // cout<<"End of the pulse extended to = "<<par->ftime_pos<<endl;
-  // cin.get();
+  // //cin.get();();
   // for (int i=par->ftime_pos; i<points && i<par->stime_pos + CIVIDEC_PULSE_DURATION/dt; i++)
   // {
   //   par->ftime_pos=i;
@@ -4429,7 +4429,7 @@ int AnalyseLongPulseMCP(int points,int evNo, double* data, double dt, double* dr
 
   par->SigmoidfitSuccess = SigmoidfitSuccess;
 
-  //cin.get();
+  ////cin.get();();
    //cout<<BLUE<<"Time Sigmoid processed, tfit20 =  "<< par->tfit20 <<endlr;
 
    //cout<<RED<<"FIT TIME = "<< par->tfit20<<endlr;

@@ -1487,7 +1487,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
 #endif
 		cout<<GREEN<<"Baseline rms per channel "<<ci+1<<" = "<<rmsC[ci]<<endl;
-    	cin.get();
+    	// cin.get();
         cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
         cout<<"Pulse length = "<<maxpoints<<endl;
         long double epochX = (1.*epoch + nn*1e-9);
