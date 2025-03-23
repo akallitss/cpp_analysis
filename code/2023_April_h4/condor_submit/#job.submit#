@@ -1,0 +1,23 @@
+# Specify the executable (your script or program)
+
+
+Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code
+
+Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/condor_sumbit_test/condor_test.sh
+
+
+# Define the log, output, and error files
+Log = job.log
+Output = job.out
+Error = job.err
+
+#+JobFlavour = "testmatch"
++MaxRuntime = 7200
+
+
+# Request resources
+RequestCpus = 1
+RequestMemory = 2GB
+
+# Specify the job queue (submit one job)
+Queue
