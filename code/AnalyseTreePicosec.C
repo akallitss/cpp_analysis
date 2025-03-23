@@ -730,7 +730,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   
   long double tnow = 0., tlast[]={0.,0.,0.,0.}, tlastgoodpeaks[]={0.,0.,0.,0.};
   long double dtlast[]={0.,0.,0.,0.}, dtlastgoodpeaks[]={0.,0.,0.,0.};
-  int npeaks[4], ngoodPeaks[4];
+  int npeaks[4] = {0, 0, 0, 0}, ngoodPeaks[4] = {0, 0, 0, 0};
   int ntrigsTot[4]={0,0,0,0};
   int ngoodTrigsTot[4]={0,0,0,0}; 
 
@@ -2411,7 +2411,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         cout<<BLUE<<"Event "<<setw(6)<< eventNo<<endl;
         for (int ci = 0; ci < 4; ++ci) 
 		{
-			cout<<"Channel C"<<ci+1<<" ,f ound ntrigs ="<<npeaks[ci]<<" pulses , "<<ntrigsTot[ci]<<" total ,  after cuts ="<<ngoodPeaks[ci]<<" pulses , "<<ntrigsTot[ci]<<" total "<<endlr;
+			cout<<"Channel C"<<ci+1<<" , found ntrigs ="<<npeaks[ci]<<" pulses , "<<ntrigsTot[ci]<<" total ,  after cuts ="<<ngoodPeaks[ci]<<" pulses , "<<ntrigsTot[ci]<<" total "<<endlr;
 		}
 	}
     //  for (int ci=0;ci<4; ci++) cout<<RED<<"Size of Array = "<<sparArr[ci]->GetEntriesFast()<<endlr;
