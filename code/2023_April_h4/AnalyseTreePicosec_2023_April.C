@@ -48,7 +48,7 @@ int AnalyseTreePicosec_2023_April(int runNo=15, int poolNo=2, int draw=0, double
 {
   cout<<"RunNo= " <<runNo<< " poolNo = "<<poolNo<<endl;
 
-  gROOT->LoadMacro("MyFunctions.C");
+  gROOT->LoadMacro("MyFunctions_2023_April.C");
   
   bool activeDraw[]={0,0,0,0};
   if (draw)
