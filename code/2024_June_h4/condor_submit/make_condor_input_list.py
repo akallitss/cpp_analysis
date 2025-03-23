@@ -79,6 +79,7 @@ root -l -b -q '{analysetreepicosec_c_name}++($1,$2)'
 """
     with open('run_code.sh', 'w') as f:
         f.write(bash_script)
+    os.chmod('run_code.sh', 0o755)
 
 if __name__ == '__main__':
     main()
