@@ -2,6 +2,9 @@
 
 # Can clean and compile ../ directory and recompile the code, if needed
 rm -r *pcm *.so *d *_ACLiC_*
+rm err/*
+rm out/*
+rm log/*
 root -l -b -q "../MyFunctions_2024_September.C++"
 root -l -b -q "../AnalyseTreePicosec_2024_September.C++"
 python3 make_condor_input_list.py
