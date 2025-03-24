@@ -1028,7 +1028,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
 
 //   TH1D* hSparkEvolution;
-// cin.get();
+//cin.get();
 
   char hname[200], htitle[200], axtitle[200];
   
@@ -1368,7 +1368,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int total_thin_count = 0;
 	while (eventNo<nevents)
   {
-	// if (eventNo<33593 || eventNo>34278) { eventNo++; continue;};
+//	if (eventNo<14255 || eventNo>14257) { eventNo++; continue;};
   	//cout << "Event Number: " << eventNo << endl;
   	// if (eventNo < 1200) { eventNo++; continue; }
   	//if (eventNo!=47) { eventNo++; continue;}
@@ -1465,9 +1465,9 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         //cout<<endl<<"Entering 2nd if(draw) Fine tune for SmoothArray, DerivateArray and IntegratePulse that will be used for the analysis _________________________"<<endl<<endl;;
 #endif
 		//cout<<GREEN<<"Baseline rms per channel "<<ci+1<<" = "<<rmsC[ci]<<endl;
-    	// cin.get();
-        cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
-        cout<<"Pulse length = "<<maxpoints<<endl;
+    	//cin.get();
+        //cout<<endl<<"Event "<< eventNo<<" Channel "<<ci+1<<"\t fit1 "<<fitstatus1[ci]<<" fit2 "<<fitstatus2[ci]<< " bsl "<<bslC[ci]<<" rms "<<rmsC[ci]<< " totcharge "<<totcharge<< endl;
+        //cout<<"Pulse length = "<<maxpoints<<endl;
         long double epochX = (1.*epoch + nn*1e-9);
         TTimeStamp *tstamp = new TTimeStamp(epochX+(rootConv-unixConv),0);
         printf("Event time : %s = %10.9Lf  DT = %10.9LF s = %10.7LF ms\n",tstamp->AsString("l"),epochX,epochX-drawdt,1000.*(epochX-drawdt));
@@ -1638,7 +1638,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
     /// derivate data array
     DerivateArray(amplC[ci],dsampl,maxpoints,dt,npt,1);
-
     /// derivate smoothed data array
 	//DerivateArray(sampl,dsampl,maxpoints,dt,npt,1);
     //continue;
@@ -1652,7 +1651,6 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     if (itrig>0)
         pulsedBeam = 1;
         //pulsedBeam = callibrationRun;
-
 /// Having the following "if (detspark)" here means that an event with a spark, of a "baseline recovery event will not be analysed!!!
     if (detspark)
     {
@@ -1661,14 +1659,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
        eventNo++;
        continue;
     }
-
   	vector<pair<double, double>> trigger_windows;
   	if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0) {
 		adjust_baseline(maxpoints, ptime, sampl);
   		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
 		TriggerResult trigger_results = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
-  	  	// cout << "Event number: " << eventNo << " Channel number: " << ci << endl;
-  		// cin.get();
+  	  	//cout<< "Event number: " << eventNo << " Channel number: " << ci << endl;
+  		//cin.get();
   		//print event number that had secondary pulses
   		if (trigger_results.secondary_count > 0) {
   			// cout<<"Event number: "<<eventNo<<" Secondary pulses detected: "<<trigger_results.secondary_count<<endl;
@@ -1847,7 +1844,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
          // cout<<YELLOW<<"spar[ci][ntrigs].ioncharge = "<<spar[ci][ntrigs].ioncharge<<endl;
          h2deCHvsiCH[ci]->Fill((spar[ci][ntrigs].ioncharge),(spar[ci][ntrigs].echarge) );
 	     // cout<<YELLOW<<"spar[ci][ntrigs].ioncharge = "<<spar[ci][ntrigs].ioncharge<<endl;
-      	// cin.get();
+      	//cin.get();
 		 h2dtotCHvsAmpl[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].totcharge);
          h2dAmplvsDampl[ci]->Fill(spar[ci][ntrigs].dampl*mV,spar[ci][ntrigs].ampl*mV);
          h2deCHvsAmpl[ci]->Fill(spar[ci][ntrigs].ampl*mV,spar[ci][ntrigs].echarge);
@@ -2072,7 +2069,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
     //double DTI2 = 2.;  ///default
     double DTI2 = 150.; //time window for integration in ns
     nint = TMath::FloorNint(DTI2/dt)+1; // make it int at >= of the setted time window
-    cout<<"Integration points second time with DTI2 = "<<nint<<endl;
+    //cout<<"Integration points second time with DTI2 = "<<nint<<endl;
     double intgr;
     intgr = IntegratePulse(maxpoints,idamplC,iampl,dt,nint*dt);
     // continue;
@@ -2165,14 +2162,14 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
         line2->Draw();
 	      TLine *line3 = new TLine(spar[ci][i].ttrig*dt,Thresholds[ci],spar[ci][i].ttrig*dt+spar[ci][i].tot[0],Thresholds[ci]);
 // 	      TLatex *label3 = new TLatex(0.5, 0.5, "Starting/Ending points of E-peak");
-          cout<<"(x1,y1) = "<<spar[ci][i].ttrig<<" , "<<Thresholds[ci] << "  (x2,y2) = "<<spar[ci][i].ttrig+spar[ci][i].tot[0]<<" , "<<Thresholds[ci]<<endl;
+          //cout<<"(x1,y1) = "<<spar[ci][i].ttrig<<" , "<<Thresholds[ci] << "  (x2,y2) = "<<spar[ci][i].ttrig+spar[ci][i].tot[0]<<" , "<<Thresholds[ci]<<endl;
         line3->SetLineColor(3);
 //         label3->SetLineColor(3);
 //         label3->Draw();
         line3->Draw();
         gPad->BuildLegend(0.75,0.8,0.99,0.99);
 
-        // 	    cout<<i<<" \t "<<spar[i].ampl<<endl;
+        // 	    //cout<<i<<" \t "<<spar[i].ampl<<endl;
         evdcanv[ci]->cd(2);
         TLine *line4 = new TLine(spar[ci][i].t10,-spar[ci][i].ampl,spar[ci][i].tb10,-spar[ci][i].ampl);
         line4->SetLineColor(4);
