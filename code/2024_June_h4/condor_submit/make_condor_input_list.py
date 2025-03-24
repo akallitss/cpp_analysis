@@ -73,11 +73,7 @@ def make_bash_script(code_dir_path, myfunctions_c_name, analysetreepicosec_c_nam
     bash_script = f"""#!/bin/bash
 
 cd {code_dir_path} || exit 1  # Ensure script exits if cd fails
-rm -r *pcm *.so *d
-echo $1
-echo $2
-root -l -b -q "{myfunctions_c_name}++"
-root -l -b -q "{analysetreepicosec_c_name}++($1,$2)"
+root -l -b -q "{analysetreepicosec_c_name}+($1,$2)"
 """
     with open('run_code.sh', 'w') as f:
         f.write(bash_script)
