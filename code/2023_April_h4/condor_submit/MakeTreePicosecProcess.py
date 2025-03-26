@@ -68,6 +68,9 @@ def process_runs(base_dir, rerun=False):
                 print_log(f'Run {run_info["RunNo"]}, Pool {run_info["PoolNo"]} reprocessing.', log_path)
                 process_run(run_info, base_dir, test_beam_period_dir, test_beam_period_code_dir, root_macro_name)  # Process run anyway
 
+    #chmod the outputdirectory
+    os.system(f'chmod -R +x {output_dir}')
+
     print_log(f'Processed runs: {processed_runs}', log_path)
     print_log(f'Crashed runs: {crashed_runs}', log_path)
     print_log(f'Finished processing runs.', log_path)
