@@ -3276,7 +3276,7 @@ vector<pair<double, double>> find_initial_trigger_bounds_with_ion_integral(const
         while (i_trigger < y_int.size() && y_int[i_trigger] >= integration_threshold) {
             i_trigger++;
         }
-//        cout << "Trigger: " << i_trigger << endl;
+        cout << "Trigger: " << i_trigger << endl;
 
 
         if (i_trigger >= y_int.size()) {
@@ -3292,40 +3292,40 @@ vector<pair<double, double>> find_initial_trigger_bounds_with_ion_integral(const
         double x_min = x_int[i_min];
         double y_min = y_int[i_min];  // We don't use this variable, but it's useful for debugging
 
-//         cout << x_trigger << " " << x_end << " " << end_thresh << " " << y_min << endl;
-//         cout << "i_start: " << i_start << " i_min: " << i_min << " i_trigger: " << i_trigger << endl;
-//         cout << "x_min: " << x_min << " y_min: " << y_min << endl;
+         cout << x_trigger << " " << x_end << " " << end_thresh << " " << y_min << endl;
+         cout << "i_start: " << i_start << " i_min: " << i_min << " i_trigger: " << i_trigger << endl;
+         cout << "x_min: " << x_min << " y_min: " << y_min << endl;
 
         // Find Left Bound (Pulse Start)
         // Get first point to left of minimum above end fraction of min
 
         size_t i_left = find_first_point_index_below_threshold(y_int, end_thresh, i_min, -1, -1);
-//         cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
+         cout << "i_left: " << i_left << " y_int: " << y_int[i_left] << " end_thresh: " << end_thresh << endl;
 
         double x_left = x_int[i_left];
-//        cout << "x_left: " << x_left << endl;
+        cout << "x_left: " << x_left << endl;
 
         // Check if there is a previous signal bound, if so make sure we don't overlap
         if (!signal_bounds.empty()) {
           x_left = max(x_left, signal_bounds.back().second);
           i_left = convert_x_to_index(x_int.data(), x_int.size(), x_left);
         }
-//        cout << "Post check x_left: " << x_left << " i_left: " << i_left << endl;
+        cout << "Post check x_left: " << x_left << " i_left: " << i_left << endl;
 
         // Get first point to right of minimum above end fraction of min
         // Find Right Bound (Pulse End) with epeak intergration
         size_t i_right = find_first_point_index_below_threshold(y_int, end_thresh, i_min, +1, -1);
-//         cout << "i_right: " << i_right << " y_int[i_right]: " << y_int[i_right] << " end_thresh: " << end_thresh << endl;
+         cout << "i_right: " << i_right << " y_int[i_right]: " << y_int[i_right] << " end_thresh: " << end_thresh << endl;
         double x_right_epeak = x_int[i_right];
 
          // Find Right Bound (Pulse End) with ion tail integration
         double x_right = x_int[i_right];
         size_t i_min_ion_tail = convert_x_to_index(x_int_ion_tail.data(), x_int_ion_tail.size(), x_min);
-//        cout << "i_min_ion_tail: " << i_min_ion_tail << " x_right: " << x_right << endl;
+        cout << "i_min_ion_tail: " << i_min_ion_tail << " x_right: " << x_right << endl;
 
          size_t i_right_ion_tail = find_first_point_index_below_threshold(y_int_ion_tail, end_thresh_ion_tail, i_min_ion_tail, +1, -1);
          double x_right_ion = x_int_ion_tail[i_right_ion_tail];
-//         cout << "i_right_ion_tail: " << i_right_ion_tail << " x_right_ion: " << x_right_ion << " y_int_ion_tail: " << y_int_ion_tail[i_right_ion_tail] << " end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
+         cout << "i_right_ion_tail: " << i_right_ion_tail << " x_right_ion: " << x_right_ion << " y_int_ion_tail: " << y_int_ion_tail[i_right_ion_tail] << " end_thresh_ion_tail: " << end_thresh_ion_tail << endl;
 
         // Compare endpoint found with epeak and ion tail integrations
         // double x_range_ion = x_right_ion - x_int[i_left];
@@ -3340,14 +3340,14 @@ vector<pair<double, double>> find_initial_trigger_bounds_with_ion_integral(const
          x_right = min({x_right, x_right_lim});
 
          signal_bounds.emplace_back(x_left, x_right);
-//         cout << "Bounds: (" << x_left << ", " << x_right << ")" << endl;
-//         cout << "x_right_ion: " << x_right_ion << " x_right_epeak: " << x_right_epeak << endl;
+         cout << "Bounds: (" << x_left << ", " << x_right << ")" << endl;
+         cout << "x_right_ion: " << x_right_ion << " x_right_epeak: " << x_right_epeak << endl;
 
         //Convert x_right to i_right in x_int to find next pulse
         i_right = convert_x_to_index(x_int.data(), x_int.size(), x_right);
-//        cout << "i_right: " << i_right << " x_right: " << x_right << endl;
+        cout << "i_right: " << i_right << " x_right: " << x_right << endl;
         i_start = i_right + 1;
-//        cout << "i_start: " << i_start << endl;
+        cout << "i_start: " << i_start << endl;
     }
 
     return signal_bounds;
@@ -3373,7 +3373,7 @@ vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector
     for (size_t bound_i = 0; bound_i < pulse_bounds.size(); ++bound_i) {
       double x_left = pulse_bounds[bound_i].first;
       double x_right = pulse_bounds[bound_i].second;
-//      cout << "Secondary check to reject Bounds: (" << x_left << ", " << x_right << ")" << endl;
+      cout<<MAGENTA << "Secondary check to reject Bounds: (" << x_left << ", " << x_right << ")" << endlr;
 
       // Find the indices of the bounds in the derivative
       size_t i_left = convert_x_to_index(x_der.data(), x_der.size(), x_left);
@@ -3387,13 +3387,13 @@ vector<bool> find_secondary_pulses (const vector<double>& t_values, const vector
 
       //Set the threshold for the secondary pulse
       double y_thresh = y_min * secondary_pulse_threshold_fraction;
-//       cout<< "Secondary: " << x_der[i_min] << " " << y_min << " " << y_thresh << endl;
+      cout<< "Secondary: " << x_der[i_min] << " " << y_min << " " << y_thresh << endl;
 
       // Set region to the left of the peak to check for secondary pulses
       auto left_begin = y_der.begin() + i_left;
       int left_offset = i_min > int_secondary_points ? i_min - int_secondary_points : 0;  // Ensure that the left offset does not go negative
       auto left_end = y_der.begin() + left_offset;
-//      cout << "Left begin: " << x_der[distance(y_der.begin(), left_begin)] << " Left end: " << x_der[distance(y_der.begin(), left_end)] << endl;
+      cout << "Left begin: " << x_der[distance(y_der.begin(), left_begin)] << " Left end: " << x_der[distance(y_der.begin(), left_end)] << endl;
       if (distance(left_begin, left_end) > 0) {
         // compare the distance between the left begin and left end if its negative means the left bound has moved too much
         if (any_of(left_begin, left_end, [y_thresh](double val) { return val < y_thresh; })) {
@@ -3445,13 +3445,13 @@ void find_start_bounds(vector<pair<double, double>>& pulse_bounds, double tint, 
       size_t i_right = convert_x_to_index(x.data(), x.size(), pulse_bound.second);
 
       if (i_left > i_right) {
-//        cout << "Warning: i_left > i_right" << endl;
+        cout << "Warning: i_left > i_right" << endl;
         continue;
       }
       auto it_min = min_element(y.begin() + i_left, y.begin() + i_right);
       //find ymin in the window
       if (it_min == y.end()) {
-//        cout << "Warning: find_start_bounds could not find minimum in window" << endl;
+        cout << "Warning: find_start_bounds could not find minimum in window" << endl;
         continue;
       }
 
@@ -3468,13 +3468,14 @@ void find_start_bounds(vector<pair<double, double>>& pulse_bounds, double tint, 
         double previous_x_right = pulse_bounds[bound_i - 1].second;
         if (x_left < previous_x_right) {  // Check if the start bound is to the left of the previous end bound
           x_left = previous_x_right;  // Adjust the current start bound to the right of the previous end bound
+          cout<<RED<<"Start bound adjusted to the right of the previous end bound"<<endlr;
         }
       }
 
       pulse_bound.first = x_left;
 
 
-//      cout << "Start bound changed to " << pulse_bound.first << " (conversion from integral times to waveform times) " << endl;
+      cout << "Start bound changed to " << pulse_bound.first << " (conversion from integral times to waveform times) " << endl;
     }
 }
 
@@ -3493,43 +3494,43 @@ void find_end_bounds(vector<pair<double, double>>& pulse_bounds, vector<double>&
       double x_right_original = pulse_bounds[bound_i].second;
 
 
-//      cout<<"x_left: "<<x_left<<" x_right_original: "<<x_right_original<<endl;
+      cout<<"x_left: "<<x_left<<" x_right_original: "<<x_right_original<<endl;
 
       size_t i_left = convert_x_to_index(x.data(), x.size(), x_left);
 
       double x_right  = 0.0;
-//      cout << "Bound_i: " << bound_i << " pulse bounds size: " << pulse_bounds.size() << endl;
+      cout << "Bound_i: " << bound_i << " pulse bounds size: " << pulse_bounds.size() << endl;
       if (bound_i + 1 >= pulse_bounds.size()) {
         x_right = x.back();
-//        cout<<"End bound if its the last pulse: "<<x_right<<endl;
+        cout<<"End bound if its the last pulse: "<<x_right<<endl;
       } else {
         x_right = pulse_bounds[bound_i + 1].first;
-//        cout<<"End bound if its not the last pulse: "<<x_right<<endl;
+        cout<<"End bound if its not the last pulse: "<<x_right<<endl;
       }
       // double x_right_lim = 2 * x_range_original + x_left;
       double x_right_lim = target_end_range + x_left;
       if (x_right > x_right_lim) {
         x_right = x_right_lim;
       }
-//      cout << "End bound: " << x_right << endl;
+      cout << "End bound: " << x_right << endl;
 
       //convert from x to i values
       size_t i_right = convert_x_to_index(x.data(), x.size(), x_right);
-//      cout << "Before calling min element " << "i_left: " << i_left << " i_right: " << i_right << " csum size: " << csum.size() << endl;
+      cout << "Before calling min element " << "i_left: " << i_left << " i_right: " << i_right << " csum size: " << csum.size() << endl;
       auto min_it = min_element(csum.begin() + i_left, csum.begin() + i_right);
-//      cout<< "Min_it: "<<*min_it<<endl;
+      cout<< "Min_it: "<<*min_it<<endl;
       //find the index of the maximum
       size_t i_min = distance(csum.begin(), min_it);
 
       // Print warning if i_min is on edge of range
       if (i_min == i_left || i_min == i_right) {
-//          cout << "Warning: Minimum of cumulative sum is on edge of range: i_left=" << i_left << " i_right=" << i_right << " i_min=" << i_min << endl;
+          cout << "Warning: Minimum of cumulative sum is on edge of range: i_left=" << i_left << " i_right=" << i_right << " i_min=" << i_min << endl;
       }
       //find the x value of the maximum
       double x_min = x[i_min];
 
       pulse_bounds[bound_i].second = x_min;
-//      cout << "End bound changed from  " << x_right_original << " to " << x_min<< endl;
+      cout << "End bound changed from  " << x_right_original << " to " << x_min<< endl;
   }
 }
 
@@ -3571,24 +3572,24 @@ TriggerResult GetTriggerWindows(double* ptime, int maxpoints, double* sampl, dou
       vector<double> y_values = vector<double>(sampl, sampl + maxpoints);
 
       //Get trigger windows from the integrated pulse
-//      cout<<RED<< "Find initial trigger bounds" << endlr;
+      cout<<RED<< "Find initial trigger bounds" << endlr;
       vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds_with_ion_integral(t_values, y_values, trigger_threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, CIVIDEC_PULSE_DURATION, ion_tail_end_point_threshold_fraction, dt);
       // vector<pair<double, double>> pulse_bounds = find_initial_trigger_bounds(t_values, y_values, threshold, INTEGRATION_TIME_TRIG, CIVIDEC_PEAK_DURATION, ion_tail_end_point_threshold_fraction, dt);
 
       // Reject secondaries within windows
       int int_secondary_points = static_cast<int>(CIVIDEC_PEAK_DURATION / dt);
-//      cout<<RED<< "Find secondary pulses" << endlr;
+      cout<<RED<< "Find secondary pulses" << endlr;
       vector<bool> secondary_rejects = find_secondary_pulses(t_values, y_values, pulse_bounds, int_secondary_points);
       //adjust pulse bounds to the original time-scale
-//      cout<<RED<< "Find start bounds" << endlr;
+      cout<<RED<< "Find start bounds" << endlr;
       find_start_bounds(pulse_bounds, INTEGRATION_TIME_TRIG, t_values, y_values);
 //      cout <<RED<<"Find end bounds" << endlr;
       find_end_bounds(pulse_bounds, t_values, y_values);
-//      cout<< RED << "Reject thin pulses" << endlr;
+      cout<< RED << "Reject thin pulses" << endlr;
       // vector<bool> thin_rejects = reject_thin_pulses(pulse_bounds, 0.8 * CIVIDEC_PEAK_DURATION);
       vector<bool> thin_rejects = reject_thin_pulses(pulse_bounds, 0.2 * CIVIDEC_PULSE_DURATION);
       // Print the pulse bounds and info
-//       cout<< GREEN << "Pulse bounds:" << endlr;
+       cout<< GREEN << "Pulse bounds:" << endlr;
       for (size_t i=0; i<pulse_bounds.size(); i++) {
         // cout << "  [" << pulse_bounds[i].first << ", " << pulse_bounds[i].second << "]  secondary: " << secondary_rejects[i] << "  too thin: " << thin_rejects[i] << endl;
       }
