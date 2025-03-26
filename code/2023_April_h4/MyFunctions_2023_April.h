@@ -40,7 +40,7 @@
 #define DEBUG 1
 #undef DEBUG
 #define DEBUGMSG 1
-// #undef DEBUGMSG
+#undef DEBUGMSG
 #define SLOWFILES 1
 // #undef SLOWFILES
 
@@ -322,6 +322,15 @@ const double unixConv = 2082844800.;
 
 const int MAX_N_FILES=11000;
 
+//
+//const char *CODEDIR="/home/akallits/Saclay_Analysis/cpp_analysis/code/2023_April_h4";
+//const char *BASEDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/";
+//const char *WORKDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/wdir";
+//const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/plots";
+//const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/dataTrees";
+//const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTrees";
+//const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTreesParameterTrees";
+//const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
 const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
 const char *BASEDIRNAME="/eos/project-p/picosec/Saclay/data/2023_April_h4";
