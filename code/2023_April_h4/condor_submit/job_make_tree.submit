@@ -9,7 +9,7 @@ Log = condor_submit/log_make_tree/job.log
 Output = condor_submit/out_make_tree/job.out
 Error = condor_submit/err_make_tree/job.err
 
-+MaxRuntime = 18000
++MaxRuntime = 86400
 
 # Request resources
 RequestCpus = 1
