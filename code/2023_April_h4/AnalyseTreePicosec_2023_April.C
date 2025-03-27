@@ -38,7 +38,7 @@
 #include<TMultiGraph.h>
 #include<TClonesArray.h>
 #include "MyFunctions_2023_April.C"
-#include "../RMS_Baseline_Calculator/RMSBaselineCalculator_2023_April.cpp"
+#include "RMSBaselineCalculator_2023_April.cpp"
 #include <iomanip>
 #include <iostream>
 
@@ -745,6 +745,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       TString bname1 = "npeaks_C"+channel1;
       TString btype1 = bname1+"/I";
       otree->Branch(bname1, &npeaks[i], btype1);
+
+      TString hitX_bname = "hitX_C"+channel1;
+      TString hitY_bname = "hitY_C"+channel1;
+
+      otree->Branch(hitX_bname, hitX_C[i], hitX_bname + "[eventTracks]/D");
+      otree->Branch(hitY_bname, hitY_C[i], hitY_bname + "[eventTracks]/D");
 
 //       for(int j=0;j<MAXTRIG;j++)
 	  {
@@ -1691,6 +1697,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  //cout<<"check: "<<ntrigs+1<<endl;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
+       for(int i=0; i<eventTracks; i++)
+         {
+         	ppar->hitX[i]=hitX_C[ci][i];
+            ppar->hitY[i]=hitY_C[ci][i];
+         }
 ///*************************************************************
 
       if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci] && DOUBLESIGMOIDFIT[ci]==false)  // Checks if "MCP" is at the start of the string

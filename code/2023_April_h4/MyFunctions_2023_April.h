@@ -104,6 +104,9 @@ public:
    double bslch;  /// integral from baseline over/under shoot. to be used to correct the CDF oin the future
    double rms;
    double bsl;
+
+   double hitX[200];
+   double hitY[200];
  
   PEAKPARAM() {
       Reset();
@@ -113,11 +116,12 @@ public:
       maxtime = ampl = dampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
       echarge = echargefixed = echargefit = totchargefixed = totcharge = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
-        for (int i=0; i<10; i++) tot[i] = -999.;
-        for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
-        for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
-        charge = scharge = t10 = tb10 = t90 = t50 = tb50 = ttrig = bslch = rms = bsl = -999.;
-        doubleSigmoidfitSuccess = SigmoidfitSuccess = false;
+      for (int i=0; i<200; i++) hitX[i] = hitY[i] = -1111.;
+      for (int i=0; i<10; i++) tot[i] = -999.;
+      for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
+      for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
+      charge = scharge = t10 = tb10 = t90 = t50 = tb50 = ttrig = bslch = rms = bsl = -999.;
+      doubleSigmoidfitSuccess = SigmoidfitSuccess = false;
 
 
   }
@@ -329,17 +333,26 @@ const int MAX_N_FILES=11000;
 //const char *PLOTDIR="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/plots";
 //const char *DATADIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/dataTrees";
 //const char *OUTDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTrees";
-//const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTreesParameterTrees";
+//const char *PARAMDIRNAME="/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/processedTrees/ParameterTrees";
 //const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
+//
+//const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
+//const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline";
+//const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/wdir";
+//const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/plots";
+//const char *DATADIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/dataTrees";
+//const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees";
+//const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees/ParameterTrees";
+//const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
 const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
-const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline";
-const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/wdir";
-const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/plots";
-const char *DATADIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/dataTrees";
-const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees";
-const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees/ParameterTrees";
+const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4";
+const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/wdir";
+const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/plots";
+const char *DATADIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/dataTrees";
+const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/processedTrees";
+const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4/processedTrees/ParameterTrees";
 const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
 //const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code/2023_April_h4";
