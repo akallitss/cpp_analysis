@@ -30,7 +30,7 @@ def main():
     run_pool_numbers = convert_MB_to_process_time(run_pool_numbers, conv_factor)
     with open(output_file_name, 'w') as f:
         for run_pool in run_pool_numbers:
-            f.write(f'{run_pool[0]},{run_pool[1]}, {run_pool[2]}\n')
+            f.write(f'{run_pool[0]},{run_pool[1]},{run_pool[2]}\n')
 
 
     # Generate condor bash script
