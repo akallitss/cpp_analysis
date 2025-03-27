@@ -2,9 +2,21 @@
 
 Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4
 
-Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_submit/run_code.sh
+# Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_submit/run_code.sh
+Executable = /bin/bash
 
-Arguments = $(run_number) $(pool_number)
+# Arguments = $(run_number) $(pool_number)
+Arguments = run_code.sh $(run_number) $(pool_number)
+
+Transfer_Input_Files = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/condor_submit/run_code.sh, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/MyFunctions_2023_April.C,  \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/MyFunctions_2023_April.h, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/AnalyseTreePicosec_2023_April.C, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4/RMSBaselineCalculator_2023_April.cpp
+
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
 
 # Define the log, output, and error files
 Log = condor_submit/log/job_run.log
