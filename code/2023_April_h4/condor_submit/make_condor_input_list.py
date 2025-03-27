@@ -11,6 +11,8 @@ Created as cpp_analysis/make_condor_input_list.py
 import os
 import re
 
+from numpy.ma import minimum
+
 
 def main():
 
@@ -23,11 +25,12 @@ def main():
     process_time = 10  # minutes
     conv_factor = process_time * 60 / (file_size * 1000)  # seconds / MB
     conv_factor *= 3  # Increase factor to give wiggle room
+    minimum_time = 600  # seconds corresponding to 10 minutes for compiling/checking to find data etc..
 
     outdirname_path = get_directory_path_from_myfunctions_h(myfunctions_h_path, 'OUTDIRNAME')
     print(outdirname_path)
     run_pool_numbers = extract_run_pool_numbers_from_dir(outdirname_path)
-    run_pool_numbers = convert_MB_to_process_time(run_pool_numbers, conv_factor)
+    run_pool_numbers = convert_MB_to_process_time(run_pool_numbers, conv_factor, minimum_time)
     with open(output_file_name, 'w') as f:
         for run_pool in run_pool_numbers:
             f.write(f'{run_pool[0]},{run_pool[1]},{run_pool[2]}\n')
@@ -80,9 +83,9 @@ def extract_run_pool_numbers_from_dir(dir_path):
                     run_pool_numbers.append([run_number, pool_number, size_in_MB]) # in MB
     return run_pool_numbers
 
-def convert_MB_to_process_time(run_pool_numbers, conv_factor):
+def convert_MB_to_process_time(run_pool_numbers, conv_factor, minimum_time=600):
     for run_pool in run_pool_numbers:
-        run_pool[2] = round(float(run_pool[2]) * conv_factor)
+        run_pool[2] = round(float(run_pool[2]) * conv_factor + minimum_time)
     return run_pool_numbers
 
 
