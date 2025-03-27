@@ -77,7 +77,7 @@ def extract_run_pool_numbers_from_dir(dir_path):
                 if match:
                     run_number = match.group(1)
                     pool_number = match.group(2)
-                    run_pool_numbers.append([run_number, pool_number, f"{size_in_MB:.2f} MB"])
+                    run_pool_numbers.append([run_number, pool_number, size_in_MB]) # in MB
     return run_pool_numbers
 
 def convert_MB_to_process_time(run_pool_numbers, conv_factor):
