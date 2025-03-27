@@ -34,14 +34,14 @@ def main():
 
 
     # Generate condor bash script
-    # myfunctions_c_path = find_file('../', 'MyFunctions', '.C')
+    myfunctions_c_path = find_file('../', 'MyFunctions', '.C')
     analysetreepicosec_c_path = find_file('../', 'AnalyseTreePicosec', '.C')
     codedirname_path = get_directory_path_from_myfunctions_h(myfunctions_h_path, 'CODEDIR')
 
-    # myfunctions_c_name = os.path.basename(myfunctions_c_path)
+    myfunctions_c_name = os.path.basename(myfunctions_c_path)
     analysetreepicosec_c_name = os.path.basename(analysetreepicosec_c_path)
 
-    make_bash_script(codedirname_path, analysetreepicosec_c_name)
+    make_bash_script(codedirname_path, myfunctions_c_name, analysetreepicosec_c_name)
 
 
     print('bonzo')
@@ -86,11 +86,12 @@ def convert_MB_to_process_time(run_pool_numbers, conv_factor):
     return run_pool_numbers
 
 
-def make_bash_script(code_dir_path, analysetreepicosec_c_name):
+def make_bash_script(code_dir_path, myfunctions_c_name, analysetreepicosec_c_name):
     bash_script = f"""#!/bin/bash
 
-cd {code_dir_path} || exit 1  # Ensure script exits if cd fails
-root -l -b -q "{analysetreepicosec_c_name}+($1,$2)"
+# cd {code_dir_path} || exit 1  # Ensure script exits if cd fails. Not used when transferring files to condor node
+root -l -b -q "{myfunctions_c_name}++"
+root -l -b -q "{analysetreepicosec_c_name}++($1,$2)"
 """
     with open('run_code.sh', 'w') as f:
         f.write(bash_script)
