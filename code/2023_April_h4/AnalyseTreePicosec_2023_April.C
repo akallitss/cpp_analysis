@@ -732,10 +732,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   long double dtlast[]={0.,0.,0.,0.}, dtlastgoodpeaks[]={0.,0.,0.,0.};
   int npeaks[4] = {0, 0, 0, 0}, ngoodPeaks[4] = {0, 0, 0, 0};
   int ntrigsTot[4]={0,0,0,0};
-  int ngoodTrigsTot[4]={0,0,0,0}; 
+  int ngoodTrigsTot[4]={0,0,0,0};
 
   otree->Branch("eventNo", &eventNo, "eventNo/I");
   otree->Branch("evtime", &tnow, "evtime/l");
+  otree->Branch("trackOK", &trackOK, "trackOK/I");
+  otree->Branch("eventTracks", &eventTracks, "eventTracks/I");
+  otree->Branch("chi2track",chi2track,"chi2track[eventTracks]/D");
+  otree->Branch("disttonextcluster",disttonextcluster,"disttonextcluster[eventTracks][6]/D");
+  otree->Branch("totchargenextcluster",totchargenextcluster,"totchargenextcluster[eventTracks][6]/D");
+  otree->Branch("refP1",refP1,"refP1[eventTracks][3]/D");
+    otree->Branch("refP2",refP2,"refP2[eventTracks][3]/D");
+
 
   for (int i=0;i<4;i++)
   {
