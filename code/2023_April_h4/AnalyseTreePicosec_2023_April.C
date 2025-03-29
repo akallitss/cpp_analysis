@@ -1705,11 +1705,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  //cout<<"check: "<<ntrigs+1<<endl;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
-       for(int i=0; i<eventTracks; i++)
-         {
-         	ppar->hitX[i]=hitX_C[ci][i];
-            ppar->hitY[i]=hitY_C[ci][i];
-         }
+//       for(int i=0; i<eventTracks; i++) // this makes hitX and hitY to be filled up to the number of tracks in the event for all the peaks
+//         {
+//         	ppar->hitX[i]=hitX_C[ci][i];
+//            ppar->hitY[i]=hitY_C[ci][i];
+//         }
 ///*************************************************************
 
       if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci] && DOUBLESIGMOIDFIT[ci]==false)  // Checks if "MCP" is at the start of the string
