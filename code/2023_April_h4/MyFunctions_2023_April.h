@@ -105,8 +105,8 @@ public:
    double rms;
    double bsl;
 
-   double hitX[200];
-   double hitY[200];
+//   double hitX[200];
+//   double hitY[200];
  
   PEAKPARAM() {
       Reset();
@@ -116,7 +116,7 @@ public:
       maxtime = ampl = dampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
       echarge = echargefixed = echargefit = totchargefixed = totcharge = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
-      for (int i=0; i<200; i++) hitX[i] = hitY[i] = -1111.;
+//      for (int i=0; i<200; i++) hitX[i] = hitY[i] = -1111.;
       for (int i=0; i<10; i++) tot[i] = -999.;
       for (int i=0; i<4; i++) sigmoidR[i] = sigmoidF[i] = -999.;
       for (int i=0; i<6; i++) sigmoidtot[i] = -999.;
