@@ -66,6 +66,7 @@ public:
    //double t20;
    //double st20;
    double tfit20;       /// timing @ 20% of amplitude of the single sigmoid fit
+   double tfit20_nb;       /// timing @ 20% of amplitude of the single sigmoid fit
    double tnaive20;     /// timing @ 20% of data[maxtime_pos] by linear interpolation
    double te_peak_end;  /// e_peak_end_pos*dt this will be done in the end
 
@@ -113,7 +114,7 @@ public:
   }
     void Reset() {
       maxtime_pos = stime_pos = ftime_pos = e_peak_end_pos = sig_start_pos = sig_end_pos = tot_sig_end_pos = -111;
-      maxtime = ampl = dampl = e_peak_end_ampl = sampl = fampl = tfit20 = tnaive20 = te_peak_end = -999.;
+      maxtime = ampl = dampl = e_peak_end_ampl = sampl = fampl = tfit20 = tfit20_nb = tnaive20 = te_peak_end = -999.;
       echarge = echargefixed = echargefit = totchargefixed = totcharge = ioncharge = risetime = risecharge = width = -9999.;
       chi2_sigmoid = chi2_doubleSigmoid = -1111.;
 //      for (int i=0; i<200; i++) hitX[i] = hitY[i] = -1111.;
