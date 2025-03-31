@@ -1859,6 +1859,10 @@ double Xpoint_linear_interpolation(double *arr, double dt, PEAKPARAM *par)
     return x;  
 }
 
+double get_sigmoid_plus_offset_time_point(double y, double x0, double k, double a, double c) {
+  return x0 - (1. / k) * TMath::Log(a / (y - c) - 1.);
+}
+
 
 bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo, double sig_shift, int tshift)
 {
@@ -1948,7 +1952,8 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
       sig_fit->SetParError(2, 0.05);
       sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
-      sig_fit->SetParLimits(0,sig_fit->GetParameter(0)*0.85,sig_fit->GetParameter(0)*1.15);
+      double amp_limit = abs(sig_fit->GetParameter(0)*0.15);
+      sig_fit->SetParLimits(0,sig_fit->GetParameter(0) - amp_limit, sig_fit->GetParameter(0) + amp_limit);
       sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
       sig_fit->SetParLimits(2, 0.1, 15);
       sig_fit->SetParLimits(3,-fabs(sig_fit->GetParameter(3)*4.1),fabs(sig_fit->GetParameter(3)*4.1));
@@ -2000,17 +2005,36 @@ bool TimeSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
           cerr << "Unable to open file to write failed event." << endl;
         }
       }
+//
+//      cout<<"amplitude of sigmoid"<<par->ampl<<endl;
+//      cout<<"amplitude of sigmoid from fit parameters"<<par->sigmoidR[0]<<endl;
+//      cin.get();
+//      for(int i=0; i<4; i++)
+//      {
+//        cout<<"Sigmoid fit parameters "<< "par["<< i <<"]"<<par->sigmoidR[i]<<endl;
+//        cout<<"sig_pars [ "<<i<<"]"<<sig_pars[i]<<endl;
+//      }
 
-      par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
-      par->chi2_sigmoid = sig_fit->GetChisquare();
-      //Calculate the rise time using the 10% and 90% points of the sigmoid fit
-      par->t10 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.1*par->ampl-sig_pars[3])-1.)));
-      par->t90 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.9*par->ampl-sig_pars[3])-1.)));
-      par->risetime = par->t90 - par->t10;
+    //    par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.))); //replacing with fit parameters
+    // par->tfit20 =  par->sigmoidR[1] - (1./par->sigmoidR[2])*(TMath::Log(par->sigmoidR[0]/((0.2*par->ampl-par->sigmoidR[3])-1.)));
 
-      //calculate the rise charge of the fit using the integral of the sigmoid fit for the rise time
-      
+    double a = par->sigmoidR[0], x0 = par->sigmoidR[1], k = par->sigmoidR[2], c = par->sigmoidR[3];
+
+    par->tfit20_nb = get_sigmoid_plus_offset_time_point(0.2 * (par->ampl - c) + c, x0, k, a, c);
+    par->tfit20 = get_sigmoid_plus_offset_time_point(0.2 * par->ampl, x0, k, a, c);
+    // par->tfit20 = 0.0;
+    par->chi2_sigmoid = sig_fit->GetChisquare();
+    //Calculate the rise time using the 10% and 90% points of the sigmoid fit
+    par->t10 = get_sigmoid_plus_offset_time_point(0.1 * (par->ampl - c) + c, x0, k, a, c);
+    par->t90 = get_sigmoid_plus_offset_time_point(0.9 * (par->ampl - c) + c, x0, k, a, c);
+    par->t50 = get_sigmoid_plus_offset_time_point(0.5 * (par->ampl - c) + c, x0, k, a, c);
+    par->risetime = par->t90 - par->t10;
+    if (isnan(par->t10) || isnan(par->t90)) {
+      par->risecharge = -9999;
+    } else {
       par->risecharge = sig_fit->Integral(par->t10, par->t90) - par->risetime*sig_fit->GetParameter(3);
+    }
+
 #ifdef DEBUGMSG
   cout << "chi2 sigmoid " << par->chi2_sigmoid << endl;
 
@@ -2162,8 +2186,9 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
         sig_fit->SetParError(2, 0.05);
         sig_fit->SetParError(3, 0.001*abs(sig_fit->GetParameter(0)));
 
-        sig_fit->SetParLimits(0,sig_fit->GetParameter(0)*0.85,sig_fit->GetParameter(0)*1.15);
-        sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
+		    double amp_limit = abs(sig_fit->GetParameter(0)*0.15);
+      	sig_fit->SetParLimits(0,sig_fit->GetParameter(0) - amp_limit, sig_fit->GetParameter(0) + amp_limit);
+      	sig_fit->SetParLimits(1, fit_start_point, fit_end_point);
         sig_fit->SetParLimits(2, 0.1, 15);
         sig_fit->SetParLimits(3,-fabs(sig_fit->GetParameter(3)*4.1),fabs(sig_fit->GetParameter(3)*4.1));
 
@@ -2244,14 +2269,28 @@ bool TimeSigmoidMCP(int maxpoints, double *arr, double dt, PEAKPARAM *par, int e
 
 
 #endif
-    par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.2*par->ampl-sig_pars[3])-1.)));
+    double a = par->sigmoidR[0], x0 = par->sigmoidR[1], k = par->sigmoidR[2], c = par->sigmoidR[3];
+    // par->tfit20 =  sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/(0.2*par->ampl-sig_pars[3]-1.))); //replacing with fit parameters
+    // par->tfit20 =  par->sigmoidR[1] - (1./par->sigmoidR[2])*(TMath::Log(par->sigmoidR[0]/((0.2*par->ampl-par->sigmoidR[3]))-1.)));
+	  // par->tfit20_nb = par->sigmoidR[1] - (1./par->sigmoidR[2])*(TMath::Log(par->sigmoidR[0]/(0.2*(par->ampl-par->sigmoidR[3]))-1.));
+    // double t20_nb_y_find = 0.2 * (par->ampl - c) + c;
+    par->tfit20_nb = get_sigmoid_plus_offset_time_point(0.2 * (par->ampl - c) + c, x0, k, a, c);
+    par->tfit20 = get_sigmoid_plus_offset_time_point(0.2 * par->ampl, x0, k, a, c);
     par->chi2_sigmoid = sig_fit->GetChisquare();
     //Calculate the rise time using the 10% and 90% points of the sigmoid fit
-    par->t10 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.1*par->ampl-sig_pars[3])-1.)));
-    par->t90 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.9*par->ampl-sig_pars[3])-1.)));
+    par->t10 = get_sigmoid_plus_offset_time_point(0.1 * (par->ampl - c) + c, x0, k, a, c);
+    par->t90 = get_sigmoid_plus_offset_time_point(0.9 * (par->ampl - c) + c, x0, k, a, c);
+    par->t50 = get_sigmoid_plus_offset_time_point(0.5 * (par->ampl - c) + c, x0, k, a, c);
     par->risetime = par->t90 - par->t10;
-    par->t50 = sig_pars[1] - (1./sig_pars[2])*(TMath::Log(sig_pars[0]/((0.5*par->ampl-sig_pars[3])-1.)));
-    par->risecharge = sig_fit->Integral(par->t10, par->t90) - par->risetime*sig_fit->GetParameter(3);
+    if (isnan(par->t10) || isnan(par->t90)) {
+      par->risecharge = -9999;
+    } else {
+      par->risecharge = sig_fit->Integral(par->t10, par->t90) - par->risetime*sig_fit->GetParameter(3);
+    }
+    // par->t10 =  par->sigmoidR[1] - (1./ par->sigmoidR[2])*(TMath::Log( par->sigmoidR[0]/(0.1*(par->ampl- par->sigmoidR[3])-1.)));
+    // par->t90 =  par->sigmoidR[1] - (1./ par->sigmoidR[2])*(TMath::Log( par->sigmoidR[0]/(0.9*(par->ampl- par->sigmoidR[3])-1.)));
+
+    // par->t50 =  par->sigmoidR[1] - (1./ par->sigmoidR[2])*(TMath::Log( par->sigmoidR[0]/(0.5*(par->ampl- par->sigmoidR[3])-1.)));
 
 
   delete sig_fit;
@@ -2831,7 +2870,6 @@ bool FullSigmoid(int maxpoints, double *arr, double dt, PEAKPARAM *par, int evNo
   par->e_peak_end_ampl = sig_fittot->Eval(par->e_peak_end_pos );
   par->t50 = GetXFitValue(sig_fittot, target_y_50, fit_double_start_point, par->maxtime, evNo);
   par->tb10 = GetXFitValue(sig_fittot, target_y_end_10,par->maxtime, fit_double_end_point+10.,evNo);
-
   par->tb50 = GetXFitValue(sig_fittot, target_y_50, par->maxtime, fit_double_end_point+10.,evNo);
 
  double fit_integral = sig_fittot->Integral(sig_lim_min, fit_double_end_point+10.);
@@ -3983,7 +4021,7 @@ double miny = data[i_start];
   par->ftime_pos=i_end;
 
     for (int i = i_start; i < min(i_end, points); i++)  {
-    // cout << "i = " << i << " data[i] = " << data[i] << " miny = " << miny << endlr;
+//     cout << "i = " << i << " data[i] = " << data[i] << " miny = " << miny << endlr;
       if (data[i]<miny)
       {
         par->ampl=data[i];
@@ -4009,7 +4047,10 @@ double miny = data[i_start];
 #ifdef DEBUGMSG
   cout<<RED<<"Starting Sigmoid fit "<<endlr;
 #endif
+//  cout<<"Amplitude of raw data of max point "<<par->ampl<<endl;
   bool SigmoidfitSuccess = TimeSigmoid(points, data, dt, par, evNo, 0, i_start);
+//  cout<<par->ampl<<endl;
+//  cin.get();
   par->SigmoidfitSuccess = SigmoidfitSuccess;
 #ifdef DEBUGMSG
   cout<<GREEN<<"Starting Sigmoid interpolation "<<endlr;
@@ -4319,6 +4360,7 @@ void AddPar(PEAKPARAM* ipar, PEAKPARAM* spar) //The function copies the values f
    //spar->t20=ipar->t20;
    //spar->st20=ipar->st20;
    spar->tfit20=ipar->tfit20;
+   spar->tfit20_nb=ipar->tfit20_nb;
    spar->tnaive20 = ipar->tnaive20;
    spar->te_peak_end = ipar->te_peak_end;
    
