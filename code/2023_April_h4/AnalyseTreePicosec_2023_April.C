@@ -742,8 +742,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   otree->Branch("disttonextcluster",disttonextcluster,"disttonextcluster[eventTracks][6]/D");
   otree->Branch("totchargenextcluster",totchargenextcluster,"totchargenextcluster[eventTracks][6]/D");
   otree->Branch("refP1",refP1,"refP1[eventTracks][3]/D");
-    otree->Branch("refP2",refP2,"refP2[eventTracks][3]/D");
-
+  otree->Branch("refP2",refP2,"refP2[eventTracks][3]/D");
+  otree->Branch("SRSNo", &srsNo, "SRSNo/I");
 
   for (int i=0;i<4;i++)
   {
