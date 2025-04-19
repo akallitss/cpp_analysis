@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <map>
 #include <chrono>
-
 #include "../MyFunctions.C"
 
 class RMSBaselineCalculator {
@@ -243,10 +242,10 @@ void RMSBaselineCalculator::Plot() {
 
 int calculate_rms_baseline() {
     std::string file_path = "/home/akallits/Documents/PicoAnalysis/Saclay_Analysis/data/2022_October_h4/processedTrees/Run224-Pool2_TESTBEAM_tree.root";
-    RMSBaselineCalculator calculator_c4(file_path, "RawDataTree", 4);
+    RMSBaselineCalculator calculator_c4(file_path, "RawDataTree", 3);
     calculator_c4.Process();
     calculator_c4.Plot();
-    RMSBaselineCalculator calculator_c2(file_path, "RawDataTree", 2);
+    RMSBaselineCalculator calculator_c2(file_path, "RawDataTree", 1);
     calculator_c2.Process();
     calculator_c2.Plot();
     return 0;
