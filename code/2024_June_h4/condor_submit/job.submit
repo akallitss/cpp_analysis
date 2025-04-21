@@ -1,18 +1,18 @@
 # Specify the executable (your script or program)
 
-Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4
+Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4
 
-# Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/condor_submit/run_code.sh
+# Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/condor_submit/run_code.sh
 Executable = /bin/bash
 
 # Arguments = $(run_number) $(pool_number)
 Arguments = run_code.sh $(run_number) $(pool_number)
 
-Transfer_Input_Files = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/condor_submit/run_code.sh, \
- /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/MyFunctions_2023_June.C,  \
- /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/MyFunctions_2023_June.h, \
- /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/AnalyseTreePicosec_2023_June.C, \
- /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/RMSBaselineCalculator_2023_June.cpp
+Transfer_Input_Files = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/condor_submit/run_code.sh, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/MyFunctions_2024_June.C,  \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/MyFunctions_2024_June.h, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/AnalyseTreePicosec_2024_June.C, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/RMSBaselineCalculator_2024_June.cpp
 
 
 should_transfer_files = YES
