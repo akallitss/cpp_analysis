@@ -31,8 +31,8 @@ def main():
         lines = f.readlines()
         for line in lines:
             parts = line.strip().split(',')
-            if len(parts) == 2:
-                run, pool = parts
+            if len(parts) >= 2:
+                run, pool = parts[:2]
                 run_pool_numbers.append([int(run), int(pool)])
     expected_jobs = len(run_pool_numbers)
     print(f"Extracted {expected_jobs} Run-Pool numbers:")

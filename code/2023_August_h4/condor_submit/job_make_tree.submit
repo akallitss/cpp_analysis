@@ -1,0 +1,20 @@
+# Specify the executable (your script or program)
+
+Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4
+
+Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/condor_submit/MakeTreePicosecProcess.py
+
+# Define the log, output, and error files
+Log = condor_submit/log_make_tree/job.log
+Output = condor_submit/out_make_tree/job.out
+Error = condor_submit/err_make_tree/job.err
+
++MaxRuntime = 86400
+
+# Request resources
+RequestCpus = 1
+RequestMemory = 2GB
+
+# Specify the job queue
+
+Queue

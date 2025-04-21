@@ -38,7 +38,7 @@
 #include<TMultiGraph.h>
 #include<TClonesArray.h>
 #include "MyFunctions_2023_August.C"
-#include "../RMS_Baseline_Calculator/RMSBaselineCalculator_2023_August.cpp"
+#include "RMSBaselineCalculator_2023_August.cpp"
 #include <iomanip>
 #include <iostream>
 
@@ -732,10 +732,18 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   long double dtlast[]={0.,0.,0.,0.}, dtlastgoodpeaks[]={0.,0.,0.,0.};
   int npeaks[4] = {0, 0, 0, 0}, ngoodPeaks[4] = {0, 0, 0, 0};
   int ntrigsTot[4]={0,0,0,0};
-  int ngoodTrigsTot[4]={0,0,0,0}; 
+  int ngoodTrigsTot[4]={0,0,0,0};
 
   otree->Branch("eventNo", &eventNo, "eventNo/I");
   otree->Branch("evtime", &tnow, "evtime/l");
+  otree->Branch("trackOK", &trackOK, "trackOK/I");
+  otree->Branch("eventTracks", &eventTracks, "eventTracks/I");
+  otree->Branch("chi2track",chi2track,"chi2track[eventTracks]/D");
+  otree->Branch("disttonextcluster",disttonextcluster,"disttonextcluster[eventTracks][6]/D");
+  otree->Branch("totchargenextcluster",totchargenextcluster,"totchargenextcluster[eventTracks][6]/D");
+  otree->Branch("refP1",refP1,"refP1[eventTracks][3]/D");
+  otree->Branch("refP2",refP2,"refP2[eventTracks][3]/D");
+  otree->Branch("SRSNo", &srsNo, "SRSNo/I");
 
   for (int i=0;i<4;i++)
   {
@@ -745,6 +753,12 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       TString bname1 = "npeaks_C"+channel1;
       TString btype1 = bname1+"/I";
       otree->Branch(bname1, &npeaks[i], btype1);
+
+      TString hitX_bname = "hitX_C"+channel1;
+      TString hitY_bname = "hitY_C"+channel1;
+
+      otree->Branch(hitX_bname, hitX_C[i], hitX_bname + "[eventTracks]/D");
+      otree->Branch(hitY_bname, hitY_C[i], hitY_bname + "[eventTracks]/D");
 
 //       for(int j=0;j<MAXTRIG;j++)
 	  {
@@ -1368,8 +1382,10 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
   int total_thin_count = 0;
 	while (eventNo<nevents)
   {
-//	if (eventNo<14255 || eventNo>14257) { eventNo++; continue;};
-  	//cout << "Event Number: " << eventNo << endl;
+	// if (eventNo<30542 || eventNo>30662) { eventNo++; continue;}; //30661
+	// if (eventNo<30542) { eventNo++; continue;}; //30661
+//	if (eventNo<1595) { eventNo++; continue;};
+  	// cout << "Event Number: " << eventNo << endl;
   	// if (eventNo < 1200) { eventNo++; continue; }
   	//if (eventNo!=47) { eventNo++; continue;}
 #ifdef DEBUGMSG
@@ -1642,7 +1658,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	//DerivateArray(sampl,dsampl,maxpoints,dt,npt,1);
     //continue;
     //return 11;
-
+//	cout<<"here I am after dericate array"<<endl;
     int itrig =0;
     ntrigs = 0;
     ntrigsCuts=0;
@@ -1659,12 +1675,13 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
        eventNo++;
        continue;
     }
+//  	cout<<"Here I am ready to find triggers"<<endl;
   	vector<pair<double, double>> trigger_windows;
   	if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0) {
 		adjust_baseline(maxpoints, ptime, sampl);
   		double trigger_threshold = rmsBaselineCalculators[ci].get_epoch_integral_rms(epoch) * single_point_bkg_rejection_sigmas;
 		TriggerResult trigger_results = GetTriggerWindows(ptime, maxpoints, sampl, dt, trigger_threshold);
-  	  	//cout<< "Event number: " << eventNo << " Channel number: " << ci << endl;
+//  	  	cout<< "Event number: " << eventNo << " Channel number: " << ci << endl;
   		//cin.get();
   		//print event number that had secondary pulses
   		if (trigger_results.secondary_count > 0) {
@@ -1688,6 +1705,11 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 	  //cout<<"check: "<<ntrigs+1<<endl;
 	  ppar->rms=rmsC[ci];
 	  ppar->bsl=bslC[ci];
+//       for(int i=0; i<eventTracks; i++) // this makes hitX and hitY to be filled up to the number of tracks in the event for all the peaks
+//         {
+//         	ppar->hitX[i]=hitX_C[ci][i];
+//            ppar->hitY[i]=hitY_C[ci][i];
+//         }
 ///*************************************************************
 
       if(strncmp(oscsetup->DetName[ci], "MCP", 3) == 0 && SIGMOIDFIT[ci] && DOUBLESIGMOIDFIT[ci]==false)  // Checks if "MCP" is at the start of the string

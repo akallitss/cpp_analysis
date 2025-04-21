@@ -2,20 +2,32 @@
 
 Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4
 
-Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/condor_submit/run_code.sh
+# Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/condor_submit/run_code.sh
+Executable = /bin/bash
 
-Arguments = $(run_number) $(pool_number)
+# Arguments = $(run_number) $(pool_number)
+Arguments = run_code.sh $(run_number) $(pool_number)
+
+Transfer_Input_Files = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/condor_submit/run_code.sh, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/MyFunctions_2023_August.C,  \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/MyFunctions_2023_August.h, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/AnalyseTreePicosec_2023_August.C, \
+ /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_August_h4/RMSBaselineCalculator_2023_August.cpp
+
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
 
 # Define the log, output, and error files
 Log = condor_submit/log/job_run.log
 Output = condor_submit/out/job_run$(run_number)_pool$(pool_number).out
 Error = condor_submit/err/job_run$(run_number)_pool$(pool_number).err
 
-+MaxRuntime = 7200
++MaxRuntime = $(max_run_time)
 
 # Request resources
 RequestCpus = 1
 RequestMemory = 2GB
 
 # Specify the job queue
-Queue run_number, pool_number from processedTrees_run_list.txt
+Queue run_number, pool_number, max_run_time from processedTrees_run_list.txt
