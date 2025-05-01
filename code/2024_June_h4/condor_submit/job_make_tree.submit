@@ -1,8 +1,8 @@
 # Specify the executable (your script or program)
 
-Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4
+Initialdir = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4
 
-Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_June_h4/condor_submit/MakeTreePicosecProcess.py
+Executable = /afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2024_June_h4/condor_submit/MakeTreePicosecProcess.py
 
 # Define the log, output, and error files
 Log = condor_submit/log_make_tree/job.log
