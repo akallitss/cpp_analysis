@@ -30,4 +30,4 @@ RequestCpus = 1
 RequestMemory = 2GB
 
 # Specify the job queue
-Queue run_number, pool_number, max_run_time from processedTrees_run_list.txt
+Queue run_number, pool_number, max_run_time from processedTrees_run_list_long_runs.txt

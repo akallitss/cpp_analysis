@@ -8,5 +8,5 @@ rm log/*
 #root -l -b -q "../MyFunctions_2024_June.C++" #not needed when transfering files to condor node
 #root -l -b -q "../AnalyseTreePicosec_2024_June.C++" #not needed when transfering files to condor node
 #python3 make_condor_input_list.py
-chmod 755 processedTrees_run_list.txt
+#chmod 755 processedTrees_run_list.txt
 condor_submit job.submit
