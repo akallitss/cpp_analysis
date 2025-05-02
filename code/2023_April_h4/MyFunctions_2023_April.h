@@ -277,7 +277,7 @@ typedef struct {
    float V1[4];
    float V2[4]; 
    float Z[4]; 
-   char DetName[4][10];
+   char DetName[4][20];
    char Photocathode[4][12];
    char Amplifier[4][20];
    int AmplifierNo[4];

@@ -257,7 +257,7 @@ int AnalyseTreePicosec_2024_June(int runNo=15, int poolNo=2, int draw=0, double 
   branch->SetAddress(&ZZ);
   cout<<GREEN<<"Info tree OK..."<<endlr;
 
-  char DetName[10];
+  char DetName[20];
   branch = infotree->GetBranch("DetName");
   branch->SetAddress(DetName);
   char Photocathode[12];
@@ -281,6 +281,13 @@ int AnalyseTreePicosec_2024_June(int runNo=15, int poolNo=2, int draw=0, double 
   for (int i=0;i<4;i++)
   {
       infotree->GetEntry(i);
+  	  if (strncmp(DetName, "PIM96", 5) == 0) {
+  		char temp[20]; // temp buffer
+  		strcpy(temp, DetName);             // Copy original to temp
+  		strcpy(DetName, "MM");             // Start DetName with "MM"
+  		strcat(DetName, temp);             // Append original
+  	  }
+
       oscsetup->srsCh = srsNo;
       oscsetup->V1[i]=V1;
       oscsetup->V2[i]=V2;
