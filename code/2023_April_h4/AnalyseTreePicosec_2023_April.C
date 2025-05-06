@@ -1815,8 +1815,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       	if (i_end < maxpoints - 50) {
       		// cout << "Analyzing trigger window..." << endl;
-      		cout<<RED<<"I am MM And will run AnalysePicosecBounds"<<endlr;
-      		cin.get();
+      		// cout<<RED<<"I am MM And will run AnalysePicosecBounds"<<endlr;
+      		// cin.get();
       		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
       		totalFits_sigmoid++;
