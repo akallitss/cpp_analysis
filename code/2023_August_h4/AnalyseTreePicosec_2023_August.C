@@ -257,7 +257,7 @@ int AnalyseTreePicosec_2023_August(int runNo=15, int poolNo=2, int draw=0, doubl
   branch->SetAddress(&ZZ);
   cout<<GREEN<<"Info tree OK..."<<endlr;
 
-  char DetName[10];
+  char DetName[20];
   branch = infotree->GetBranch("DetName");
   branch->SetAddress(DetName);
   char Photocathode[12];
@@ -281,6 +281,13 @@ int AnalyseTreePicosec_2023_August(int runNo=15, int poolNo=2, int draw=0, doubl
   for (int i=0;i<4;i++)
   {
       infotree->GetEntry(i);
+  	  if (strncmp(DetName, "PIM96", 5) == 0) {
+  		char temp[20]; // temp buffer
+  		strcpy(temp, DetName);             // Copy original to temp
+  		strcpy(DetName, "MM");             // Start DetName with "MM"
+  		strcat(DetName, temp);             // Append original
+  	  }
+
       oscsetup->srsCh = srsNo;
       oscsetup->V1[i]=V1;
       oscsetup->V2[i]=V2;
@@ -1808,6 +1815,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       	if (i_end < maxpoints - 50) {
       		// cout << "Analyzing trigger window..." << endl;
+      		// cout<<RED<<"I am MM And will run AnalysePicosecBounds"<<endlr;
+      		// cin.get();
       		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
       		totalFits_sigmoid++;

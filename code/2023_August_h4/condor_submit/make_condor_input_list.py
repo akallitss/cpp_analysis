@@ -24,7 +24,7 @@ def main():
     file_size = 2  # GB
     process_time = 10  # minutes
     conv_factor = process_time * 60 / (file_size * 1000)  # seconds / MB
-    conv_factor *= 500  # Increase factor to give wiggle room
+    conv_factor *= 5  # Increase factor to give wiggle room
     minimum_time = 600  # seconds corresponding to 10 minutes for compiling/checking to find data etc..
 
     outdirname_path = get_directory_path_from_myfunctions_h(myfunctions_h_path, 'OUTDIRNAME')
