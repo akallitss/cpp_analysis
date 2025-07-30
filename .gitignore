@@ -1,6 +1,7 @@
 alternative_codes/
 back_up/
 condor_tests/
+code/Bin2Tree/bin2tree
 *processedTrees_run_list.txt
 **/log/
 **/err/
