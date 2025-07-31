@@ -338,14 +338,14 @@ const int MAX_N_FILES=11000;
 // const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
 //
-const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
-const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline";
-const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/wdir";
-const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/plots";
-const char *DATADIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/dataTrees";
-const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees";
-const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees/ParameterTrees";
-const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
+// const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
+// const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline";
+// const char *WORKDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/wdir";
+// const char *PLOTDIR="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/plots";
+// const char *DATADIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/dataTrees";
+// const char *OUTDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees";
+// const char *PARAMDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4_new_baseline/processedTrees/ParameterTrees";
+// const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/reconstructed";
 
 // const char *CODEDIR="/afs/cern.ch/user/a/akallits/PicoAnalysis/cpp_analysis/code/2023_April_h4";
 // const char *BASEDIRNAME="/eos/project-p/picosec/analysis/Saclay/data/2023_April_h4";
@@ -365,6 +365,17 @@ const char *TRACKDIRNAME="/eos/project-p/picosec/testbeam/2023_April_h4/tracker/
 // const char *TRACKDIRNAME="/data/akallits/Saclay_Analysis/data/data/2023_April_h4/tracking";
 // const char *OUTDIRNAME="/data/akallits/Saclay_Analysis/data/data/2023_April_h4/processedTrees/";
 // const char *PARAMDIRNAME="/data/akallits/Saclay_Analysis/data/data/2023_April_h4/processedTrees/ParameterTrees";
+
+
+const char *CODEDIR="/sw/akallits/PicoAnalysis/Saclay_Analysis/cpp_analysis/code/2025_July_h4";
+const char *BASEDIRNAME="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/";
+const char *WORKDIR="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/wdir";
+const char *PLOTDIR="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/plots";
+const char *DATADIRNAME="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/dataTrees";
+// const char *TRACKDIRNAME="/sw/akallits/PicoAnalysis/Saclay_Analysis/data/2023_April_h4/tracking";
+const char *TRACKDIRNAME="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/tracking";
+const char *OUTDIRNAME="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/processedTrees/";
+const char *PARAMDIRNAME="/data/akallits/Saclay_Analysis/data/data/2025_July_h4/processedTrees/ParameterTrees";
 
 const char *RTYPE="TESTBEAM";
 const int MINRUN = 1;
@@ -400,7 +411,7 @@ const double ion_tail_end_point_threshold_fraction = 0.4 ; // Set ion tail end p
 #ifndef PATH_NAMES_DATA_CODE
 #define PATH_NAMES_DATA_CODE 1
 
-const char *DATA_PATH_NAME="/eos/project-p/picosec/testbeam/2023_April_h4/";
+const char *DATA_PATH_NAME="/eos/project-p/picosec/testbeam/2025_July_h4/";
 
 const char *OUT_DIR_NAME=BASEDIRNAME;  /// Must be the same with above
 const char *WORK_DIR_NAME=WORKDIR;   /// Must be the same with above
