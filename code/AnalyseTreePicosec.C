@@ -38,7 +38,7 @@
 #include<TMultiGraph.h>
 #include<TClonesArray.h>
 #include "MyFunctions.C"
-#include "RMS_Baseline_Calculator/RMSBaselineCalculator.cpp"
+#include "RMSBaselineCalculator.cpp"
 #include <iomanip>
 #include <iostream>
 
@@ -257,7 +257,7 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   branch->SetAddress(&ZZ);
   cout<<GREEN<<"Info tree OK..."<<endlr;
 
-  char DetName[10];
+  char DetName[20];
   branch = infotree->GetBranch("DetName");
   branch->SetAddress(DetName);
   char Photocathode[12];
@@ -281,6 +281,13 @@ int AnalyseTreePicosec(int runNo=15, int poolNo=2, int draw=0, double threshold 
   for (int i=0;i<4;i++)
   {
       infotree->GetEntry(i);
+  	  if (strncmp(DetName, "PIM96", 5) == 0) {
+  		char temp[20]; // temp buffer
+  		strcpy(temp, DetName);             // Copy original to temp
+  		strcpy(DetName, "MM");             // Start DetName with "MM"
+  		strcat(DetName, temp);             // Append original
+  	  }
+
       oscsetup->srsCh = srsNo;
       oscsetup->V1[i]=V1;
       oscsetup->V2[i]=V2;
@@ -1731,6 +1738,7 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
       }
       else if (strncmp(oscsetup->DetName[ci], "MM", 2) == 0)
       {
+      	cout<<RED<<"I am MM and will run AnalysePicosecBounds"<<endlr;
          isMM = kTRUE;
       	// break;
       	//cout<<BLUE<<"Channel "<<ci+1<<" uses the fit. Threshold = "<<Thresholds[ci]*mV<<" mV"<<endlr;
@@ -1808,6 +1816,8 @@ const int MAXTRIG=100; //maximum number of triggers per channel, i.e. npeaks
 
       	if (i_end < maxpoints - 50) {
       		// cout << "Analyzing trigger window..." << endl;
+      		// cout<<RED<<"I am MM And will run AnalysePicosecBounds"<<endlr;
+      		// cin.get();
       		AnalysePicosecBounds(maxpoints, evNo, sampl, dt, i_start, i_end, ppar);    /// all the analysis is done here!!!!
       		successfulFits_sigmoid += ppar->SigmoidfitSuccess;
       		totalFits_sigmoid++;

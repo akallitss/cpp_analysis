@@ -83,6 +83,7 @@
 
 int MakeTreefromRawTreePicosec(int runNo=1, int poolNo=1,  string filetype = "")  ///put trigger = ChannelNo in case of external trigger
 {
+  // gROOT->LoadMacro("MyFunctions.C");
   gROOT->LoadMacro("MyFunctions.C");
   gROOT->LoadMacro("tracks.C");
   
@@ -396,7 +397,7 @@ int MakeTreefromRawTreePicosec(int runNo=1, int poolNo=1,  string filetype = "")
   sprintf(runid,"Run%03d",runNo);
   char ctrigger[20];
   sprintf(ctrigger,"%d",trigger);
-  cout<<RED<<"Here I am"<<endlr;
+  // cout<<RED<<"Here I am"<<endlr;
 
   TString rtypes(runid);
   rtypes+="-";
@@ -473,6 +474,7 @@ int MakeTreefromRawTreePicosec(int runNo=1, int poolNo=1,  string filetype = "")
       V2=oscsetup->V2[i];
       ZZ=oscsetup->Z[i];
       strcpy(DetName,oscsetup->DetName[i]);
+      cout<<GREEN<<"Adding info for channel C"<<i+1<<" : "<<DetName<<endlr;
       strcpy(Photocathode,oscsetup->Photocathode[i]);
       strcpy(Amplifier,oscsetup->Amplifier[i]);
       AmplifierNo=oscsetup->AmplifierNo[i];
@@ -892,12 +894,13 @@ int MakeTreefromRawTreePicosec(int runNo=1, int poolNo=1,  string filetype = "")
         }
         ttrig = itrigger * dt;
         trigExist=true;
+
   //cout<<"itrigger = "<<itrigger<<" , ttrig = "<<ttrig<<" ns"<<endl;
 
          srsNo=0;
          int step =(int) (25./dt);
          if (step<=0) return -44;
-         if (itrigger + 16*step>=spoints[ci]) validSRS = false; //Frame size too short to fit in the SRS trigger
+           if (itrigger + 16*step>=spoints[ci]) validSRS = false;
          int bit=1;
          for (int j=16; j>0; j--) 
          {

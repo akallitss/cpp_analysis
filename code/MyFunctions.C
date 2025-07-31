@@ -49,6 +49,7 @@ int GetOsciloscopeSetup(int runNo, int poolNo, const char* dirname, OSCSETUP* os
 //            cout<<oscsetup->V2[i]<<"\t";
 //            cout<<oscsetup->Photocathode[i]<<"\t";
             cout<<MAGENTA<<"Amplifier ->"<<oscsetup->Amplifier[i]<<"<-"<<endlr;
+            cout<<CYAN<<"Detector ->"<<oscsetup->DetName[i]<<"<-"<<endlr;
            oscsetup->AmplifierNo[i]=WhichAmplifier(oscsetup->Amplifier[i]);
        }
        entries++;
